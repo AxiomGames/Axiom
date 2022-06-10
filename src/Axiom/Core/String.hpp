@@ -12,26 +12,35 @@ namespace Ax
 		using CharType = char;
 		using LenType = uint32_t;
 	private:
-		static constexpr int CapacityBlockSize = 12;
+		static constexpr int CapacityBlockSize = 16;
+		static constexpr int AliasSize = 16;
 		CharType* m_Data = nullptr;
 		uint32_t m_Capacity = 0;
+		CharType m_Alias[AliasSize]{'\0'};
 	public:
-		String()
-		{
-			m_Capacity = CapacityBlockSize;
-			m_Data = (CharType*)malloc(sizeof(CharType) * m_Capacity);
-			m_Data[0] = '\0';
-		}
+		__forceinline String() = default;
 
 		~String()
 		{
-			free(m_Data);
-			m_Data = nullptr;
+			if(m_Data)
+			{
+				free(m_Data);
+				m_Data = nullptr;
+			}
 		}
 
-		String(const char* str)
+		String(const char* str) // NOLINT(google-explicit-constructor)
 		{
 			auto len = strlen(str);
+
+			if (len + 1 <= AliasSize)
+			{
+				memcpy(m_Alias, str, sizeof(CharType) * (len + 1));
+				return;
+			}
+
+			m_Alias[0] = '\0';
+
 			auto size = sizeof(CharType) * (len + 1);
 			m_Capacity = len + 1;
 			m_Data = (CharType*)malloc(size);
@@ -40,7 +49,15 @@ namespace Ax
 
 		String(const String& other)
 		{
-			auto len = strlen(other.m_Data);
+			auto len = other.Length();
+
+			if (len + 1 <= AliasSize)
+			{
+				memcpy(m_Alias, other.m_Alias, sizeof(CharType) * (len + 1));
+				return;
+			}
+
+			m_Alias[0] = '\0';
 
 			if (len == 0)
 			{
@@ -53,81 +70,124 @@ namespace Ax
 			strcpy_s(m_Data, size, other.m_Data);
 		}
 
-		String(String&& other) noexcept : m_Data(other.m_Data), m_Capacity(other.m_Capacity)
+		__forceinline String(String&& other) noexcept : m_Data(other.m_Data), m_Capacity(other.m_Capacity)
 		{
+			memcpy(m_Alias, other.m_Alias, 16);
 			other.m_Data = nullptr;
 		}
 
-		static String FromInt(int32_t num)
+		__forceinline static String FromInt(int32_t num)
 		{
 			String str;
 			str.AppendInt(num);
 			return str;
 		}
 
-		static LenType StrLength(CharType* str)
+		__forceinline static String FromFloat(float num, const char* format = "%f")
+		{
+			String str;
+			str.AppendFloat(num, format);
+			return str;
+		}
+
+		__forceinline static String FromDouble(double num, const char* format = "%f")
+		{
+			String str;
+			str.AppendDouble(num, format);
+			return str;
+		}
+
+		static __forceinline LenType StrLength(const CharType* str)
 		{
 			LenType len = 0;
 
-			while(*str != '\0')
+			while(str[len] != '\0')
 			{
 				len++;
-				str++;
 			}
 
 			return len;
 		}
 
-		[[nodiscard]] LenType Length() const { return StrLength(m_Data); }
-		[[nodiscard]] size_t Size() const { return Length() * sizeof(CharType); }
+		[[nodiscard]] __forceinline LenType Length() const
+		{
+			if (m_Alias[0] != '\0')
+			{
+				return StrLength(m_Alias);
+			}
+			else if (m_Data != nullptr)
+			{
+				return StrLength(m_Data);
+			}
+			else
+			{
+				return 0;
+			}
+		}
+		[[nodiscard]] __forceinline size_t Size() const { return Length() * sizeof(CharType); }
 
 		String& Append(const CharType* str, LenType len)
 		{
 			auto currentLen = Length();
 			auto remainingSize = m_Capacity - (currentLen + 1);
 
-			if (len > remainingSize)
+			if (currentLen + len + 1 <= AliasSize)
+			{
+				memcpy(m_Alias + currentLen, str, len);
+				m_Alias[currentLen + len] = '\0';
+				return *this;
+			}
+
+			if (m_Data == nullptr)
+			{
+				auto newSize = currentLen + len + 1 + CapacityBlockSize;
+				m_Data = static_cast<CharType*>(malloc(sizeof(CharType) * newSize));
+				m_Capacity = newSize;
+
+				if (m_Alias[0] != '\0')
+				{
+					memcpy(m_Data, m_Alias, sizeof(CharType) * currentLen);
+				}
+			}
+			else if (len > remainingSize)
 			{
 				auto newSize = currentLen + len + 1 + CapacityBlockSize;
 				m_Data = static_cast<CharType*>(realloc(m_Data, sizeof(CharType) * newSize));
 				m_Capacity = newSize;
 			}
 
-			for (LenType i = 0; i < len; ++i)
-			{
-				m_Data[currentLen + i] = str[i];
-			}
-
+			memcpy(m_Data + currentLen, str, len);
 			m_Data[currentLen + len] = '\0';
+			m_Alias[0] = '\0';
 
 			return *this;
 		}
 
-		String& Append(CharType c)
+		__forceinline String& Append(CharType c)
 		{
 			return Append(&c, 1);
 		}
 
-		String& Append(const String& other)
+		__forceinline String& Append(const String& other)
 		{
 			return Append(other.m_Data, other.Length());
 		}
 
-		void AppendInt(int32_t num)
+		__forceinline void AppendInt(int32_t num)
 		{
 			CharType buf[16];
 			std::sprintf(buf, "%d", num);
 			Append(buf, strlen(buf));
 		}
 
-		void AppendFloat(float num, const char* format = "%f")
+		__forceinline void AppendFloat(float num, const char* format = "%f")
 		{
 			CharType buf[16];
 			std::sprintf(buf, format, num);
 			Append(buf, strlen(buf));
 		}
 
-		void AppendDouble(double num, const char* format = "%f")
+		__forceinline void AppendDouble(double num, const char* format = "%f")
 		{
 			CharType buf[16];
 			std::sprintf(buf, format, num);
@@ -136,6 +196,13 @@ namespace Ax
 
 		String& operator=(const String& other)
 		{
+			memcpy(m_Alias, other.m_Alias, 16);
+
+			if (other.m_Data == nullptr)
+			{
+				return *this;
+			}
+
 			if (other.m_Capacity > m_Capacity)
 			{
 				m_Data = static_cast<CharType*>(realloc(m_Data, sizeof(CharType) * m_Capacity));
@@ -150,30 +217,86 @@ namespace Ax
 			return *this;
 		}
 
-		void Clear()
+		__forceinline void Clear()
 		{
 			m_Data[0] = '\0';
+			m_Alias[0] = '\0';
 		}
 
-		void Reset()
+		__forceinline void Reset()
 		{
-			if (m_Capacity > CapacityBlockSize)
+			m_Alias[0] = '\0';
+
+			if (m_Data != nullptr)
 			{
-				m_Data = static_cast<CharType*>(realloc(m_Data, sizeof(CharType) * CapacityBlockSize));
+				free(m_Data);
+				m_Data = nullptr;
+			}
+		}
+
+		__forceinline bool operator==(const String& other) const { return strcmp(CStr(), other.CStr()) == 0; }
+		__forceinline bool operator!=(const String& other) const { return strcmp(CStr(), other.CStr()) != 0; }
+
+		__forceinline bool operator==(const char* other) const { return strcmp(CStr(), other) == 0; }
+		__forceinline bool operator!=(const char* other) const { return strcmp(CStr(), other) != 0; }
+
+		__forceinline CharType operator[](int index)
+		{
+			if (m_Alias[0] != '\0')
+			{
+				return m_Alias[index];
+			}
+			else
+			{
+				return m_Data[index];
+			}
+		}
+
+		__forceinline String& operator+=(const char* str)
+		{
+			Append(str, strlen(str));
+			return *this;
+		}
+
+		__forceinline String& operator+=(const String& str)
+		{
+			if (str.m_Alias[0] != '\0')
+			{
+				Append(str.m_Alias, str.Length());
+				return *this;
 			}
 
-			m_Data[0] = '\0';
+			Append(str.m_Data, str.Length());
+			return *this;
 		}
 
-		bool operator==(const String& other) { return strcmp(m_Data, other.m_Data) == 0; }
-		bool operator!=(const String& other) { return strcmp(m_Data, other.m_Data) != 0; }
+		__forceinline String& operator+=(int num)
+		{
+			AppendInt(num);
+			return *this;
+		}
 
-		bool operator==(const char* other) { return strcmp(m_Data, other) == 0; }
-		bool operator!=(const char* other) { return strcmp(m_Data, other) != 0; }
+		__forceinline String& operator+=(float num)
+		{
+			AppendFloat(num);
+			return *this;
+		}
 
-		CharType operator[](int index) { return m_Data[index]; }
+		__forceinline String& operator+=(double num)
+		{
+			AppendDouble(num);
+			return *this;
+		}
 
-		[[nodiscard]] const char* CStr() const { return m_Data; }
+		[[nodiscard]] __forceinline const char* CStr() const
+		{
+			if (m_Alias[0] != '\0')
+			{
+				return m_Alias;
+			}
+
+			return m_Data;
+		}
 	};
 
 	inline std::ostream& operator <<(std::ostream& stream, const String& str)
