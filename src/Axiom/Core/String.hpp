@@ -1,6 +1,9 @@
 #pragma once
 
+#include <cstdlib>
 #include <cstdint>
+#include <sstream>
+#include <iostream>
 
 namespace Ax
 {
@@ -10,7 +13,7 @@ namespace Ax
 		using CharType = char;
 		using LenType = uint32_t;
 	private:
-		static constexpr int CapacityBlockSize = 10;
+		static constexpr int CapacityBlockSize = 12;
 		CharType* m_Data = nullptr;
 		uint32_t m_Capacity = 0;
 	public:
@@ -39,13 +42,23 @@ namespace Ax
 		String(const String& other)
 		{
 			auto len = strlen(other.m_Data);
+
+			if (len == 0)
+			{
+				len = other.m_Capacity - 1;
+			}
+
 			auto size = sizeof(CharType) * (len + 1);
 			m_Data = (CharType*)malloc(size);
 			m_Capacity = other.m_Capacity;
 			strcpy_s(m_Data, size, other.m_Data);
 		}
 
-		String(const String&& other) noexcept : m_Data(other.m_Data), m_Capacity(other.m_Capacity) {}
+		String(String&& other) noexcept : m_Data(other.m_Data), m_Capacity(other.m_Capacity)
+		{
+			other.m_Data = nullptr;
+			std::cout << "move" << std::endl;
+		}
 
 		static String FromInt(int32_t num)
 		{
@@ -131,7 +144,7 @@ namespace Ax
 				m_Capacity = other.m_Capacity;
 			}
 
-			for (LenType i = 0; i < other.Length(); ++i)
+			for (LenType i = 0; i < other.Length() + 1; ++i)
 			{
 				m_Data[i] = other.m_Data[i];
 			}
@@ -164,4 +177,10 @@ namespace Ax
 
 		[[nodiscard]] const char* CStr() const { return m_Data; }
 	};
+
+	inline std::ostream& operator <<(std::ostream& stream, const String& str)
+	{
+		stream << str.CStr();
+		return stream;
+	}
 }
