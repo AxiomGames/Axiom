@@ -11,6 +11,10 @@ if (MSVC)
 	add_compile_options(/Oi /GR- /D_HAS_EXCEPTIONS=0)
 endif()
 
+add_subdirectory(lib)
+
 file(GLOB_RECURSE AXIOM_SOURCES src/*.hpp src/*.cpp)
 add_executable(Axiom ${AXIOM_SOURCES})
 target_include_directories(Axiom PUBLIC src)
+
+target_link_libraries(Axiom PUBLIC glfw d3d11 dxgi dxguid d3dcompiler)
