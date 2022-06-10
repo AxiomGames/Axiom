@@ -3,7 +3,6 @@
 #include <cstdlib>
 #include <cstdint>
 #include <sstream>
-#include <iostream>
 
 namespace Ax
 {
@@ -57,7 +56,6 @@ namespace Ax
 		String(String&& other) noexcept : m_Data(other.m_Data), m_Capacity(other.m_Capacity)
 		{
 			other.m_Data = nullptr;
-			std::cout << "move" << std::endl;
 		}
 
 		static String FromInt(int32_t num)
