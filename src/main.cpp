@@ -5,11 +5,12 @@
 #include "Axiom/Core/Array.hpp"
 #include "Axiom/App/SystemWindow.hpp"
 #include "Axiom/Graphics/RenderDevice.hpp"
+#include "Axiom/Framework/ECS/Registry.hpp"
 
 #include <DXGI.h>
 #include <D3D11.h>
 
-using namespace Ax;
+using namespace ax;
 
 const char* shader_blit = R"(
 struct FullScreenQuadOutput
@@ -56,6 +57,21 @@ protected:
 	std::string m_name;
 	std::chrono::steady_clock::time_point m_begin;
 };
+
+class TestComponent
+{
+
+};
+
+int maina()
+{
+	ESCRegistry registry;
+
+	EntityID entity0 = registry.NewEntity();
+	TestComponent* component = registry.AddComponent<TestComponent>(entity0);
+
+	return 0;
+}
 
 int main()
 {
