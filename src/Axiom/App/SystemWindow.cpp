@@ -97,9 +97,9 @@ bool SystemWindow::ShouldClose() const
 	return glfwWindowShouldClose(Window);
 }
 
-Vector2i SystemWindow::GetSize() const
+ax::Vector2i SystemWindow::GetSize() const
 {
-	Vector2i vec;
+	ax::Vector2i vec;
 	glfwGetWindowSize(Window, &vec.x, &vec.y);
 	return vec;
 }

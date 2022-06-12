@@ -42,7 +42,7 @@ void RenderContext::DestroyRenderContext()
 bool RenderContext::CreateSwapChain(SystemWindow* systemWindow)
 {
 	HWND hwnd = glfwGetWin32Window(systemWindow->Window);
-	Vector2i size = systemWindow->GetSize();
+	ax::Vector2i size = systemWindow->GetSize();
 
 	// Created swap chain
 

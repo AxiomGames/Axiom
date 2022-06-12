@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Axiom/Core/String.hpp"
-#include "Axiom/Math/Vector.hpp"
+#include "Axiom/Math/Vector2.hpp"
 #include <GLFW/glfw3.h>
 
 class IDXGISwapChain;
@@ -54,6 +54,6 @@ struct SystemWindow
 
 	[[nodiscard]] bool ShouldClose() const;
 
-	[[nodiscard]] Vector2i GetSize() const;
+	[[nodiscard]] ax::Vector2i GetSize() const;
 };
 }
