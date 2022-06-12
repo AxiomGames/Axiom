@@ -5,13 +5,11 @@
 #include <GLFW/glfw3.h>
 
 class IDXGISwapChain;
-
 class ID3D11Texture2D;
-
 class ID3D11RenderTargetView;
 
-namespace Ax
-{
+AX_NAMESPACE
+
 class SystemWindow;
 class RenderContext;
 
@@ -56,4 +54,5 @@ struct SystemWindow
 
 	[[nodiscard]] ax::Vector2i GetSize() const;
 };
-}
+
+AX_END_NAMESPACE

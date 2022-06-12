@@ -4,8 +4,8 @@
 #include "Axiom/Core/robin_hood.h"
 #include "Axiom/Framework/Object.hpp"
 
-namespace Ax
-{
+AX_NAMESPACE
+
 typedef uint32_t EntityID;
 
 struct ESCRegistry
@@ -48,4 +48,5 @@ struct ESCRegistry
 		return array;
 	}
 };
-}
+
+AX_END_NAMESPACE

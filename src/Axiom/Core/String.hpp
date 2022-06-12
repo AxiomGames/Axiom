@@ -4,8 +4,10 @@
 #include <cstdint>
 #include <sstream>
 
-namespace Ax
-{
+#include "Common.hpp"
+
+AX_NAMESPACE
+
 typedef uint64_t StrHashID;
 
 constexpr StrHashID HashDjb2(const char* str)
@@ -426,4 +428,5 @@ inline std::ostream& operator<<(std::ostream& stream, const String& str)
 	stream << str.CStr();
 	return stream;
 }
-}
+
+AX_END_NAMESPACE

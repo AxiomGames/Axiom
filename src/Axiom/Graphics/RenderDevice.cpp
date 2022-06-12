@@ -10,8 +10,8 @@
 
 #include <d3dcompiler.h>
 
-namespace Ax
-{
+AX_NAMESPACE
+
 RenderContext::RenderContext()
 {
 
@@ -190,4 +190,5 @@ ID3DBlob* RenderContext::CompileShader(const ShaderCompileDesc& desc) const
 
 	return shaderBlob;
 }
-}
+
+AX_END_NAMESPACE

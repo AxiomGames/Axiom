@@ -2,8 +2,8 @@
 
 #include <Axiom/Core/String.hpp>
 
-namespace Ax
-{
+AX_NAMESPACE
+
 typedef uint64_t TTypeID;
 
 class ObjectBase;
@@ -95,4 +95,5 @@ public:
         else return nullptr; \
     } \
     static std::shared_ptr<className> Cast(const std::shared_ptr<ObjectBase>& ptr) { return std::static_pointer_cast<className>(ptr); }
-}
+
+AX_END_NAMESPACE

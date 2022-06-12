@@ -7,14 +7,14 @@ struct Color32
 {
 	union
 	{
-		struct { byte r, g, b, a; };
-		byte arr[4];
+		struct { uint8 r, g, b, a; };
+		uint8 arr[4];
 		int _int;
 	};
 	Color32() : r(0), g(0), b(0), a(0) {};
 	Color32(__int32 __int) : _int(__int) {};
-	Color32(byte _r, byte _g, byte _b) : r(_r), g(_g), b(_b), a(255) {};
-	Color32(byte _r, byte _g, byte _b, byte _a) : r(_r), g(_g), b(_b), a(_a) {};
+	Color32(uint8 _r, uint8 _g, uint8 _b) : r(_r), g(_g), b(_b), a(255) {};
+	Color32(uint8 _r, uint8 _g, uint8 _b, uint8 _a) : r(_r), g(_g), b(_b), a(_a) {};
 
 	[[nodiscard]] static FINLINE Color32 Red()	 { return Color32(255, 0, 0, 255); }
 	[[nodiscard]] static FINLINE Color32 Green() { return Color32(0, 255, 0, 255); }
@@ -63,7 +63,7 @@ struct Color
 
 	Color32 ConvertToColor32() {
 		Color converted = *this * 255.0f;
-		return Color32(byte(converted.r), byte(converted.g), byte(converted.b));
+		return Color32(uint8(converted.r), uint8(converted.g), uint8(converted.b));
 	}
 
 	FINLINE Color VECTORCALL operator + (const Color b) const { return _mm_add_ps(vec, b.vec); }

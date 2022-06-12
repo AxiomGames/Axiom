@@ -1,14 +1,8 @@
 #pragma once
-#include <math.h>
-#include <immintrin.h>
 
-#ifndef FINLINE 
-#	ifndef _MSC_VER 
-#		define FINLINE  inline
-#	else
-#		define FINLINE __forceinline
-#	endif
-#endif
+#include <cmath>
+#include <immintrin.h>
+#include "Axiom/Core/Common.hpp"
 
 #ifndef VECTORCALL
 #	ifndef _MSC_VER
@@ -18,8 +12,10 @@
 #	endif
 #endif
 
-#define AMATH_NAMESPACE namespace ax {
-#define AMATH_END_NAMESPACE }
+#ifndef AMATH_NAMESPACE
+	#define AMATH_NAMESPACE namespace ax {
+	#define AMATH_END_NAMESPACE }
+#endif
 
 AMATH_NAMESPACE
 

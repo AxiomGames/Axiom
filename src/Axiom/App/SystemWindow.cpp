@@ -4,8 +4,8 @@
 #include <DXGI.h>
 #include <D3D11.h>
 
-namespace Ax
-{
+AX_NAMESPACE
+
 bool SystemWindow::GLFWInitialized = false;
 
 void GLFWWindowSizeCallback(GLFWwindow* window, int w, int h)
@@ -108,4 +108,5 @@ SystemWindow::~SystemWindow()
 {
 	glfwDestroyWindow(Window);
 }
-}
+
+AX_END_NAMESPACE

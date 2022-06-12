@@ -4,8 +4,10 @@
 #include <cstdint>
 #include <algorithm>
 
-namespace Ax
-{
+#include "Common.hpp"
+
+AX_NAMESPACE
+
 template<typename T>
 class Array
 {
@@ -206,4 +208,5 @@ public:
 		return *this;
 	}
 };
-}
+
+AX_END_NAMESPACE

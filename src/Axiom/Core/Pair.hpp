@@ -1,7 +1,9 @@
 #pragma once
 
-namespace Ax
-{
+#include "Common.hpp"
+
+AX_NAMESPACE
+
 template<typename Key, typename Val>
 struct Pair
 {
@@ -19,4 +21,5 @@ struct Pair
 		return true;
 	}
 };
-}
+
+AX_END_NAMESPACE

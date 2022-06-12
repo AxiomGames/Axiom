@@ -1,4 +1,5 @@
 #pragma once
+
 #include "Math.hpp"
 #include "Vector3.hpp"
 #include "Vector4.hpp"
@@ -94,7 +95,7 @@ struct Matrix4
 		__m128 Q0, Q1;
 		__m128 V0, V1, V2;
 		__m128 R0, R1, R2;
-		static CONST __m128 Constant1110 = { 1.0f, 1.0f, 1.0f, 0.0f };
+		static const __m128 Constant1110 = { 1.0f, 1.0f, 1.0f, 0.0f };
 
 		Q0 = _mm_add_ps(quaternion.vec, quaternion.vec);
 		Q1 = _mm_mul_ps(quaternion.vec, Q0);
