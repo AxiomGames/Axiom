@@ -6,46 +6,46 @@
 
 namespace Ax
 {
-	typedef uint32_t EntityID;
+typedef uint32_t EntityID;
 
-	struct ESCRegistry
+struct ESCRegistry
+{
+
+
+	EntityID NewEntity()
 	{
+		return 0;
+	}
 
+	bool RemoveEntity(EntityID entity)
+	{
+		return false;
+	}
 
-		EntityID NewEntity()
-		{
-			return 0;
-		}
+	template<typename T, typename ... Args>
+	T* AddComponent(EntityID entity, Args... args)
+	{
+		return nullptr;
+	}
 
-		bool RemoveEntity(EntityID entity)
-		{
-			return false;
-		}
+	template<typename T>
+	T* RemoveComponent()
+	{
+		return nullptr;
+	}
 
-		template<typename T, typename ... Args>
-		T* AddComponent(EntityID entity, Args... args)
-		{
-			return nullptr;
-		}
+	template<typename T>
+	T* GetComponent()
+	{
+		return nullptr;
+	}
 
-		template<typename T>
-		T* RemoveComponent()
-		{
-			return nullptr;
-		}
+	template<typename T>
+	Array<T*> GetComponents()
+	{
+		Array<T*> array;
 
-		template<typename T>
-		T* GetComponent()
-		{
-			return nullptr;
-		}
-
-		template<typename T>
-		Array<T*> GetComponents()
-		{
-			Array<T*> array;
-
-			return array;
-		}
-	};
+		return array;
+	}
+};
 }

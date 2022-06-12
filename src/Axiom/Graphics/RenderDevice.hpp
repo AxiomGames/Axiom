@@ -122,6 +122,12 @@ namespace Ax
 		ID3D11UnorderedAccessView* UAView;
 	};
 
+	template<typename T>
+	struct ConstantBuffer : Buffer
+	{
+		T Data;
+	};
+
 	struct Texture
 	{
 		ID3D11Resource* TextureResource;
