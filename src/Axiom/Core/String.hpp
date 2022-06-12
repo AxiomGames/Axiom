@@ -6,6 +6,26 @@
 
 namespace Ax
 {
+	typedef uint64_t StrHashID;
+
+	constexpr StrHashID HashDjb2(const char* str)
+	{
+		unsigned long int hash = 5381;
+
+		char c = *str;
+		while(c != 0)
+		{
+			hash = ((hash << 5) + hash) + c;
+			c = *(++str);
+		}
+
+		return hash;
+	}
+
+	StrHashID constexpr operator "" _HASH(const char* s, std::size_t) {
+		return HashDjb2(s);
+	}
+
 	class String
 	{
 	public:
@@ -76,25 +96,65 @@ namespace Ax
 			other.m_Data = nullptr;
 		}
 
-		__forceinline static String FromInt(int32_t num)
+		__forceinline static String From(int32_t num)
 		{
 			String str;
-			str.AppendInt(num);
+			str.Append(num);
 			return str;
 		}
 
-		__forceinline static String FromFloat(float num, const char* format = "%f")
+		__forceinline static String From(int64_t num)
 		{
 			String str;
-			str.AppendFloat(num, format);
+			str.Append(num);
 			return str;
 		}
 
-		__forceinline static String FromDouble(double num, const char* format = "%f")
+		__forceinline static String From(float num, const char* format = "%f")
 		{
 			String str;
-			str.AppendDouble(num, format);
+			str.Append(num, format);
 			return str;
+		}
+
+		__forceinline static String From(double num, const char* format = "%f")
+		{
+			String str;
+			str.Append(num, format);
+			return str;
+		}
+
+		__forceinline static String FormatBytes(uint64_t bytes)
+		{
+			uint64_t marker = 1024; // Change to 1000 if required
+			uint64_t decimal = 3; // Change as required
+			uint64_t kiloBytes = marker; // One Kilobyte is 1024 bytes
+			uint64_t megaBytes = marker * marker; // One MB is 1024 KB
+			uint64_t gigaBytes = marker * marker * marker; // One GB is 1024 MB
+			uint64_t teraBytes = marker * marker * marker * marker; // One TB is 1024 GB
+
+			// return bytes if less than a KB
+			if(bytes < kiloBytes)
+			{
+				//ss << bytes << " Bytes";
+				return String::From(int64_t(bytes)) + " B";
+			} // return KB if less than a MB
+			else if(bytes < megaBytes)
+			{
+				return String::From(int64_t(((float)bytes / (float)kiloBytes))) + " KiB";
+			}// return MB if less than a GB
+			else if(bytes < gigaBytes)
+			{
+				return String::From(int64_t(((float)bytes / (float)megaBytes))) + " MiB";
+			} // return GB if less than a TB
+			else if (bytes < teraBytes)
+			{
+				return String::From(int64_t((float)bytes / (float)gigaBytes)) + " GiB";
+			}
+			else
+			{
+				return String::From(int64_t((float)bytes / (float)teraBytes)) + " TiB";
+			}
 		}
 
 		static __forceinline LenType StrLength(const CharType* str)
@@ -125,6 +185,18 @@ namespace Ax
 			}
 		}
 		[[nodiscard]] __forceinline size_t Size() const { return Length() * sizeof(CharType); }
+
+		[[nodiscard]] __forceinline StrHashID Hash() const
+		{
+			if (m_Alias[0] == '\0')
+			{
+				return HashDjb2(m_Data);
+			}
+			else
+			{
+				return HashDjb2(m_Alias);
+			}
+		}
 
 		String& Append(const CharType* str, LenType len)
 		{
@@ -173,21 +245,28 @@ namespace Ax
 			return Append(other.m_Data, other.Length());
 		}
 
-		__forceinline void AppendInt(int32_t num)
+		__forceinline void Append(int32_t num)
 		{
 			CharType buf[16];
 			std::sprintf(buf, "%d", num);
 			Append(buf, strlen(buf));
 		}
 
-		__forceinline void AppendFloat(float num, const char* format = "%f")
+		__forceinline void Append(int64_t num)
+		{
+			CharType buf[16];
+			std::sprintf(buf, "%lld", num);
+			Append(buf, strlen(buf));
+		}
+
+		__forceinline void Append(float num, const char* format = "%f")
 		{
 			CharType buf[16];
 			std::sprintf(buf, format, num);
 			Append(buf, strlen(buf));
 		}
 
-		__forceinline void AppendDouble(double num, const char* format = "%f")
+		__forceinline void Append(double num, const char* format = "%f")
 		{
 			CharType buf[16];
 			std::sprintf(buf, format, num);
@@ -252,6 +331,12 @@ namespace Ax
 			}
 		}
 
+		__forceinline String& operator+(const char* str)
+		{
+			Append(str, strlen(str));
+			return *this;
+		}
+
 		__forceinline String& operator+=(const char* str)
 		{
 			Append(str, strlen(str));
@@ -272,19 +357,19 @@ namespace Ax
 
 		__forceinline String& operator+=(int num)
 		{
-			AppendInt(num);
+			Append(num);
 			return *this;
 		}
 
 		__forceinline String& operator+=(float num)
 		{
-			AppendFloat(num);
+			Append(num);
 			return *this;
 		}
 
 		__forceinline String& operator+=(double num)
 		{
-			AppendDouble(num);
+			Append(num);
 			return *this;
 		}
 
@@ -297,7 +382,35 @@ namespace Ax
 
 			return m_Data;
 		}
+
+		struct Bytes
+		{
+			String* Str;
+		};
 	};
+
+	inline String::Bytes operator <<(String& strOriginal, const String::Bytes& bytes)
+	{
+		return {&strOriginal};
+	}
+
+	inline String& operator <<(const String::Bytes& bytes, uint64_t num)
+	{
+		*bytes.Str += String::FormatBytes(num);
+		return *bytes.Str;
+	}
+
+	inline String& operator <<(String& original, const char* str)
+	{
+		original += str;
+		return original;
+	}
+
+	inline String& operator <<(String& original, const String& added)
+	{
+		original += added;
+		return original;
+	}
 
 	inline std::ostream& operator <<(std::ostream& stream, const String& str)
 	{
