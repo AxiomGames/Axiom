@@ -5,7 +5,7 @@
 #include "Axiom/Core/Array.hpp"
 #include "Axiom/App/SystemWindow.hpp"
 #include "Axiom/Graphics/RenderDevice.hpp"
-#include "Axiom/Framework/ECS/Registry.hpp"
+#include "Axiom/Framework/ECS.hpp"
 
 #include <DXGI.h>
 #include <D3D11.h>
@@ -58,17 +58,82 @@ protected:
 	std::chrono::steady_clock::time_point m_begin;
 };
 
-class TestComponent
+struct TestComponent : ComponentBase
 {
+	CLASS_OBJ(TestComponent, ComponentBase);
+	int A;
 
+	TestComponent() : A(1000) {}
+	TestComponent(int a) : A(a) {}
 };
 
 int maina()
 {
+	Array<int> one;
+	one.Add(0);
+	one.Add(1);
+
+	Array<int> two;
+	one.Add(2);
+	one.Add(3);
+
+	one.Insert(two);
+
+	for (int i : one)
+	{
+		printf("num: %d\n", i);
+	}
+
+
+	Array<TestComponent*> arr;
+	arr.Add(new TestComponent());
+	arr.Add(nullptr);
+	(*arr.begin())->A = 10;
+	arr.Remove(arr.begin() + 1);
+	arr.Add(new TestComponent(100));
+
+	printf("Arr size: %d\n", arr.Size());
+
+	for (TestComponent* cmp : arr)
+	{
+		printf("A = %d\n", cmp->A);
+	}
+
+	//////////////
+
+	CMBAllocator allocator;
+	int* number = allocator.Alloc<int>(666);
+	printf("Num: %d\n", *number);
+	allocator.Free<int>(number);
+
+	//////////////
+
 	ESCRegistry registry;
 
 	EntityID entity0 = registry.NewEntity();
 	TestComponent* component = registry.AddComponent<TestComponent>(entity0);
+	component->A = 700;
+
+	if (registry.HasComponent<TestComponent>(entity0))
+	{
+		printf("Has component\n");
+	}
+
+	if (TestComponent* tc1 = registry.GetComponent<TestComponent>(entity0))
+	{
+		printf("TestComponent A = %d\n", tc1->A);
+	}
+
+	EntityID entity1 = registry.NewEntity();
+	TestComponent* component2 = registry.AddComponent<TestComponent>(entity1);
+	component2->A = 123;
+
+	registry.RemoveEntity(entity0);
+
+	for (TestComponent* cmp : registry.GetComponents<TestComponent>())
+	{
+		printf("TestComponent all A = %d\n", cmp->A);
+	}
 
 	return 0;
 }
@@ -180,4 +245,6 @@ int main()
 	delete window;
 
 	glfwTerminate();
+
+	return 0;
 }
