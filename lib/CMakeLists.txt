@@ -11,3 +11,7 @@ if(NOT TARGET glfw AND NOT PLATFORM_ANDROID)
 	add_subdirectory(glfw)
 	set_property(TARGET glfw PROPERTY FOLDER "Libs")
 endif()
+
+if(NOT TARGET EnTT)
+	add_subdirectory(entt)
+endif()

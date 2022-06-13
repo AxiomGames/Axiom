@@ -89,7 +89,7 @@ public:
 	}
 };
 
-class ESCRegistry
+class ECSRegistry
 {
 private:
 	struct EntityData
@@ -104,15 +104,15 @@ private:
 
 	std::atomic<EntityID> m_EntityCounter{0};
 public:
-	~ESCRegistry()
+	~ECSRegistry()
 	{
 		for (const auto& [typeID, Allocator] : m_ComponentMemory)
 		{
-			delete Allocator;
+			//delete Allocator;
 		}
 	}
 
-	EntityID NewEntity()
+	FINLINE EntityID NewEntity()
 	{
 		EntityID newEntity = m_EntityCounter.fetch_add(1);
 		m_Entities[newEntity] = {};
@@ -138,7 +138,7 @@ public:
 	}
 
 	template<ComponentType T, typename ... Args>
-	T* AddComponent(EntityID entity, Args... args)
+	FINLINE T* AddComponent(EntityID entity, Args... args)
 	{
 		const auto& it = m_Entities.find(entity);
 
@@ -255,7 +255,7 @@ public:
 
 private:
 	template<ComponentType T, typename ... Args>
-	T* AllocComponent(Args... args)
+	FINLINE T* AllocComponent(Args... args)
 	{
 		TTypeID componentID = T::TypeID();
 
@@ -267,7 +267,7 @@ private:
 		}
 		else
 		{
-			allocator = new CMBAllocator();
+			allocator = new CMBAllocator(8388608 * 10);
 			//allocator->SetName(std::string("ComponentMemory:") + T::TypeName());
 			m_ComponentMemory.emplace(componentID, allocator);
 			//AU_LOG_INFO("New allocator for component ", T::TypeName(), " with size of ", FormatBytes(componentSize), " aligned ", FormatBytes(componentSizeAligned));

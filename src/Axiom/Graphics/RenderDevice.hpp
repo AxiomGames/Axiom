@@ -147,7 +147,7 @@ struct ShaderCompileDesc
 	String Profile;
 };
 
-class RenderContext
+class AX_API RenderContext
 {
 public:
 	ID3D11Device* Device = nullptr;

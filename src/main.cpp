@@ -6,6 +6,7 @@
 #include "Axiom/App/SystemWindow.hpp"
 #include "Axiom/Graphics/RenderDevice.hpp"
 #include "Axiom/Framework/ECS.hpp"
+#include <entt/entity/registry.hpp>
 
 #include <DXGI.h>
 #include <D3D11.h>
@@ -67,7 +68,99 @@ struct TestComponent : ComponentBase
 	TestComponent(int a) : A(a) {}
 };
 
-int maina()
+int TestEnTT()
+{
+	int a = 0;
+
+	{
+		ScopedTimer timer("EnTT");
+
+		int count = 100'000;
+
+		entt::registry registry;
+
+		{
+			ScopedTimer timer2("First component");
+			auto entity0 = registry.create();
+			registry.emplace<TestComponent>(entity0, 10);
+		}
+
+		{
+			ScopedTimer timer2("Creation");
+
+			for (int i = 0; i < count; ++i)
+			{
+				auto entity0 = registry.create();
+				registry.emplace<TestComponent>(entity0, 10);
+			}
+		}
+
+		{
+			ScopedTimer timer3("LoopThrough");
+			auto view = registry.view<TestComponent>();
+
+			for (const auto& it : view)
+			{
+				TestComponent& cmp = view.get<TestComponent>(it);
+
+				a += cmp.A;
+			}
+		}
+	}
+
+	printf("Sum: %d\n", a);
+
+	return 0;
+}
+
+int main()
+{
+	printf("Begin EnTT\n");
+	TestEnTT();
+
+	printf("\n");
+	printf("Begin ours ecs\n");
+
+	int a = 0;
+
+	{
+		ScopedTimer timer("ESC");
+
+		int count = 100'000;
+
+		ECSRegistry registry;
+
+		{
+			ScopedTimer timer2("First component");
+			EntityID entity0 = registry.NewEntity();
+			registry.AddComponent<TestComponent>(entity0, 10);
+		}
+
+		{
+			ScopedTimer timer2("Creation");
+
+			for (int i = 0; i < count; ++i)
+			{
+				EntityID entity = registry.NewEntity();
+				registry.AddComponent<TestComponent>(entity, 10);
+			}
+		}
+
+		{
+			ScopedTimer timer3("LoopThrough");
+			for (TestComponent* test : registry.GetComponents<TestComponent>())
+			{
+				a += test->A;
+			}
+		}
+	}
+
+	printf("Sum: %d", a);
+
+	return 0;
+}
+
+int mainaa()
 {
 	Array<int> one;
 	one.Add(0);
@@ -108,7 +201,7 @@ int maina()
 
 	//////////////
 
-	ESCRegistry registry;
+	ECSRegistry registry;
 
 	EntityID entity0 = registry.NewEntity();
 	TestComponent* component = registry.AddComponent<TestComponent>(entity0);
@@ -128,7 +221,8 @@ int maina()
 	TestComponent* component2 = registry.AddComponent<TestComponent>(entity1);
 	component2->A = 123;
 
-	registry.RemoveEntity(entity0);
+	registry.RemoveComponent<TestComponent>(entity0);
+	//registry.RemoveEntity(entity0);
 
 	for (TestComponent* cmp : registry.GetComponents<TestComponent>())
 	{
@@ -138,7 +232,7 @@ int maina()
 	return 0;
 }
 
-int main()
+int maina()
 {
 	SystemWindow* window = SystemWindow::Create(WindowDesc(), true);
 	RenderContext renderContext;

@@ -25,7 +25,7 @@ struct WindowDesc
 	String Title = "Unknown";
 };
 
-struct SystemWindow
+struct AX_API SystemWindow
 {
 	static bool GLFWInitialized;
 	GLFWwindow* Window;
