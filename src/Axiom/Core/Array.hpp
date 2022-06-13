@@ -9,7 +9,7 @@
 
 /*
  * It is possible that every realloc command will need to clear new added memory (if any) to zero,
- * if it going to make problems.
+ * if it's going to make problems.
  */
 
 AX_NAMESPACE
@@ -129,6 +129,7 @@ public:
 	using iterator_base = ArrayIteratorBase<T>;
 	using iterator = ArrayIterator<T>;
 	using const_iterator = ArrayConstIterator<T>;
+	using size_type = uint32_t;
 
 	FINLINE Array(uint32_t defaultSize = 12) : m_Data(static_cast<T*>(calloc(1, sizeof(T) * defaultSize))), m_Size(0), m_Capacity(defaultSize)
 	{}
@@ -254,6 +255,19 @@ public:
 		m_Data[index] = std::move(type);
 	}
 
+	FINLINE void Insert(const Array& other)
+	{
+		if (other.m_Size > m_Capacity)
+		{
+			m_Capacity += other.m_Size + CapacityBlockSize;
+			m_Data = static_cast<T*>(realloc(m_Data, sizeof(T) * m_Capacity));
+		}
+
+		memcpy(m_Data + m_Size, other.m_Data, other.DataSize());
+
+		m_Size += other.m_Size;
+	}
+
 	int RemoveAll(const T& what)
 	{
 		int freeIndex = 0;   // the first free slot in items array
@@ -368,10 +382,10 @@ public:
 		return m_Data[index];
 	}
 
-	[[nodiscard]] FINLINE uint32_t Size() const
+	[[nodiscard]] FINLINE size_type Size() const
 	{ return m_Size; }
 
-	[[nodiscard]] FINLINE uint32_t DataSize() const
+	[[nodiscard]] FINLINE size_type DataSize() const
 	{ return m_Size * sizeof(T); }
 
 	FINLINE Array& operator+=(T type)
