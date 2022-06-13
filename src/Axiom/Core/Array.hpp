@@ -197,7 +197,7 @@ public:
 
 	FINLINE T& Add(T type)
 	{
-		if (m_Size > m_Capacity)
+		if (m_Size + 1 > m_Capacity)
 		{
 			m_Capacity += CapacityBlockSize;
 			m_Data = static_cast<T*>(realloc(m_Data, sizeof(T) * m_Capacity));
@@ -208,7 +208,7 @@ public:
 
 	FINLINE T& Emplace(T&& type)
 	{
-		if (m_Size > m_Capacity)
+		if (m_Size + 1 > m_Capacity)
 		{
 			m_Capacity += CapacityBlockSize;
 			m_Data = static_cast<T*>(realloc(m_Data, sizeof(T) * m_Capacity));
