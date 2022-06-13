@@ -267,7 +267,7 @@ private:
 		}
 		else
 		{
-			allocator = new CMBAllocator(8388608 * 10);
+			allocator = new CMBAllocator(8388608);
 			//allocator->SetName(std::string("ComponentMemory:") + T::TypeName());
 			m_ComponentMemory.emplace(componentID, allocator);
 			//AU_LOG_INFO("New allocator for component ", T::TypeName(), " with size of ", FormatBytes(componentSize), " aligned ", FormatBytes(componentSizeAligned));
