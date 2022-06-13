@@ -2,7 +2,6 @@
 
 #include "Math.hpp"
 #include "Vector3.hpp"
-#include <DirectXMath.h>
 
 AMATH_NAMESPACE
 
@@ -63,40 +62,40 @@ struct Quaternion
 
 	inline Quaternion VECTORCALL Slerp(const Quaternion Q0, const Quaternion Q1, float t) noexcept
 	{
-		__m128 T = DirectX::XMVectorReplicate(t);
+		const __m128 T = _mm_set_ps1(t);
 		// Result = Q0 * sin((1.0 - t) * Omega) / sin(Omega) + Q1 * sin(t * Omega) / sin(Omega)
-		static const DirectX::XMVECTORF32 OneMinusEpsilon = { { { 1.0f - 0.00001f, 1.0f - 0.00001f, 1.0f - 0.00001f, 1.0f - 0.00001f } } };
-		static const DirectX::XMVECTORU32 SignMask2 = { { { 0x80000000, 0x00000000, 0x00000000, 0x00000000 } } };
+		static const Vector4 OneMinusEpsilon = { { { 1.0f - 0.00001f, 1.0f - 0.00001f, 1.0f - 0.00001f, 1.0f - 0.00001f } } };
+		static const Vector4UI SignMask2 = { 0x80000000, 0x00000000, 0x00000000, 0x00000000 } ;
 
-		__m128 CosOmega = DirectX::XMQuaternionDot(Q0.vec, Q1.vec);
+		__m128 CosOmega = _mm_dp_ps(Q0.vec, Q1.vec, 0xff);
 
-		const __m128 Zero = DirectX::XMVectorZero();
-		__m128 Control = DirectX::XMVectorLess(CosOmega, Zero);
-		__m128 Sign = DirectX::XMVectorSelect(DirectX::g_XMOne, DirectX::g_XMNegativeOne, Control);
+		const __m128 Zero = _mm_setzero_ps();
+		__m128 Control = _mm_cmplt_ps(CosOmega, Zero);
+		__m128 Sign = SSESelect(g_XMOne, g_XMNegativeOne, Control);
 
 		CosOmega = _mm_mul_ps(CosOmega, Sign);
 
-		Control = DirectX::XMVectorLess(CosOmega, OneMinusEpsilon);
+		Control = _mm_cmplt_ps(CosOmega, OneMinusEpsilon.vec);
 
 		__m128 SinOmega = _mm_mul_ps(CosOmega, CosOmega);
-		SinOmega = _mm_sub_ps(DirectX::g_XMOne, SinOmega);
+		SinOmega = _mm_sub_ps(g_XMOne, SinOmega);
 		SinOmega = _mm_sqrt_ps(SinOmega);
 
-		__m128 Omega = DirectX::XMVectorATan2(SinOmega, CosOmega);
+		__m128 Omega = _mm_atan2_ps(SinOmega, CosOmega);
 
-		__m128 V01 = XM_PERMUTE_PS(T, _MM_SHUFFLE(2, 3, 0, 1));
-		V01 = _mm_and_ps(V01, DirectX::g_XMMaskXY);
+		__m128 V01 = _mm_permute_ps(T, _MM_SHUFFLE(2, 3, 0, 1));
+		V01 = _mm_and_ps(V01, g_XMMaskXY);
 		V01 = _mm_xor_ps(V01, SignMask2);
-		V01 = _mm_add_ps(DirectX::g_XMIdentityR0, V01);
+		V01 = _mm_add_ps(g_XMIdentityR0, V01);
 
 		__m128 S0 = _mm_mul_ps(V01, Omega);
-		S0 = DirectX::XMVectorSin(S0);
+		S0 = _mm_sin_ps(S0);
 		S0 = _mm_div_ps(S0, SinOmega);
 
-		S0 = DirectX::XMVectorSelect(V01, S0, Control);
+		S0 = SSESelect(V01, S0, Control);
 
-		__m128 S1 = DirectX::XMVectorSplatY(S0);
-		S0 = DirectX::XMVectorSplatX(S0);
+		__m128 S1 = SSESplatY(S0);
+		S0 = SSESplatX(S0);
 
 		S1 = _mm_mul_ps(S1, Sign);
 		__m128 Result = _mm_mul_ps(Q0.vec, S0);

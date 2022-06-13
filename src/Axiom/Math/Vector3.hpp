@@ -176,7 +176,6 @@ struct Vector3i
 		__m128i vec;
 	};
 
-
 	FINLINE Vector3i() : x(0), y(0), z(0) {}
 	FINLINE Vector3i(int scale) : x(scale), y(scale), z(scale) {}
 	Vector3i(int _x, int _y, int _z) : x(_x), y(_y), z(_z) {}

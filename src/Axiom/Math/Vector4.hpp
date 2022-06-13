@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Math.hpp"
-#include <emmintrin.h>
 
 AMATH_NAMESPACE
 
@@ -19,36 +18,16 @@ struct Vector4
 	Vector4(float _x, float _y, float _z, float _w) : x(_x), y(_y), z(_z), w(_w) {}
 	Vector4(__m128 _vec) : vec(_vec) {}
 
-	FINLINE static __m128 VECTORCALL Dot(const Vector4 V1, const Vector4 V2)
-	{
-		__m128 vTemp2 = V2.vec;
-		__m128 vTemp = _mm_mul_ps(V1.vec, vTemp2);
-		vTemp2 = _mm_shuffle_ps(vTemp2, vTemp, _MM_SHUFFLE(1, 0, 0, 0)); // Copy X to the Z position and Y to the W position
-		vTemp2 = _mm_add_ps(vTemp2, vTemp);          // Add Z = X+Z; W = Y+W;
-		vTemp = _mm_shuffle_ps(vTemp, vTemp2, _MM_SHUFFLE(0, 3, 0, 0));  // Copy W to the Z position
-		vTemp = _mm_add_ps(vTemp, vTemp2);           // Add Z and W together
-		return _mm_shuffle_ps(vTemp, vTemp, _MM_SHUFFLE(2, 2, 2, 2));    // Splat Z and return
-	}
-
 	FINLINE static __m128 VECTORCALL Normalize(const __m128 V)
 	{
-		__m128 vLengthSq = _mm_mul_ps(V, V);
-		__m128 vTemp = _mm_shuffle_ps(vLengthSq, vLengthSq, _MM_SHUFFLE(3, 2, 3, 2));
-		vLengthSq = _mm_add_ps(vLengthSq, vTemp);
-		vLengthSq = _mm_shuffle_ps(vLengthSq, vLengthSq, _MM_SHUFFLE(1, 0, 0, 0));
-		vTemp = _mm_shuffle_ps(vTemp, vLengthSq, _MM_SHUFFLE(3, 3, 0, 0));
-		vLengthSq = _mm_add_ps(vLengthSq, vTemp);
-		vLengthSq = _mm_shuffle_ps(vLengthSq, vLengthSq, _MM_SHUFFLE(2, 2, 2, 2));
-		__m128 vResult = _mm_sqrt_ps(vLengthSq);
-		__m128 vZeroMask = _mm_setzero_ps();
-		vZeroMask = _mm_cmpneq_ps(vZeroMask, vResult);
-		vLengthSq = _mm_cmpneq_ps(vLengthSq, _mm_set_ps(0x7F800000, 0x7F800000, 0x7F800000, 0x7F800000));
-		vResult = _mm_div_ps(V, vResult);
-		vResult = _mm_and_ps(vResult, vZeroMask);
-		__m128 vTemp1 = _mm_andnot_ps(vLengthSq, _mm_set_ps(0x7FC00000, 0x7FC00000, 0x7FC00000, 0x7FC00000));
-		__m128 vTemp2 = _mm_and_ps(vResult, vLengthSq);
-		vResult = _mm_or_ps(vTemp1, vTemp2);
-		return vResult;
+		__m128 vTemp = _mm_dp_ps(V, V, 0xff);
+    	__m128 vResult = _mm_rsqrt_ps(vTemp);
+		return _mm_mul_ps(vResult, V);
+	}
+	
+	FINLINE static __m128 VECTORCALL Dot(const __m128 V1, const __m128 V2)
+	{
+		return _mm_dp_ps(V1, V2, 0xff);
 	}
 
 	FINLINE Vector4 VECTORCALL operator + (const Vector4 b) const { return _mm_add_ps(vec, b.vec); }
@@ -80,38 +59,6 @@ struct Vector4d
 	FINLINE Vector4d(double scale) : x(scale), y(scale), z(scale), w(scale) {}
 	Vector4d(double _x, double _y, double _z, double _w) : x(_x), y(_y), z(_z), w(_w) {}
 	Vector4d(__m256d _vec) : vec(_vec) {}
-
-	FINLINE static __m256d VECTORCALL Dot(const Vector4d V1, const Vector4d& V2)
-	{
-		__m256d vTemp2 = V2.vec;
-		__m256d vTemp = _mm256_mul_pd(V1.vec, vTemp2);
-		vTemp2	= _mm256_shuffle_pd(vTemp2, vTemp, _MM_SHUFFLE(1, 0, 0, 0)); // Copy X to the Z position and Y to the W position
-		vTemp2	= _mm256_add_pd(vTemp2, vTemp);          // Add Z = X+Z; W = Y+W;
-		vTemp	= _mm256_shuffle_pd(vTemp, vTemp2, _MM_SHUFFLE(0, 3, 0, 0));  // Copy W to the Z position
-		vTemp	= _mm256_add_pd(vTemp, vTemp2);           // Add Z and W together
-		return _mm256_shuffle_pd(vTemp, vTemp, _MM_SHUFFLE(2, 2, 2, 2));    // Splat Z and return
-	}
-
-	FINLINE static __m256d VECTORCALL Normalize(const __m256d  V)
-	{
-		__m256d vLengthSq	= _mm256_mul_pd(V, V);
-		__m256d vTemp		= _mm256_shuffle_pd(vLengthSq, vLengthSq, _MM_SHUFFLE(3, 2, 3, 2));
-		vLengthSq			= _mm256_add_pd(vLengthSq, vTemp);
-		vLengthSq			= _mm256_shuffle_pd(vLengthSq, vLengthSq, _MM_SHUFFLE(1, 0, 0, 0));
-		vTemp				= _mm256_shuffle_pd(vTemp, vLengthSq, _MM_SHUFFLE(3, 3, 0, 0));
-		vLengthSq			= _mm256_add_pd(vLengthSq, vTemp);
-		vLengthSq			= _mm256_shuffle_pd(vLengthSq, vLengthSq, _MM_SHUFFLE(2, 2, 2, 2));
-		__m256d vResult		= _mm256_sqrt_pd(vLengthSq);
-		__m256d vZeroMask	= _mm256_setzero_pd();
-		vZeroMask			= _mm256_set1_pd(1.0);// _mm256_cmpneq_pd(vZeroMask, vResult);
-		vLengthSq			= _mm256_set1_pd(1.0);// _mm256_cmpeq(vLengthSq, _mm256_set_pd(0x7F800000, 0x7F800000, 0x7F800000, 0x7F800000));
-		vResult				= _mm256_div_pd(V, vResult);
-		vResult				= _mm256_and_pd(vResult, vZeroMask);
-		__m256d vTemp1		= _mm256_andnot_pd(vLengthSq, _mm256_set_pd(0x7FC00000, 0x7FC00000, 0x7FC00000, 0x7FC00000));
-		__m256d vTemp2		= _mm256_and_pd(vResult, vLengthSq);
-		vResult				= _mm256_or_pd(vTemp1, vTemp2);
-		return vResult;
-	}
 
 	FINLINE Vector4d VECTORCALL operator + (const Vector4d b) const { return _mm256_add_pd(vec, b.vec); }
 	FINLINE Vector4d VECTORCALL operator - (const Vector4d b) const { return _mm256_sub_pd(vec, b.vec); }

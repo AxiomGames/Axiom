@@ -4,7 +4,6 @@
 #include "Vector3.hpp"
 #include "Vector4.hpp"
 #include "Quaternion.hpp"
-#include <DirectXMath.h>
 
 AMATH_NAMESPACE
 
@@ -25,9 +24,9 @@ struct Matrix4
 	FINLINE static Matrix4 FromPosition(const float x, const float y, const float z)
 	{
 		Matrix4 M;
-		M.r[0] = DirectX::g_XMIdentityR0.v;
-		M.r[1] = DirectX::g_XMIdentityR1.v;
-		M.r[2] = DirectX::g_XMIdentityR2.v;
+		M.r[0] = g_XMIdentityR0;
+		M.r[1] = g_XMIdentityR1;
+		M.r[2] = g_XMIdentityR2;
 		M.r[3] = _mm_set_ps(1.0f, z, y, x);
 		return M;
 	}
@@ -43,7 +42,7 @@ struct Matrix4
 		M.r[0] = _mm_set_ps(0, 0, 0, ScaleX);
 		M.r[1] = _mm_set_ps(0, 0, ScaleY, 0);
 		M.r[2] = _mm_set_ps(0, ScaleZ, 0, 0);
-		M.r[3] = DirectX::g_XMIdentityR3.v;
+		M.r[3] = g_XMIdentityR3;
 		return M;
 	}
 
@@ -52,71 +51,71 @@ struct Matrix4
 		return CreateScale(vec3.x, vec3.y, vec3.z);
 	}
 
-	FINLINE static Matrix4 VECTORCALL LookAtLH(const Vector3 EyePosition, const Vector3 EyeDirection, const Vector3 UpDirection)
+	// please assign normalized vectors
+	FINLINE static Matrix4 VECTORCALL LookAtLH(const Vector3 EyePosition, const Vector3 EyeDirection, const Vector3& UpDirection)
 	{
-		__m128 R2 = DirectX::XMVector3Normalize(EyeDirection.vec());
+		__m128 R2 = EyeDirection.vec();
 
-		__m128 R0 = DirectX::XMVector3Cross(UpDirection.vec(), R2);
-		R0 = DirectX::XMVector3Normalize(R0);
+		__m128 R0 = SSEVector3Cross(UpDirection.vec(), R2);
+		R0 = SSEVector3Normalize(R0);
 
-		__m128 R1 = DirectX::XMVector3Cross(R2, R0);
+		__m128 R1 = SSEVector3Cross(R2, R0);
 
-		__m128 NegEyePosition = DirectX::XMVectorNegate(EyePosition.vec());
+		__m128 NegEyePosition = _mm_sub_ps(_mm_setzero_ps(), EyePosition.vec()); // negate
 
-		__m128 D0 = DirectX::XMVector3Dot(R0, NegEyePosition);
-		__m128 D1 = DirectX::XMVector3Dot(R1, NegEyePosition);
-		__m128 D2 = DirectX::XMVector3Dot(R2, NegEyePosition);
+		__m128 D0 = SSEVector3Dot(R0, NegEyePosition);
+		__m128 D1 = SSEVector3Dot(R1, NegEyePosition);
+		__m128 D2 = SSEVector3Dot(R2, NegEyePosition);
 
 		Matrix4 M;
-		M.r[0] = DirectX::XMVectorSelect(D0, R0, DirectX::g_XMSelect1110.v);
-		M.r[1] = DirectX::XMVectorSelect(D1, R1, DirectX::g_XMSelect1110.v);
-		M.r[2] = DirectX::XMVectorSelect(D2, R2, DirectX::g_XMSelect1110.v);
-		M.r[3] = DirectX::g_XMIdentityR3.v;
-
+		M.r[0] = SSESelect(D0, R0, g_XMSelect1110.vec);
+		M.r[1] = SSESelect(D1, R1, g_XMSelect1110.vec);
+		M.r[2] = SSESelect(D2, R2, g_XMSelect1110.vec);
+		M.r[3] = g_XMIdentityR3;
 		return Matrix4::Transpose(M);
 	}
 
 	FINLINE static Matrix4 VECTORCALL FromQuaternion(const Quaternion quaternion)
 	{
-		static const DirectX::XMVECTORF32  Constant1110 = { { { 1.0f, 1.0f, 1.0f, 0.0f } } };
+		static const Vector4 Constant1110 = { { { 1.0f, 1.0f, 1.0f, 0.0f } } };
 
 		__m128  Q0 = _mm_add_ps(quaternion.vec, quaternion.vec);
 		__m128  Q1 = _mm_mul_ps(quaternion.vec, Q0);
 
-		__m128  V0 = XM_PERMUTE_PS(Q1, _MM_SHUFFLE(3, 0, 0, 1));
-		V0 = _mm_and_ps(V0, DirectX::g_XMMask3);
-		__m128  V1 = XM_PERMUTE_PS(Q1, _MM_SHUFFLE(3, 1, 2, 2));
-		V1 = _mm_and_ps(V1, DirectX::g_XMMask3);
-		__m128  R0 = _mm_sub_ps(Constant1110, V0);
+		__m128  V0 = _mm_permute_ps(Q1, _MM_SHUFFLE(3, 0, 0, 1));
+		V0 = _mm_and_ps(V0, g_XMMask3);
+		__m128  V1 = _mm_permute_ps(Q1, _MM_SHUFFLE(3, 1, 2, 2));
+		V1 = _mm_and_ps(V1, g_XMMask3);
+		__m128  R0 = _mm_sub_ps(Constant1110.vec, V0);
 		R0 = _mm_sub_ps(R0, V1);
 
-		V0 = XM_PERMUTE_PS(quaternion.vec, _MM_SHUFFLE(3, 1, 0, 0));
-		V1 = XM_PERMUTE_PS(Q0, _MM_SHUFFLE(3, 2, 1, 2));
+		V0 = _mm_permute_ps(quaternion.vec, _MM_SHUFFLE(3, 1, 0, 0));
+		V1 = _mm_permute_ps(Q0, _MM_SHUFFLE(3, 2, 1, 2));
 		V0 = _mm_mul_ps(V0, V1);
 
-		V1 = XM_PERMUTE_PS(quaternion.vec, _MM_SHUFFLE(3, 3, 3, 3));
-		__m128  V2 = XM_PERMUTE_PS(Q0, _MM_SHUFFLE(3, 0, 2, 1));
+		V1 = _mm_permute_ps(quaternion.vec, _MM_SHUFFLE(3, 3, 3, 3));
+		__m128  V2 = _mm_permute_ps(Q0, _MM_SHUFFLE(3, 0, 2, 1));
 		V1 = _mm_mul_ps(V1, V2);
 
 		__m128  R1 = _mm_add_ps(V0, V1);
 		__m128  R2 = _mm_sub_ps(V0, V1);
 
 		V0 = _mm_shuffle_ps(R1, R2, _MM_SHUFFLE(1, 0, 2, 1));
-		V0 = XM_PERMUTE_PS(V0, _MM_SHUFFLE(1, 3, 2, 0));
+		V0 = _mm_permute_ps(V0, _MM_SHUFFLE(1, 3, 2, 0));
 		V1 = _mm_shuffle_ps(R1, R2, _MM_SHUFFLE(2, 2, 0, 0));
-		V1 = XM_PERMUTE_PS(V1, _MM_SHUFFLE(2, 0, 2, 0));
+		V1 = _mm_permute_ps(V1, _MM_SHUFFLE(2, 0, 2, 0));
 
 		Q1 = _mm_shuffle_ps(R0, V0, _MM_SHUFFLE(1, 0, 3, 0));
-		Q1 = XM_PERMUTE_PS(Q1, _MM_SHUFFLE(1, 3, 2, 0));
+		Q1 = _mm_permute_ps(Q1, _MM_SHUFFLE(1, 3, 2, 0));
 
 		Matrix4 M;
 		M.r[0] = Q1;
 		Q1 = _mm_shuffle_ps(R0, V0, _MM_SHUFFLE(3, 2, 3, 1));
-		Q1 = XM_PERMUTE_PS(Q1, _MM_SHUFFLE(1, 3, 0, 2));
+		Q1 = _mm_permute_ps(Q1, _MM_SHUFFLE(1, 3, 0, 2));
 		M.r[1] = Q1;
 		Q1 = _mm_shuffle_ps(V1, R0, _MM_SHUFFLE(3, 2, 1, 0));
 		M.r[2] = Q1;
-		M.r[3] = DirectX::g_XMIdentityR3;
+		M.r[3] = g_XMIdentityR3;
 		return M;
 	}
 
@@ -149,12 +148,12 @@ struct Matrix4
 		M.r[0] = vTemp;
 		// 0,fReciprocalHeight*2,0,0
 		vTemp = vValues;
-		vTemp = _mm_and_ps(vTemp, DirectX::g_XMMaskY);
+		vTemp = _mm_and_ps(vTemp, g_XMMaskY);
 		vTemp = _mm_add_ps(vTemp, vTemp);
 		M.r[1] = vTemp;
 		// 0,0,fRange,0.0f
 		vTemp = vValues;
-		vTemp = _mm_and_ps(vTemp, DirectX::g_XMMaskZ);
+		vTemp = _mm_and_ps(vTemp, g_XMMaskZ);
 		M.r[2] = vTemp;
 		// -(ViewLeft + ViewRight)*fReciprocalWidth,-(ViewTop + ViewBottom)*fReciprocalHeight,fRange*-NearZ,1.0f
 		vValues = _mm_mul_ps(vValues, rMem2);
@@ -162,11 +161,13 @@ struct Matrix4
 		return M;
 	}
 
+
 	FINLINE static Matrix4 VECTORCALL PerspectiveFovLH(float FovAngleY, float AspectRatio, float NearZ, float FarZ)
 	{
 		float    SinFov;
 		float    CosFov;
-		DirectX::XMScalarSinCos(&SinFov, &CosFov, 0.5f * FovAngleY);
+		
+		ScalarSinCos(&SinFov, &CosFov, 0.5f * FovAngleY);
 
 		float fRange = FarZ / (FarZ - NearZ);
 		// Note: This is recorded on the stack
@@ -187,11 +188,11 @@ struct Matrix4
 		M.r[0] = vTemp;
 		// 0,Height / AspectRatio,0,0
 		vTemp = vValues;
-		vTemp = _mm_and_ps(vTemp, DirectX::g_XMMaskY);
+		vTemp = _mm_and_ps(vTemp, g_XMMaskY);
 		M.r[1] = vTemp;
 		// x=fRange,y=-fRange * NearZ,0,1.0f
 		vTemp = _mm_setzero_ps();
-		vValues = _mm_shuffle_ps(vValues, DirectX::g_XMIdentityR3, _MM_SHUFFLE(3, 2, 3, 2));
+		vValues = _mm_shuffle_ps(vValues, g_XMIdentityR3, _MM_SHUFFLE(3, 2, 3, 2));
 		// 0,0,fRange,1.0f
 		vTemp = _mm_shuffle_ps(vTemp, vValues, _MM_SHUFFLE(3, 0, 0, 0));
 		M.r[2] = vTemp;
@@ -222,17 +223,17 @@ struct Matrix4
 		__m128 vTemp3 = _mm_shuffle_ps(M.r[0], M.r[1], _MM_SHUFFLE(3, 2, 3, 2));
 		__m128 vTemp2 = _mm_shuffle_ps(M.r[2], M.r[3], _MM_SHUFFLE(1, 0, 1, 0));
 		__m128 vTemp4 = _mm_shuffle_ps(M.r[2], M.r[3], _MM_SHUFFLE(3, 2, 3, 2));
-
+		
 		Matrix4 MT;
 		MT.r[0] = _mm_shuffle_ps(vTemp1, vTemp2, _MM_SHUFFLE(2, 0, 2, 0));
 		MT.r[1] = _mm_shuffle_ps(vTemp1, vTemp2, _MM_SHUFFLE(3, 1, 3, 1));
 		MT.r[2] = _mm_shuffle_ps(vTemp3, vTemp4, _MM_SHUFFLE(2, 0, 2, 0));
 		MT.r[3] = _mm_shuffle_ps(vTemp3, vTemp4, _MM_SHUFFLE(3, 1, 3, 1));
 
-		__m128 V00 = XM_PERMUTE_PS(MT.r[2], _MM_SHUFFLE(1, 1, 0, 0));
-		__m128 V10 = XM_PERMUTE_PS(MT.r[3], _MM_SHUFFLE(3, 2, 3, 2));
-		__m128 V01 = XM_PERMUTE_PS(MT.r[0], _MM_SHUFFLE(1, 1, 0, 0));
-		__m128 V11 = XM_PERMUTE_PS(MT.r[1], _MM_SHUFFLE(3, 2, 3, 2));
+		__m128 V00 = _mm_permute_ps(MT.r[2], _MM_SHUFFLE(1, 1, 0, 0));
+		__m128 V10 = _mm_permute_ps(MT.r[3], _MM_SHUFFLE(3, 2, 3, 2));
+		__m128 V01 = _mm_permute_ps(MT.r[0], _MM_SHUFFLE(1, 1, 0, 0));
+		__m128 V11 = _mm_permute_ps(MT.r[1], _MM_SHUFFLE(3, 2, 3, 2));
 		__m128 V02 = _mm_shuffle_ps(MT.r[2], MT.r[0], _MM_SHUFFLE(2, 0, 2, 0));
 		__m128 V12 = _mm_shuffle_ps(MT.r[3], MT.r[1], _MM_SHUFFLE(3, 1, 3, 1));
 
@@ -240,27 +241,27 @@ struct Matrix4
 		__m128 D1 = _mm_mul_ps(V01, V11);
 		__m128 D2 = _mm_mul_ps(V02, V12);
 
-		V00 = XM_PERMUTE_PS(MT.r[2], _MM_SHUFFLE(3, 2, 3, 2));
-		V10 = XM_PERMUTE_PS(MT.r[3], _MM_SHUFFLE(1, 1, 0, 0));
-		V01 = XM_PERMUTE_PS(MT.r[0], _MM_SHUFFLE(3, 2, 3, 2));
-		V11 = XM_PERMUTE_PS(MT.r[1], _MM_SHUFFLE(1, 1, 0, 0));
+		V00 = _mm_permute_ps(MT.r[2], _MM_SHUFFLE(3, 2, 3, 2));
+		V10 = _mm_permute_ps(MT.r[3], _MM_SHUFFLE(1, 1, 0, 0));
+		V01 = _mm_permute_ps(MT.r[0], _MM_SHUFFLE(3, 2, 3, 2));
+		V11 = _mm_permute_ps(MT.r[1], _MM_SHUFFLE(1, 1, 0, 0));
 		V02 = _mm_shuffle_ps(MT.r[2], MT.r[0], _MM_SHUFFLE(3, 1, 3, 1));
 		V12 = _mm_shuffle_ps(MT.r[3], MT.r[1], _MM_SHUFFLE(2, 0, 2, 0));
 
-		D0 = XM_FNMADD_PS(V00, V10, D0);
-		D1 = XM_FNMADD_PS(V01, V11, D1);
-		D2 = XM_FNMADD_PS(V02, V12, D2);
+		D0 = _mm_fmadd_ps(V00, V10, D0);
+		D1 = _mm_fmadd_ps(V01, V11, D1);
+		D2 = _mm_fmadd_ps(V02, V12, D2);
 		// V11 = D0Y,D0W,D2Y,D2Y
 		V11 = _mm_shuffle_ps(D0, D2, _MM_SHUFFLE(1, 1, 3, 1));
-		V00 = XM_PERMUTE_PS(MT.r[1], _MM_SHUFFLE(1, 0, 2, 1));
+		V00 = _mm_permute_ps(MT.r[1], _MM_SHUFFLE(1, 0, 2, 1));
 		V10 = _mm_shuffle_ps(V11, D0, _MM_SHUFFLE(0, 3, 0, 2));
-		V01 = XM_PERMUTE_PS(MT.r[0], _MM_SHUFFLE(0, 1, 0, 2));
+		V01 = _mm_permute_ps(MT.r[0], _MM_SHUFFLE(0, 1, 0, 2));
 		V11 = _mm_shuffle_ps(V11, D0, _MM_SHUFFLE(2, 1, 2, 1));
 		// V13 = D1Y,D1W,D2W,D2W
 		__m128 V13 = _mm_shuffle_ps(D1, D2, _MM_SHUFFLE(3, 3, 3, 1));
-		V02 = XM_PERMUTE_PS(MT.r[3], _MM_SHUFFLE(1, 0, 2, 1));
+		V02 = _mm_permute_ps(MT.r[3], _MM_SHUFFLE(1, 0, 2, 1));
 		V12 = _mm_shuffle_ps(V13, D1, _MM_SHUFFLE(0, 3, 0, 2));
-		__m128 V03 = XM_PERMUTE_PS(MT.r[2], _MM_SHUFFLE(0, 1, 0, 2));
+		__m128 V03 = _mm_permute_ps(MT.r[2], _MM_SHUFFLE(0, 1, 0, 2));
 		V13 = _mm_shuffle_ps(V13, D1, _MM_SHUFFLE(2, 1, 2, 1));
 
 		__m128 C0 = _mm_mul_ps(V00, V10);
@@ -270,38 +271,38 @@ struct Matrix4
 
 		// V11 = D0X,D0Y,D2X,D2X
 		V11 = _mm_shuffle_ps(D0, D2, _MM_SHUFFLE(0, 0, 1, 0));
-		V00 = XM_PERMUTE_PS(MT.r[1], _MM_SHUFFLE(2, 1, 3, 2));
+		V00 = _mm_permute_ps(MT.r[1], _MM_SHUFFLE(2, 1, 3, 2));
 		V10 = _mm_shuffle_ps(D0, V11, _MM_SHUFFLE(2, 1, 0, 3));
-		V01 = XM_PERMUTE_PS(MT.r[0], _MM_SHUFFLE(1, 3, 2, 3));
+		V01 = _mm_permute_ps(MT.r[0], _MM_SHUFFLE(1, 3, 2, 3));
 		V11 = _mm_shuffle_ps(D0, V11, _MM_SHUFFLE(0, 2, 1, 2));
 		// V13 = D1X,D1Y,D2Z,D2Z
 		V13 = _mm_shuffle_ps(D1, D2, _MM_SHUFFLE(2, 2, 1, 0));
-		V02 = XM_PERMUTE_PS(MT.r[3], _MM_SHUFFLE(2, 1, 3, 2));
+		V02 = _mm_permute_ps(MT.r[3], _MM_SHUFFLE(2, 1, 3, 2));
 		V12 = _mm_shuffle_ps(D1, V13, _MM_SHUFFLE(2, 1, 0, 3));
-		V03 = XM_PERMUTE_PS(MT.r[2], _MM_SHUFFLE(1, 3, 2, 3));
+		V03 = _mm_permute_ps(MT.r[2], _MM_SHUFFLE(1, 3, 2, 3));
 		V13 = _mm_shuffle_ps(D1, V13, _MM_SHUFFLE(0, 2, 1, 2));
 
-		C0 = XM_FNMADD_PS(V00, V10, C0);
-		C2 = XM_FNMADD_PS(V01, V11, C2);
-		C4 = XM_FNMADD_PS(V02, V12, C4);
-		C6 = XM_FNMADD_PS(V03, V13, C6);
+		C0 = _mm_fnmadd_ps(V00, V10, C0);
+		C2 = _mm_fnmadd_ps(V01, V11, C2);
+		C4 = _mm_fnmadd_ps(V02, V12, C4);
+		C6 = _mm_fnmadd_ps(V03, V13, C6);
 
-		V00 = XM_PERMUTE_PS(MT.r[1], _MM_SHUFFLE(0, 3, 0, 3));
+		V00 = _mm_permute_ps(MT.r[1], _MM_SHUFFLE(0, 3, 0, 3));
 		// V10 = D0Z,D0Z,D2X,D2Y
 		V10 = _mm_shuffle_ps(D0, D2, _MM_SHUFFLE(1, 0, 2, 2));
-		V10 = XM_PERMUTE_PS(V10, _MM_SHUFFLE(0, 2, 3, 0));
-		V01 = XM_PERMUTE_PS(MT.r[0], _MM_SHUFFLE(2, 0, 3, 1));
+		V10 = _mm_permute_ps(V10, _MM_SHUFFLE(0, 2, 3, 0));
+		V01 = _mm_permute_ps(MT.r[0], _MM_SHUFFLE(2, 0, 3, 1));
 		// V11 = D0X,D0W,D2X,D2Y
 		V11 = _mm_shuffle_ps(D0, D2, _MM_SHUFFLE(1, 0, 3, 0));
-		V11 = XM_PERMUTE_PS(V11, _MM_SHUFFLE(2, 1, 0, 3));
-		V02 = XM_PERMUTE_PS(MT.r[3], _MM_SHUFFLE(0, 3, 0, 3));
+		V11 = _mm_permute_ps(V11, _MM_SHUFFLE(2, 1, 0, 3));
+		V02 = _mm_permute_ps(MT.r[3], _MM_SHUFFLE(0, 3, 0, 3));
 		// V12 = D1Z,D1Z,D2Z,D2W
 		V12 = _mm_shuffle_ps(D1, D2, _MM_SHUFFLE(3, 2, 2, 2));
-		V12 = XM_PERMUTE_PS(V12, _MM_SHUFFLE(0, 2, 3, 0));
-		V03 = XM_PERMUTE_PS(MT.r[2], _MM_SHUFFLE(2, 0, 3, 1));
+		V12 = _mm_permute_ps(V12, _MM_SHUFFLE(0, 2, 3, 0));
+		V03 = _mm_permute_ps(MT.r[2], _MM_SHUFFLE(2, 0, 3, 1));
 		// V13 = D1X,D1W,D2Z,D2W
 		V13 = _mm_shuffle_ps(D1, D2, _MM_SHUFFLE(3, 2, 3, 0));
-		V13 = XM_PERMUTE_PS(V13, _MM_SHUFFLE(2, 1, 0, 3));
+		V13 = _mm_permute_ps(V13, _MM_SHUFFLE(2, 1, 0, 3));
 
 		V00 = _mm_mul_ps(V00, V10);
 		V01 = _mm_mul_ps(V01, V11);
@@ -320,13 +321,13 @@ struct Matrix4
 		C2 = _mm_shuffle_ps(C2, C3, _MM_SHUFFLE(3, 1, 2, 0));
 		C4 = _mm_shuffle_ps(C4, C5, _MM_SHUFFLE(3, 1, 2, 0));
 		C6 = _mm_shuffle_ps(C6, C7, _MM_SHUFFLE(3, 1, 2, 0));
-		C0 = XM_PERMUTE_PS(C0, _MM_SHUFFLE(3, 1, 2, 0));
-		C2 = XM_PERMUTE_PS(C2, _MM_SHUFFLE(3, 1, 2, 0));
-		C4 = XM_PERMUTE_PS(C4, _MM_SHUFFLE(3, 1, 2, 0));
-		C6 = XM_PERMUTE_PS(C6, _MM_SHUFFLE(3, 1, 2, 0));
+		C0 = _mm_permute_ps(C0, _MM_SHUFFLE(3, 1, 2, 0));
+		C2 = _mm_permute_ps(C2, _MM_SHUFFLE(3, 1, 2, 0));
+		C4 = _mm_permute_ps(C4, _MM_SHUFFLE(3, 1, 2, 0));
+		C6 = _mm_permute_ps(C6, _MM_SHUFFLE(3, 1, 2, 0));
 		// Get the determinant
-		__m128 vTemp = DirectX::XMVector4Dot(C0, MT.r[0]);
-		vTemp = _mm_div_ps(DirectX::g_XMOne, vTemp);
+		__m128 vTemp = Vector4::Dot(C0, MT.r[0]);
+		vTemp = _mm_div_ps(g_XMOne, vTemp);
 		Matrix4 mResult;
 		mResult.r[0] = _mm_mul_ps(C0, vTemp);
 		mResult.r[1] = _mm_mul_ps(C2, vTemp);
@@ -339,11 +340,11 @@ struct Matrix4
 	{
 		Matrix4 mResult;
 		__m128 vW = M1.r[0];
-		__m128 vX = XM_PERMUTE_PS(vW, _MM_SHUFFLE(0, 0, 0, 0));
-		__m128 vY = XM_PERMUTE_PS(vW, _MM_SHUFFLE(1, 1, 1, 1));
-		__m128 vZ = XM_PERMUTE_PS(vW, _MM_SHUFFLE(2, 2, 2, 2));
+		__m128 vX = _mm_permute_ps(vW, _MM_SHUFFLE(0, 0, 0, 0));
+		__m128 vY = _mm_permute_ps(vW, _MM_SHUFFLE(1, 1, 1, 1));
+		__m128 vZ = _mm_permute_ps(vW, _MM_SHUFFLE(2, 2, 2, 2));
 		
-		vW = XM_PERMUTE_PS(vW, _MM_SHUFFLE(3, 3, 3, 3));
+		vW = _mm_permute_ps(vW, _MM_SHUFFLE(3, 3, 3, 3));
 
 		// Perform the operation on the first row
 		vX = _mm_mul_ps(vX, M2.r[0]);
@@ -357,10 +358,10 @@ struct Matrix4
 		mResult.r[0] = vX;
 
 		vW = M1.r[1];
-		vX = XM_PERMUTE_PS(vW, _MM_SHUFFLE(0, 0, 0, 0));
-		vY = XM_PERMUTE_PS(vW, _MM_SHUFFLE(1, 1, 1, 1));
-		vZ = XM_PERMUTE_PS(vW, _MM_SHUFFLE(2, 2, 2, 2));
-		vW = XM_PERMUTE_PS(vW, _MM_SHUFFLE(3, 3, 3, 3));
+		vX = _mm_permute_ps(vW, _MM_SHUFFLE(0, 0, 0, 0));
+		vY = _mm_permute_ps(vW, _MM_SHUFFLE(1, 1, 1, 1));
+		vZ = _mm_permute_ps(vW, _MM_SHUFFLE(2, 2, 2, 2));
+		vW = _mm_permute_ps(vW, _MM_SHUFFLE(3, 3, 3, 3));
 
 		vX = _mm_mul_ps(vX, M2.r[0]);
 		vY = _mm_mul_ps(vY, M2.r[1]);
@@ -372,10 +373,10 @@ struct Matrix4
 		mResult.r[1] = vX;
 
 		vW = M1.r[2];
-		vX = XM_PERMUTE_PS(vW, _MM_SHUFFLE(0, 0, 0, 0));
-		vY = XM_PERMUTE_PS(vW, _MM_SHUFFLE(1, 1, 1, 1));
-		vZ = XM_PERMUTE_PS(vW, _MM_SHUFFLE(2, 2, 2, 2));
-		vW = XM_PERMUTE_PS(vW, _MM_SHUFFLE(3, 3, 3, 3));
+		vX = _mm_permute_ps(vW, _MM_SHUFFLE(0, 0, 0, 0));
+		vY = _mm_permute_ps(vW, _MM_SHUFFLE(1, 1, 1, 1));
+		vZ = _mm_permute_ps(vW, _MM_SHUFFLE(2, 2, 2, 2));
+		vW = _mm_permute_ps(vW, _MM_SHUFFLE(3, 3, 3, 3));
 
 		vX = _mm_mul_ps(vX, M2.r[0]);
 		vY = _mm_mul_ps(vY, M2.r[1]);
@@ -387,10 +388,10 @@ struct Matrix4
 		mResult.r[2] = vX;
 
 		vW = M1.r[3];
-		vX = XM_PERMUTE_PS(vW, _MM_SHUFFLE(0, 0, 0, 0));
-		vY = XM_PERMUTE_PS(vW, _MM_SHUFFLE(1, 1, 1, 1));
-		vZ = XM_PERMUTE_PS(vW, _MM_SHUFFLE(2, 2, 2, 2));
-		vW = XM_PERMUTE_PS(vW, _MM_SHUFFLE(3, 3, 3, 3));
+		vX = _mm_permute_ps(vW, _MM_SHUFFLE(0, 0, 0, 0));
+		vY = _mm_permute_ps(vW, _MM_SHUFFLE(1, 1, 1, 1));
+		vZ = _mm_permute_ps(vW, _MM_SHUFFLE(2, 2, 2, 2));
+		vW = _mm_permute_ps(vW, _MM_SHUFFLE(3, 3, 3, 3));
 
 		vX = _mm_mul_ps(vX, M2.r[0]);
 		vY = _mm_mul_ps(vY, M2.r[1]);
@@ -422,9 +423,9 @@ struct Matrix4
 		Vector4 row2 = matrix.r[2];
 
 		if (rowNormalize) {
-			row0 = Vector3::Normalize(row0.vec).vec();
-			row1 = Vector3::Normalize(row1.vec).vec();
-			row2 = Vector3::Normalize(row2.vec).vec();
+			row0 = SSEVector3Normalize(row0.vec);
+			row1 = SSEVector3Normalize(row1.vec);
+			row2 = SSEVector3Normalize(row2.vec);
 		}
 
 		// code below adapted from Blender
