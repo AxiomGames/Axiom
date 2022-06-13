@@ -6,6 +6,12 @@
 
 #include "Common.hpp"
 
+
+/*
+ * It is possible that every realloc command will need to clear new added memory (if any) to zero,
+ * if it going to make problems.
+ */
+
 AX_NAMESPACE
 
 template<typename T>
@@ -116,29 +122,49 @@ class Array
 private:
 	static constexpr int CapacityBlockSize = 12;
 private:
-	T* m_Data;
-	uint32_t m_Size;
-	uint32_t m_Capacity;
+	T* m_Data = nullptr;
+	uint32_t m_Size = 0;
+	uint32_t m_Capacity = 0;
 public:
 	using iterator_base = ArrayIteratorBase<T>;
 	using iterator = ArrayIterator<T>;
 	using const_iterator = ArrayConstIterator<T>;
 
-	FINLINE Array(uint32_t defaultSize = 12) : m_Data(static_cast<T*>(malloc(sizeof(T) * defaultSize))), m_Size(0), m_Capacity(defaultSize)
+	FINLINE Array(uint32_t defaultSize = 12) : m_Data(static_cast<T*>(calloc(1, sizeof(T) * defaultSize))), m_Size(0), m_Capacity(defaultSize)
 	{}
 
 	FINLINE ~Array()
 	{ if (m_Data != nullptr) free(m_Data); }
 
-	FINLINE Array(const Array& other) : m_Data(static_cast<T*>(malloc(sizeof(T) * other.m_Capacity))), m_Size(other.m_Size), m_Capacity(other.m_Capacity)
+	FINLINE Array(const Array& other) : m_Data(), m_Size(other.m_Size), m_Capacity(other.m_Capacity)
 	{
-		memcpy(m_Data, other.m_Data, other.m_Size * sizeof(T));
+		m_Data = static_cast<T*>(calloc(1, sizeof(T) * other.m_Capacity));
+
+		memcpy(m_Data, other.m_Data, other.DataSize());
 	}
 
-	/*__forceinline Array(Array&& other) noexcept: m_Data(other.m_Data), m_Size(other.m_Size), m_Capacity(other.m_Capacity)
+	/*FINLINE Array(Array&& other) noexcept: m_Data(other.m_Data), m_Size(other.m_Size), m_Capacity(other.m_Capacity)
 	{
 		other.m_Data = nullptr;
 	}*/
+
+	Array& operator=(const Array& other)
+	{
+		m_Capacity = other.m_Capacity;
+		m_Size = other.m_Size;
+
+		if (m_Data != nullptr)
+		{
+			m_Data = static_cast<T*>(realloc(m_Data, other.m_Capacity * sizeof(T)));
+		}
+		else
+		{
+			m_Data = static_cast<T*>(calloc(1, other.m_Capacity * sizeof(T)));
+		}
+
+		memcpy(m_Data, other.m_Data, other.DataSize());
+		return *this;
+	}
 
 	FINLINE iterator begin()
 	{ return iterator{m_Data}; }
