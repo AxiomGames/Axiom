@@ -2,6 +2,8 @@
 
 #include "Axiom/Core/String.hpp"
 #include "Axiom/Math/Vector2.hpp"
+
+#include <Windows.h>
 #include <GLFW/glfw3.h>
 
 class IDXGISwapChain;
