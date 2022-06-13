@@ -9,6 +9,108 @@
 AX_NAMESPACE
 
 template<typename T>
+struct ArrayIteratorBase
+{
+	T* Ptr;
+};
+
+template<typename T>
+struct ArrayIterator : ArrayIteratorBase<T>
+{
+	FINLINE T& operator*() const noexcept
+	{
+		return *this->Ptr;
+	}
+
+	FINLINE T* operator->() const noexcept
+	{
+		return this->Ptr;
+	}
+
+	FINLINE ArrayIterator& operator++()
+	{
+		this->Ptr++;
+		return *this;
+	}
+
+	FINLINE ArrayIterator operator++(int)
+	{
+		ArrayIterator tmp = *this;
+		++(*this);
+		return tmp;
+	}
+
+	FINLINE bool operator==(const ArrayIterator<T>& other) const
+	{
+		return this->Ptr == other.Ptr;
+	}
+
+	FINLINE bool operator!=(const ArrayIterator<T>& other) const
+	{
+		return this->Ptr != other.Ptr;
+	}
+
+	FINLINE ArrayIterator operator+(uint32_t index) const
+	{
+		return {this->Ptr + index};
+	}
+
+	FINLINE ArrayIterator& operator+=(uint32_t index) const
+	{
+		this->Ptr += index;
+		return *this;
+	}
+};
+
+template<typename T>
+struct ArrayConstIterator : ArrayIteratorBase<T>
+{
+	FINLINE T& operator*() const noexcept
+	{
+		return *this->Ptr;
+	}
+
+	FINLINE T& operator->() const noexcept
+	{
+		return *this->Ptr;
+	}
+
+	FINLINE const ArrayConstIterator& operator++()
+	{
+		this->Ptr++;
+		return *this;
+	}
+
+	FINLINE ArrayConstIterator operator++(int)
+	{
+		ArrayConstIterator tmp = *this;
+		++(*this);
+		return tmp;
+	}
+
+	FINLINE bool operator==(const ArrayConstIterator<T>& other) const
+	{
+		return this->Ptr == other.Ptr;
+	}
+
+	FINLINE bool operator!=(const ArrayConstIterator<T>& other) const
+	{
+		return this->Ptr != other.Ptr;
+	}
+
+	FINLINE ArrayConstIterator operator+(uint32_t index) const
+	{
+		return {this->Ptr + index};
+	}
+
+	FINLINE ArrayConstIterator& operator+=(uint32_t index) const
+	{
+		this->Ptr += index;
+		return *this;
+	}
+};
+
+template<typename T>
 class Array
 {
 private:
@@ -18,51 +120,55 @@ private:
 	uint32_t m_Size;
 	uint32_t m_Capacity;
 public:
-	__forceinline Array(uint32_t defaultSize = 12) : m_Data(static_cast<T*>(malloc(sizeof(T) * defaultSize))), m_Size(0), m_Capacity(defaultSize)
+	using iterator_base = ArrayIteratorBase<T>;
+	using iterator = ArrayIterator<T>;
+	using const_iterator = ArrayConstIterator<T>;
+
+	FINLINE Array(uint32_t defaultSize = 12) : m_Data(static_cast<T*>(malloc(sizeof(T) * defaultSize))), m_Size(0), m_Capacity(defaultSize)
 	{}
 
-	~Array()
+	FINLINE ~Array()
 	{ if (m_Data != nullptr) free(m_Data); }
 
-	__forceinline Array(const Array& other) : m_Data(static_cast<T*>(malloc(sizeof(T) * other.m_Capacity))), m_Size(other.m_Size), m_Capacity(other.m_Capacity)
+	FINLINE Array(const Array& other) : m_Data(static_cast<T*>(malloc(sizeof(T) * other.m_Capacity))), m_Size(other.m_Size), m_Capacity(other.m_Capacity)
 	{
 		memcpy(m_Data, other.m_Data, other.m_Size * sizeof(T));
 	}
 
-	__forceinline Array(Array&& other) noexcept: m_Data(other.m_Data), m_Size(other.m_Size), m_Capacity(other.m_Capacity)
+	/*__forceinline Array(Array&& other) noexcept: m_Data(other.m_Data), m_Size(other.m_Size), m_Capacity(other.m_Capacity)
 	{
 		other.m_Data = nullptr;
-	}
+	}*/
 
-	T* begin()
-	{ return m_Data; }
+	FINLINE iterator begin()
+	{ return iterator{m_Data}; }
 
-	T* end()
-	{ return m_Data + m_Size; }
+	FINLINE iterator end()
+	{ return iterator{m_Data + m_Size}; }
 
-	T* begin() const
-	{ return m_Data; }
+	FINLINE const_iterator begin() const
+	{ return const_iterator{m_Data}; }
 
-	T* end() const
-	{ return m_Data + m_Size; }
+	FINLINE const_iterator end() const
+	{ return const_iterator{m_Data + m_Size}; }
 
-	[[nodiscard]] __forceinline bool Any() const
+	[[nodiscard]] FINLINE bool Any() const
 	{ return m_Size > 0; }
 
-	[[nodiscard]] __forceinline bool Empty() const
+	[[nodiscard]] FINLINE bool Empty() const
 	{ return m_Size == 0; }
 
-	__forceinline T& operator[](int index)
+	FINLINE T& operator[](int index)
 	{
 		return m_Data[index];
 	}
 
-	__forceinline T& operator[](uint32_t index)
+	FINLINE T& operator[](uint32_t index)
 	{
 		return m_Data[index];
 	}
 
-	__forceinline Array& Add(T type)
+	FINLINE T& Add(T type)
 	{
 		if (m_Size > m_Capacity)
 		{
@@ -70,12 +176,10 @@ public:
 			m_Data = static_cast<T*>(realloc(m_Data, sizeof(T) * m_Capacity));
 		}
 
-		m_Data[m_Size++] = type;
-
-		return *this;
+		return (m_Data[m_Size++] = type);
 	}
 
-	__forceinline Array& Emplace(T&& type)
+	FINLINE T& Emplace(T&& type)
 	{
 		if (m_Size > m_Capacity)
 		{
@@ -83,9 +187,45 @@ public:
 			m_Data = static_cast<T*>(realloc(m_Data, sizeof(T) * m_Capacity));
 		}
 
-		m_Data[m_Size++] = std::move(type);
+		return (m_Data[m_Size++] = std::move(type));
+	}
 
-		return *this;
+	FINLINE void InsertAt(uint32_t index, T type)
+	{
+		ax_assert(index > m_Size);
+
+		if (index > m_Size)
+			return;
+
+		if (m_Size > m_Capacity)
+		{
+			m_Capacity += CapacityBlockSize;
+			m_Data = static_cast<T*>(realloc(m_Data, sizeof(T) * m_Capacity));
+		}
+
+		memmove(m_Data + index + 1, m_Data + index, (m_Size - index) * sizeof(T));
+		m_Size++;
+
+		m_Data[index] = type;
+	}
+
+	FINLINE void EmplaceAt(uint32_t index, T&& type)
+	{
+		ax_assert(index > m_Size);
+
+		if (index > m_Size)
+			return;
+
+		if (m_Size > m_Capacity)
+		{
+			m_Capacity += CapacityBlockSize;
+			m_Data = static_cast<T*>(realloc(m_Data, sizeof(T) * m_Capacity));
+		}
+
+		memmove(m_Data + index + 1, m_Data + index, (m_Size - index) * sizeof(T));
+		m_Size++;
+
+		m_Data[index] = std::move(type);
 	}
 
 	int RemoveAll(const T& what)
@@ -144,7 +284,7 @@ public:
 		return result; // removed item count
 	}
 
-	__forceinline bool RemoveAt(uint32_t index)
+	FINLINE bool RemoveAt(uint32_t index)
 	{
 		if (index >= m_Size)
 		{
@@ -157,7 +297,7 @@ public:
 		return true;
 	}
 
-	__forceinline void Remove(T value)
+	FINLINE void Remove(T value)
 	{
 		for (uint32_t i = 0; i < m_Size; i++)
 		{
@@ -171,7 +311,7 @@ public:
 		}
 	}
 
-	__forceinline void Remove(bool(* match)(const T&))
+	FINLINE void Remove(bool(* match)(const T&))
 	{
 		for (uint32_t i = 0; i < m_Size; i++)
 		{
@@ -185,24 +325,36 @@ public:
 		}
 	}
 
-	__forceinline T& At(uint32_t index)
+	FINLINE void Remove(const iterator_base& it)
+	{
+		int32_t index = it.Ptr - m_Data;
+
+		ax_assert(index >= 0 && index < m_Size);
+
+		if (index >= 0 && index < m_Size)
+		{
+			RemoveAt(uint32_t(index));
+		}
+	}
+
+	FINLINE T& At(uint32_t index)
 	{
 		return m_Data[index];
 	}
 
-	[[nodiscard]] __forceinline uint32_t Size() const
+	[[nodiscard]] FINLINE uint32_t Size() const
 	{ return m_Size; }
 
-	[[nodiscard]] __forceinline uint32_t DataSize() const
+	[[nodiscard]] FINLINE uint32_t DataSize() const
 	{ return m_Size * sizeof(T); }
 
-	__forceinline Array& operator+=(T type)
+	FINLINE Array& operator+=(T type)
 	{
 		Add(type);
 		return *this;
 	}
 
-	__forceinline Array& operator-=(T type)
+	FINLINE Array& operator-=(T type)
 	{
 		Remove(type);
 		return *this;
