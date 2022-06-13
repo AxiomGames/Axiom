@@ -68,6 +68,14 @@ public:
 		return type;
 	}
 
+	template<class T, typename... Args>
+	T* AllocAligned(uint64_t alignment, Args&&... args)
+	{
+		T* type = reinterpret_cast<T*>(AllocRaw(Align(sizeof(T), alignment)));
+		new (type) T(std::forward<Args>(args)...);
+		return type;
+	}
+
 	template<class T>
 	void Free(void* ptr)
 	{
