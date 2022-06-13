@@ -4,14 +4,6 @@
 #include <immintrin.h>
 #include "Axiom/Core/Common.hpp"
 
-#ifndef VECTORCALL
-#	ifndef _MSC_VER
-#		define VECTORCALL 
-#	else
-#	   define VECTORCALL __vectorcall
-#	endif
-#endif
-
 #ifndef AMATH_NAMESPACE
 	#define AMATH_NAMESPACE namespace ax {
 	#define AMATH_END_NAMESPACE }
@@ -24,7 +16,7 @@ constexpr float PI = 3.141592653;
 constexpr float RadToDeg = 180.0f / PI;
 constexpr float DegToRad = PI / 180.0f;
 
-template<typename T> FINLINE T Max(const T a, const T b)	{ return a > b ? a : b; }
+template<typename T> FINLINE T Max(const T a, const T b) { return a > b ? a : b; }
 template<typename T> FINLINE T Min(const T a, const T b) { return a < b ? a : b; }
 template<typename T> FINLINE T Clamp(const T x, const T a, const T b) { return Max(a, Min(b, x)); }
 
@@ -49,7 +41,7 @@ FINLINE float LerpAngle(const float a, const float b, const float t) noexcept
 }
 
 
-FINLINE double Lerp(double from, double to, double t)
+FINLINE double Lerp(const double from, const double to, const double t)
 {
 	return from + (to - from) * t;
 }

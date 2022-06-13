@@ -2,6 +2,7 @@
 
 #include "Math.hpp"
 #include "Vector3.hpp"
+#include <DirectXMath.h>
 
 AMATH_NAMESPACE
 
@@ -18,6 +19,9 @@ struct Quaternion
 	Quaternion(float scale) : x(scale), y(scale), z(scale), w(scale) {}
 	Quaternion(float _x, float _y, float _z, float _w) : x(_x), y(_y), z(_z), w(_w) {}
 	VECTORCALL Quaternion(__m128 _vec) : vec(_vec) {}
+	
+	const float  operator [] (int index) const { return arr[index]; }
+	      float& operator [] (int index)       { return arr[index]; }
 
 	inline static __m128 VECTORCALL Mul(const __m128 Q1, const __m128 Q2) noexcept
 	{
@@ -57,110 +61,108 @@ struct Quaternion
 		return _mm_shuffle_ps(vTemp, vTemp, _MM_SHUFFLE(2, 2, 2, 2));    // Splat Z and return
 	}
 
-	inline Quaternion VECTORCALL Slerp(const Quaternion& Q0, const Quaternion& Q1, float t) noexcept
+	inline Quaternion VECTORCALL Slerp(const Quaternion Q0, const Quaternion Q1, float t) noexcept
 	{
+		__m128 T = DirectX::XMVectorReplicate(t);
 		// Result = Q0 * sin((1.0 - t) * Omega) / sin(Omega) + Q1 * sin(t * Omega) / sin(Omega)
-		const __m128 T = _mm_set_ps1(t);
-		__m128 Omega, CosOmega, SinOmega, V01, S0, S1, Sign, Result;
-		static const __m128 Zero = _mm_set_ps1(0);
-		static const __m128 One = _mm_set_ps1(1);
-		static const __m128 NegativeOne = _mm_set_ps1(-1);
+		static const DirectX::XMVECTORF32 OneMinusEpsilon = { { { 1.0f - 0.00001f, 1.0f - 0.00001f, 1.0f - 0.00001f, 1.0f - 0.00001f } } };
+		static const DirectX::XMVECTORU32 SignMask2 = { { { 0x80000000, 0x00000000, 0x00000000, 0x00000000 } } };
 
-		static const __m128 OneMinusEpsilon = { 1.0f - 0.00001f, 1.0f - 0.00001f, 1.0f - 0.00001f, 1.0f - 0.00001f };
-		static const __m128 SignMask2 = { 0x80000000,0x00000000,0x00000000,0x00000000 };
-		static const __m128 MaskXY = { 0xFFFFFFFF,0xFFFFFFFF,0x00000000,0x00000000 };
+		__m128 CosOmega = DirectX::XMQuaternionDot(Q0.vec, Q1.vec);
 
-		CosOmega = Quaternion::Dot(Q0, Q1);
+		const __m128 Zero = DirectX::XMVectorZero();
+		__m128 Control = DirectX::XMVectorLess(CosOmega, Zero);
+		__m128 Sign = DirectX::XMVectorSelect(DirectX::g_XMOne, DirectX::g_XMNegativeOne, Control);
 
-		__m128  Control = _mm_cmplt_ps(CosOmega, Zero);
-
-		__m128  selectTemp1 = _mm_andnot_ps(Control, One);
-		__m128  selectTemp2 = _mm_and_ps(NegativeOne, Control);
-
-		Sign = _mm_or_ps(selectTemp1, selectTemp2);
 		CosOmega = _mm_mul_ps(CosOmega, Sign);
-		Control = _mm_cmplt_ps(CosOmega, OneMinusEpsilon);
 
-		SinOmega = _mm_mul_ps(CosOmega, CosOmega);
-		SinOmega = _mm_sub_ps(One, SinOmega);
+		Control = DirectX::XMVectorLess(CosOmega, OneMinusEpsilon);
+
+		__m128 SinOmega = _mm_mul_ps(CosOmega, CosOmega);
+		SinOmega = _mm_sub_ps(DirectX::g_XMOne, SinOmega);
 		SinOmega = _mm_sqrt_ps(SinOmega);
 
-		Omega = _mm_atan2_ps(SinOmega, CosOmega);
+		__m128 Omega = DirectX::XMVectorATan2(SinOmega, CosOmega);
 
-		V01 = _mm_shuffle_ps(T, T, _MM_SHUFFLE(2, 3, 0, 1));
-		V01 = _mm_and_ps(V01, MaskXY);
+		__m128 V01 = XM_PERMUTE_PS(T, _MM_SHUFFLE(2, 3, 0, 1));
+		V01 = _mm_and_ps(V01, DirectX::g_XMMaskXY);
 		V01 = _mm_xor_ps(V01, SignMask2);
-		V01 = _mm_add_ps(_mm_set_ps(1, 0, 0, 0), V01);
+		V01 = _mm_add_ps(DirectX::g_XMIdentityR0, V01);
 
-		S0 = _mm_mul_ps(V01, Omega);
-		S0 = _mm_sin_ps(S0);
+		__m128 S0 = _mm_mul_ps(V01, Omega);
+		S0 = DirectX::XMVectorSin(S0);
 		S0 = _mm_div_ps(S0, SinOmega);
 
-		selectTemp1 = _mm_andnot_ps(Control, V01);
-		selectTemp2 = _mm_and_ps(S0, Control);
+		S0 = DirectX::XMVectorSelect(V01, S0, Control);
 
-		S0 = _mm_or_ps(selectTemp1, selectTemp2);
-
-		S1 = _mm_shuffle_ps(S0, S0, _MM_SHUFFLE(1, 1, 1, 1));
-		S0 = _mm_shuffle_ps(S0, S0, _MM_SHUFFLE(0, 0, 0, 0));
+		__m128 S1 = DirectX::XMVectorSplatY(S0);
+		S0 = DirectX::XMVectorSplatX(S0);
 
 		S1 = _mm_mul_ps(S1, Sign);
-		Result = _mm_mul_ps(Q0.vec, S0);
+		__m128 Result = _mm_mul_ps(Q0.vec, S0);
 		S1 = _mm_mul_ps(S1, Q1.vec);
-		Result = _mm_add_ps(Result, S1);
-		return Result;
+		return _mm_add_ps(Result, S1);
+	}
+
+
+	FINLINE Quaternion static VECTORCALL FromEuler(float x, float y, float z) noexcept
+	{
+		// Abbreviations for the various angular functions
+		x *= 0.5f; y *= 0.5f; z *= 0.5f;
+		float cy = cos(x);
+		float sy = sin(x);
+		float cp = cos(y);
+		float sp = sin(y);
+		float cr = cos(z);
+		float sr = sin(z);
+		Quaternion q;
+		q.w = cr * cp * cy + sr * sp * sy;
+		q.x = sr * cp * cy - cr * sp * sy;
+		q.y = cr * sp * cy + sr * cp * sy;
+		q.z = cr * cp * sy - sr * sp * cy;
+		return q;
+	}
+
+	FINLINE Quaternion static VECTORCALL FromEuler(Vector3 euler) noexcept
+	{
+		return FromEuler(euler.x, euler.y, euler.z);
+	}
+
+	inline Vector3 static ToEulerAngles(const Quaternion& q) noexcept {
+		Vector3 eulerAngles;
+
+		// Threshold for the singularities found at the north/south poles.
+		constexpr float SINGULARITY_THRESHOLD = 0.4999995f;
+
+		const float sqw = q.w * q.w;
+		const float sqx = q.x * q.x;
+		const float sqy = q.y * q.y;
+		const float sqz = q.z * q.z;
+		const float unit = sqx + sqy + sqz + sqw; // if normalised is one, otherwise is correction factor
+		const float singularityTest = (q.x * q.z) + (q.w * q.y);
+
+		if (singularityTest > SINGULARITY_THRESHOLD * unit) {
+			eulerAngles.z = 2.0f * atan2(q.x, q.w);
+			eulerAngles.y = PI / 2;
+			eulerAngles.x = 0;
+		}
+		else if (singularityTest < -SINGULARITY_THRESHOLD * unit)
+		{
+			eulerAngles.z = -2.0f * atan2(q.x, q.w);
+			eulerAngles.y = -(PI / 2);
+			eulerAngles.x = 0;
+		}
+		else {
+			eulerAngles.z = atan2(2 * ((q.w * q.z) - (q.x * q.y)), sqw + sqx - sqy - sqz);
+			eulerAngles.y = asin(2 * singularityTest / unit);
+			eulerAngles.x = atan2(2 * ((q.w * q.x) - (q.y * q.z)), sqw - sqx - sqy + sqz);
+		}
+		return eulerAngles;
 	}
 
 	FINLINE Quaternion operator *  (const Quaternion& b) { return Mul(this->vec, b.vec); }
 	FINLINE Quaternion operator *= (const Quaternion& b) { this->vec = Mul(this->vec, b.vec); return *this; }
 };
 
-FINLINE Quaternion VECTORCALL EulerToQuaternion(Vector3 euler) noexcept
-{
-	// Abbreviations for the various angular functions
-	euler *= 0.5f;
-
-	Vector3 s = _mm_sin_ps(euler.vec);
-	Vector3 c = _mm_cos_ps(euler.vec);
-
-	return Quaternion(
-		(s.arr[1] * c.arr[2] * c.arr[3]) + (c.arr[1] * s.arr[2] * s.arr[3]),
-		(c.arr[1] * s.arr[2] * c.arr[3]) - (s.arr[1] * c.arr[2] * s.arr[3]),
-		(c.arr[1] * c.arr[2] * s.arr[3]) + (s.arr[1] * s.arr[2] * c.arr[3]),
-		(c.arr[1] * c.arr[2] * c.arr[3]) - (s.arr[1] * s.arr[2] * s.arr[3])
-	);
-}
-
-inline Vector3 VECTORCALL QuatToEulerAngles(const Quaternion& q) noexcept {
-	Vector3 eulerAngles;
-
-	// Threshold for the singularities found at the north/south poles.
-	constexpr float SINGULARITY_THRESHOLD = 0.4999995f;
-
-	const float sqw = q.w * q.w;
-	const float sqx = q.x * q.x;
-	const float sqy = q.y * q.y;
-	const float sqz = q.z * q.z;
-	const float unit = sqx + sqy + sqz + sqw; // if normalised is one, otherwise is correction factor
-	const float singularityTest = (q.x * q.z) + (q.w * q.y);
-
-	if (singularityTest > SINGULARITY_THRESHOLD * unit) {
-		eulerAngles.z = 2.0f * atan2(q.x, q.w);
-		eulerAngles.y = PI / 2;
-		eulerAngles.x = 0;
-	}
-	else if (singularityTest < -SINGULARITY_THRESHOLD * unit)
-	{
-		eulerAngles.z = -2.0f * atan2(q.x, q.w);
-		eulerAngles.y = -(PI / 2);
-		eulerAngles.x = 0;
-	}
-	else {
-		eulerAngles.z = atan2(2 * ((q.w * q.z) - (q.x * q.y)), sqw + sqx - sqy - sqz);
-		eulerAngles.y = asin(2 * singularityTest / unit);
-		eulerAngles.x = atan2(2 * ((q.w * q.x) - (q.y * q.z)), sqw - sqx - sqy + sqz);
-	}
-	return eulerAngles;
-}
 
 AMATH_END_NAMESPACE

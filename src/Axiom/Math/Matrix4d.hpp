@@ -30,24 +30,4 @@ struct Matrix4d
 	VECTORCALL Matrix4d(const Vector4d x, const Vector4d y, const Vector4d& z, const Vector4d& w) : vec1(x), vec2(y), vec3(z), vec4(w) {}
 };
 
-FINLINE Matrix4 MatrixDoubleToFloat(const Matrix4d& md)
-{
-	return Matrix4(
-		_mm256_cvtpd_ps(md.r1),
-		_mm256_cvtpd_ps(md.r1),
-		_mm256_cvtpd_ps(md.r1),
-		_mm256_cvtpd_ps(md.r1)
-	);
-}
-
-FINLINE Matrix4d MatrixFloatToDouble(const Matrix4& mf)
-{
-	return Matrix4d(
-		_mm256_cvtps_pd(mf.r1),
-		_mm256_cvtps_pd(mf.r1),
-		_mm256_cvtps_pd(mf.r1),
-		_mm256_cvtps_pd(mf.r1)
-	);
-}
-
 AMATH_END_NAMESPACE

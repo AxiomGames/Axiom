@@ -41,7 +41,7 @@ private:
 	uint32_t m_Capacity = 0;
 	CharType m_Alias[AliasSize]{'\0'};
 public:
-	__forceinline String() = default;
+	FINLINE String() = default;
 
 	~String()
 	{
@@ -93,41 +93,41 @@ public:
 		strcpy_s(m_Data, size, other.m_Data);
 	}
 
-	__forceinline String(String&& other) noexcept: m_Data(other.m_Data), m_Capacity(other.m_Capacity)
+	FINLINE String(String&& other) noexcept: m_Data(other.m_Data), m_Capacity(other.m_Capacity)
 	{
 		memcpy(m_Alias, other.m_Alias, 16);
 		other.m_Data = nullptr;
 	}
 
-	__forceinline static String From(int32_t num)
+	FINLINE static String From(int32_t num)
 	{
 		String str;
 		str.Append(num);
 		return str;
 	}
 
-	__forceinline static String From(int64_t num)
+	FINLINE static String From(int64_t num)
 	{
 		String str;
 		str.Append(num);
 		return str;
 	}
 
-	__forceinline static String From(float num, const char* format = "%f")
+	FINLINE static String From(float num, const char* format = "%f")
 	{
 		String str;
 		str.Append(num, format);
 		return str;
 	}
 
-	__forceinline static String From(double num, const char* format = "%f")
+	FINLINE static String From(double num, const char* format = "%f")
 	{
 		String str;
 		str.Append(num, format);
 		return str;
 	}
 
-	__forceinline static String FormatBytes(uint64_t bytes)
+	FINLINE static String FormatBytes(uint64_t bytes)
 	{
 		uint64_t marker = 1024; // Change to 1000 if required
 		uint64_t decimal = 3; // Change as required
@@ -160,7 +160,7 @@ public:
 		}
 	}
 
-	static __forceinline LenType StrLength(const CharType* str)
+	static FINLINE LenType StrLength(const CharType* str)
 	{
 		LenType len = 0;
 
@@ -172,7 +172,7 @@ public:
 		return len;
 	}
 
-	[[nodiscard]] __forceinline LenType Length() const
+	[[nodiscard]] FINLINE LenType Length() const
 	{
 		if (m_Alias[0] != '\0')
 		{
@@ -188,10 +188,10 @@ public:
 		}
 	}
 
-	[[nodiscard]] __forceinline size_t Size() const
+	[[nodiscard]] FINLINE size_t Size() const
 	{ return Length() * sizeof(CharType); }
 
-	[[nodiscard]] __forceinline StrHashID Hash() const
+	[[nodiscard]] FINLINE StrHashID Hash() const
 	{
 		if (m_Alias[0] == '\0')
 		{
@@ -240,38 +240,38 @@ public:
 		return *this;
 	}
 
-	__forceinline String& Append(CharType c)
+	FINLINE String& Append(CharType c)
 	{
 		return Append(&c, 1);
 	}
 
-	__forceinline String& Append(const String& other)
+	FINLINE String& Append(const String& other)
 	{
 		return Append(other.m_Data, other.Length());
 	}
 
-	__forceinline void Append(int32_t num)
+	FINLINE void Append(int32_t num)
 	{
 		CharType buf[16];
 		std::sprintf(buf, "%d", num);
 		Append(buf, strlen(buf));
 	}
 
-	__forceinline void Append(int64_t num)
+	FINLINE void Append(int64_t num)
 	{
 		CharType buf[16];
 		std::sprintf(buf, "%lld", num);
 		Append(buf, strlen(buf));
 	}
 
-	__forceinline void Append(float num, const char* format = "%f")
+	FINLINE void Append(float num, const char* format = "%f")
 	{
 		CharType buf[16];
 		std::sprintf(buf, format, num);
 		Append(buf, strlen(buf));
 	}
 
-	__forceinline void Append(double num, const char* format = "%f")
+	FINLINE void Append(double num, const char* format = "%f")
 	{
 		CharType buf[16];
 		std::sprintf(buf, format, num);
@@ -301,13 +301,13 @@ public:
 		return *this;
 	}
 
-	__forceinline void Clear()
+	FINLINE void Clear()
 	{
 		m_Data[0] = '\0';
 		m_Alias[0] = '\0';
 	}
 
-	__forceinline void Reset()
+	FINLINE void Reset()
 	{
 		m_Alias[0] = '\0';
 
@@ -318,19 +318,19 @@ public:
 		}
 	}
 
-	__forceinline bool operator==(const String& other) const
+	FINLINE bool operator==(const String& other) const
 	{ return strcmp(CStr(), other.CStr()) == 0; }
 
-	__forceinline bool operator!=(const String& other) const
+	FINLINE bool operator!=(const String& other) const
 	{ return strcmp(CStr(), other.CStr()) != 0; }
 
-	__forceinline bool operator==(const char* other) const
+	FINLINE bool operator==(const char* other) const
 	{ return strcmp(CStr(), other) == 0; }
 
-	__forceinline bool operator!=(const char* other) const
+	FINLINE bool operator!=(const char* other) const
 	{ return strcmp(CStr(), other) != 0; }
 
-	__forceinline CharType operator[](int index)
+	FINLINE CharType operator[](int index)
 	{
 		if (m_Alias[0] != '\0')
 		{
@@ -342,19 +342,19 @@ public:
 		}
 	}
 
-	__forceinline String& operator+(const char* str)
+	FINLINE String& operator+(const char* str)
 	{
 		Append(str, strlen(str));
 		return *this;
 	}
 
-	__forceinline String& operator+=(const char* str)
+	FINLINE String& operator+=(const char* str)
 	{
 		Append(str, strlen(str));
 		return *this;
 	}
 
-	__forceinline String& operator+=(const String& str)
+	FINLINE String& operator+=(const String& str)
 	{
 		if (str.m_Alias[0] != '\0')
 		{
@@ -366,25 +366,25 @@ public:
 		return *this;
 	}
 
-	__forceinline String& operator+=(int num)
+	FINLINE String& operator+=(int num)
 	{
 		Append(num);
 		return *this;
 	}
 
-	__forceinline String& operator+=(float num)
+	FINLINE String& operator+=(float num)
 	{
 		Append(num);
 		return *this;
 	}
 
-	__forceinline String& operator+=(double num)
+	FINLINE String& operator+=(double num)
 	{
 		Append(num);
 		return *this;
 	}
 
-	[[nodiscard]] __forceinline const char* CStr() const
+	[[nodiscard]] FINLINE const char* CStr() const
 	{
 		if (m_Alias[0] != '\0')
 		{
