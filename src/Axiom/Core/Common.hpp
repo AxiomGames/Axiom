@@ -6,7 +6,7 @@
 #define AX_NAMESPACE namespace ax {
 #define AX_END_NAMESPACE }
 #endif
-
+    
 #if AX_SHARED
 #ifdef AX_EXPORT
 		#define AX_API __declspec(dllexport)
@@ -18,28 +18,33 @@
 #endif
 
 #ifndef FINLINE
-#	ifndef _MSC_VER
-#		define FINLINE  inline
-#	else
+#	ifdef _MSC_VER
 #		define FINLINE __forceinline
-#	endif
+#   elif __CLANG__
+#       define FINLINE [[clang::always_inline]] 
+#	elif __GNUC__
+#       define FINLINE  __attribute__((always_inline))
+#   endif
 #endif
 
-#ifndef ENUM_FLAGS
-#define ENUM_FLAGS(enum_name, num_type) \
-    inline enum_name operator|(enum_name a, enum_name b)\
-    {\
-        return static_cast<enum_name>(static_cast<num_type>(a) | static_cast<num_type>(b));\
-    }\
-    inline bool operator &(enum_name a, enum_name b)\
-    {\
-        return (static_cast<num_type>(a) & static_cast<num_type>(b)) != 0;\
-    }\
-    inline enum_name& operator |=(enum_name& a, enum_name b)\
-    {\
-        return a = a | b;\
-    }
+#ifndef VECTORCALL
+#   ifdef _MSC_VER
+#		define VECTORCALL __vectorcall
+#   elif __CLANG__
+#       define VECTORCALL [[clang::vectorcall]] 
+#	elif __GNUC__
+#       define VECTORCALL  
+#   endif
 #endif
+
+#define ENUM_FLAGS(ENUMNAME, ENUMTYPE) \
+inline ENUMNAME& operator |= (ENUMNAME& a, ENUMNAME b)          noexcept { return (ENUMNAME&)(((ENUMTYPE&)a) |= ((ENUMTYPE)b)); } \
+inline ENUMNAME& operator &= (ENUMNAME& a, ENUMNAME b)			noexcept { return (ENUMNAME&)(((ENUMTYPE&)a) &= ((ENUMTYPE)b)); } \
+inline ENUMNAME& operator ^= (ENUMNAME& a, ENUMNAME b)			noexcept { return (ENUMNAME&)(((ENUMTYPE&)a) ^= ((ENUMTYPE)b)); } \
+inline constexpr ENUMNAME operator | (ENUMNAME a, ENUMNAME b)	noexcept { return ENUMNAME(((ENUMTYPE)a) | ((ENUMTYPE)b));		} \
+inline constexpr ENUMNAME operator & (ENUMNAME a, ENUMNAME b)	noexcept { return ENUMNAME(((ENUMTYPE)a) & ((ENUMTYPE)b));		} \
+inline constexpr ENUMNAME operator ~ (ENUMNAME a)				noexcept { return ENUMNAME(~((ENUMTYPE)a));						} \
+inline constexpr ENUMNAME operator ^ (ENUMNAME a, ENUMNAME b)	noexcept { return ENUMNAME(((ENUMTYPE)a) ^ (ENUMTYPE)b);		} 
 
 #define ax_assert(...)
 

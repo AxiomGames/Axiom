@@ -206,6 +206,27 @@ public:
 		return (m_Data[m_Size++] = type);
 	}
 
+	FINLINE void AddRange(T* begin, T* end)
+	{
+		uint64 len = uint64(end - begin) / sizeof(T);
+		
+		if (m_Size + len - 1 > m_Capacity)
+		{
+			m_Capacity += CapacityBlockSize;
+			m_Data = static_cast<T*>(realloc(m_Data, sizeof(T) * m_Capacity));
+		}
+
+		while (begin != end) 
+		{
+			m_Data[m_Size++] = *begin++;
+		}
+	}
+
+	FINLINE void SetRange(int start, int end, T value) 
+	{
+		for (; start < end; ++start) m_Data[start] = value;
+	}
+
 	FINLINE T& Emplace(T&& type)
 	{
 		if (m_Size + 1 > m_Capacity)
@@ -289,7 +310,6 @@ public:
 			}
 		}
 
-		memset(m_Data + freeIndex, 0, m_Size - freeIndex);
 		int result = m_Size - freeIndex;
 		m_Size = freeIndex;
 
@@ -317,7 +337,6 @@ public:
 			}
 		}
 
-		memset(m_Data + freeIndex, 0, m_Size - freeIndex);
 		int result = m_Size - freeIndex;
 		m_Size = freeIndex;
 
@@ -398,6 +417,11 @@ public:
 	{
 		Remove(type);
 		return *this;
+	}
+public:
+	
+	FINLINE static void SetRange(T* start, T* end, T value) {
+		for (; start < end; ++start) *start = value;
 	}
 };
 
