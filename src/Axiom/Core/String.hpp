@@ -247,7 +247,7 @@ public:
 
 	FINLINE String& Append(const String& other)
 	{
-		return Append(other.m_Data, other.Length());
+		return Append(other.m_Data == nullptr ? other.m_Alias : other.m_Data, other.Length());
 	}
 
 	FINLINE void Append(int32_t num)
