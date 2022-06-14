@@ -61,7 +61,7 @@ public:
 	CMBMemoryLocation GetMemoryLocation(void* ptr) const;
 
 	template<class T, typename... Args>
-	T* Alloc(Args&&... args)
+	FINLINE T* Alloc(Args&&... args)
 	{
 		T* type = reinterpret_cast<T*>(AllocRaw(sizeof(T)));
 		new (type) T(std::forward<Args>(args)...);
@@ -69,7 +69,7 @@ public:
 	}
 
 	template<class T, typename... Args>
-	T* AllocAligned(uint64_t alignment, Args&&... args)
+	FINLINE T* AllocAligned(uint64_t alignment, Args&&... args)
 	{
 		T* type = reinterpret_cast<T*>(AllocRaw(Align(sizeof(T), alignment)));
 		new (type) T(std::forward<Args>(args)...);
@@ -77,7 +77,7 @@ public:
 	}
 
 	template<class T>
-	void Free(void* ptr)
+	FINLINE void Free(void* ptr)
 	{
 		T* type = reinterpret_cast<T*>(ptr);
 		type->~T();

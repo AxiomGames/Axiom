@@ -115,7 +115,7 @@ CMBAllocator::MemoryBlock& CMBAllocator::AllocateMemoryBlock()
 	return m_Memory.Add(memoryBlock);
 }
 
-MemPtr CMBAllocator::AllocFromFragment(MemoryBlock& memoryBlock, const Array<MemoryFragment>::iterator& fragmentIt, MemSize size)
+FINLINE MemPtr CMBAllocator::AllocFromFragment(MemoryBlock& memoryBlock, const Array<MemoryFragment>::iterator& fragmentIt, MemSize size)
 {
 	MemoryFragment& fragment = *fragmentIt;
 
