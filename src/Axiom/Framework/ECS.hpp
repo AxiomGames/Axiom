@@ -260,10 +260,11 @@ private:
 		TTypeID componentID = T::TypeID();
 
 		CMBAllocator* allocator = nullptr;
+		auto it = m_ComponentMemory.find(componentID);
 
-		if(m_ComponentMemory.contains(componentID))
+		if(it != m_ComponentMemory.end())
 		{
-			allocator = m_ComponentMemory[componentID];
+			allocator = it->second;
 		}
 		else
 		{
