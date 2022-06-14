@@ -253,6 +253,27 @@ public:
 		return ComponentView<T>(foundComponents);
 	}
 
+	template<ComponentType T>
+	void IterateComponents(void(*IterateFunc)(T*))
+	{
+		Array<std::uintptr_t> foundComponents;
+
+		for (auto& it : m_ComponentPointers)
+		{
+			if (it.second.Empty()) continue;
+
+			auto* typeBase = reinterpret_cast<ObjectBase*>(it.second[0]);
+
+			if (typeBase->HasType(T::TypeID()))
+			{
+				for (std::uintptr_t ptr : it.second)
+				{
+					IterateFunc(reinterpret_cast<T*>(ptr));
+				}
+			}
+		}
+	}
+
 private:
 	template<ComponentType T, typename ... Args>
 	FINLINE T* AllocComponent(Args... args)

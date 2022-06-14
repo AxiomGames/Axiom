@@ -25,5 +25,6 @@ namespace Logger
 	void Log    (const char* filename, int line, const char* format, ...);
 	void Warning(const char* filename, int line, const char* format, ...);
 	void Error  (const char* filename, int line, const char* format, ...);
+	void ShowFileName(bool value);
 }
 

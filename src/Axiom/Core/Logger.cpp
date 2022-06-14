@@ -17,6 +17,13 @@ static std::mutex logMutex;
 #include <Windows.h>
 #include <crtdbg.h>
 
+namespace Logger
+{
+	static bool showFileName = true;
+	
+	void ShowFileName(bool value) { showFileName = value; }
+}
+
 static constexpr const char* GetFileName(const char* str)
 {
 	for (int len = __builtin_strlen(str) - 1; len > 0; --len)
@@ -48,14 +55,18 @@ void Logger::FileLog(const char* filename, const char* outputDir, int line, cons
 void Logger::Log(const char* filename, int line, const char* format, ...)
 {
 	std::lock_guard<std::mutex> lock(logMutex);
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 2);
-	printf("Log: %s (line %d) \n", GetFileName(filename), line);
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 0x0F);
-
+	
 	std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+	
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 2);
 	char buf[20] = { 0 };
 	std::strftime(buf, sizeof(buf), "%I:%M:%S", std::localtime(&now));
-	printf("[%s]: ", buf);
+	printf("[%s] ", buf);
+	
+	if (showFileName) printf("Log: %s:%d ", GetFileName(filename), line);
+	else			  printf("Log: ");
+
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 0x0F);
 
 	va_list args;
 	va_start(args, format);
@@ -68,14 +79,17 @@ void Logger::Log(const char* filename, int line, const char* format, ...)
 void Logger::Warning(const char* filename, int line, const char* format, ...) 
 {
 	std::lock_guard<std::mutex> lock(logMutex);
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_GREEN | FOREGROUND_RED);
-	printf("Warning: %s (line %d) \n", GetFileName(filename), line);
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 0x0F);
-
 	std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_GREEN | FOREGROUND_RED);
 	char buf[20] = { 0 };
 	std::strftime(buf, sizeof(buf), "%I:%M:%S", std::localtime(&now));
 	printf("[%s]: ", buf);
+	
+	if (showFileName)	printf("Warning: %s:%d ", GetFileName(filename), line);
+	else				printf("Warning: ");
+
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 0x0F);
 
 	va_list args;
 	va_start(args, format);
@@ -88,14 +102,17 @@ void Logger::Warning(const char* filename, int line, const char* format, ...)
 void Logger::Error(const char* filename, int line, const char* format, ...)
 {
 	std::lock_guard<std::mutex> lock(logMutex);
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_RED);
-	printf("Error: %s (line %d) \n", GetFileName(filename), line);
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 0x0F);
 
 	std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+	
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_RED);
 	char buf[20] = { 0 };
 	std::strftime(buf, sizeof(buf), "%I:%M:%S", std::localtime(&now));
 	printf("[%s]: ", buf);
+
+	printf("Error: %s%d \n", GetFileName(filename), line);
+
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 0x0F);
 
 	va_list args;
 	va_start(args, format);

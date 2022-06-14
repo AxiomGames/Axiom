@@ -1,6 +1,6 @@
 #include <chrono>
 #include "Logger.hpp"
-#include "Core/String.hpp"
+#include "String.hpp"
 
 #ifndef NDEBUG
 #	define AXTIMER(message) ScopedTimer timer = ScopedTimer(message);
@@ -40,7 +40,10 @@ struct ScopedTimer
 		auto _duration = end - start;
 		message.Append(' ');
 		message.Append(_duration * 0.001);
-		message.Append("ms");// error here
+		message.Append("ms");
+		Logger::ShowFileName(false);
 		AX_LOG(message.CStr());
+		Logger::ShowFileName(true);
+
 	}
 };
