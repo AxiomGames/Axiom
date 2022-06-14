@@ -103,7 +103,6 @@ struct Quaternion
 		return _mm_add_ps(Result, S1);
 	}
 
-
 	FINLINE Quaternion static VECTORCALL FromEuler(float x, float y, float z) noexcept
 	{
 		// Abbreviations for the various angular functions
