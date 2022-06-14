@@ -18,3 +18,5 @@ add_executable(Axiom ${AXIOM_SOURCES})
 target_include_directories(Axiom PUBLIC src)
 
 target_link_libraries(Axiom PUBLIC glfw EnTT d3d11 dxgi dxguid d3dcompiler)
+
+target_compile_definitions(Axiom PUBLIC NOMINMAX)

@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <cstdint>
 #include <algorithm>
+#include <limits>
 
 #include "Common.hpp"
 
@@ -120,8 +121,6 @@ template<typename T>
 class Array
 {
 private:
-	static constexpr int CapacityBlockSize = 12;
-private:
 	T* m_Data = nullptr;
 	uint32_t m_Size = 0;
 	uint32_t m_Capacity = 0;
@@ -199,7 +198,7 @@ public:
 	{
 		if (m_Size + 1 > m_Capacity)
 		{
-			m_Capacity += CapacityBlockSize;
+			m_Capacity = CalculateGrowth(m_Size + 1);
 			m_Data = static_cast<T*>(realloc(m_Data, sizeof(T) * m_Capacity));
 		}
 
@@ -212,7 +211,7 @@ public:
 		
 		if (m_Size + len - 1 > m_Capacity)
 		{
-			m_Capacity += CapacityBlockSize;
+			m_Capacity = CalculateGrowth(m_Size + len);
 			m_Data = static_cast<T*>(realloc(m_Data, sizeof(T) * m_Capacity));
 		}
 
@@ -231,7 +230,7 @@ public:
 	{
 		if (m_Size + 1 > m_Capacity)
 		{
-			m_Capacity += CapacityBlockSize;
+			m_Capacity = CalculateGrowth(m_Size + 1);
 			m_Data = static_cast<T*>(realloc(m_Data, sizeof(T) * m_Capacity));
 		}
 
@@ -245,9 +244,9 @@ public:
 		if (index > m_Size)
 			return;
 
-		if (m_Size > m_Capacity)
+		if (m_Size + 1 > m_Capacity)
 		{
-			m_Capacity += CapacityBlockSize;
+			m_Capacity = CalculateGrowth(m_Size + 1);
 			m_Data = static_cast<T*>(realloc(m_Data, sizeof(T) * m_Capacity));
 		}
 
@@ -264,9 +263,9 @@ public:
 		if (index > m_Size)
 			return;
 
-		if (m_Size > m_Capacity)
+		if (m_Size + 1 > m_Capacity)
 		{
-			m_Capacity += CapacityBlockSize;
+			m_Capacity = CalculateGrowth(m_Size + 1);
 			m_Data = static_cast<T*>(realloc(m_Data, sizeof(T) * m_Capacity));
 		}
 
@@ -280,7 +279,7 @@ public:
 	{
 		if (other.m_Size > m_Capacity)
 		{
-			m_Capacity += other.m_Size + CapacityBlockSize;
+			m_Capacity += other.m_Capacity;
 			m_Data = static_cast<T*>(realloc(m_Data, sizeof(T) * m_Capacity));
 		}
 
@@ -407,6 +406,9 @@ public:
 	[[nodiscard]] FINLINE size_type DataSize() const
 	{ return m_Size * sizeof(T); }
 
+	[[nodiscard]] FINLINE size_type Capacity() const
+	{ return m_Capacity; }
+
 	FINLINE Array& operator+=(T type)
 	{
 		Add(type);
@@ -422,6 +424,26 @@ public:
 	
 	FINLINE static void SetRange(T* start, T* end, T value) {
 		for (; start < end; ++start) *start = value;
+	}
+
+private:
+	// Same as std::vector
+	[[nodiscard]] FINLINE size_type CalculateGrowth(size_type newSize) const
+	{
+		const size_type old_capacity = Capacity();
+		const auto max = std::numeric_limits<size_type>::max();
+
+		if (old_capacity > max - old_capacity / 2) {
+			return max; // geometric growth would overflow
+		}
+
+		const size_type geometric_size = old_capacity + old_capacity / 2;
+
+		if (geometric_size < newSize) {
+			return newSize; // geometric growth would be insufficient
+		}
+
+		return geometric_size; // geometric growth is sufficient
 	}
 };
 
