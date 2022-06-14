@@ -288,6 +288,7 @@ public:
 		m_Size += other.m_Size;
 	}
 
+	// <summary> returns number of elements removed </summary>
 	int RemoveAll(const T& what)
 	{
 		int freeIndex = 0;   // the first free slot in items array
@@ -309,12 +310,14 @@ public:
 			}
 		}
 
-		int result = m_Size - freeIndex;
+		int numCleared = m_Size - freeIndex;
+		memset(m_Data + freeIndex, 0, numCleared * sizeof(T));
 		m_Size = freeIndex;
 
-		return result; // removed item count
+		return numCleared; // removed item count
 	}
 
+	// <summary> returns number of elements removed </summary>
 	int RemoveAll(bool(* match)(const T&))
 	{
 		int freeIndex = 0;   // the first free slot in items array
@@ -336,10 +339,11 @@ public:
 			}
 		}
 
-		int result = m_Size - freeIndex;
+		int numCleared = m_Size - freeIndex;
+		memset(m_Data + freeIndex, 0, numCleared * sizeof(T));
 		m_Size = freeIndex;
 
-		return result; // removed item count
+		return numCleared; // removed item count
 	}
 
 	FINLINE bool RemoveAt(uint32_t index)
