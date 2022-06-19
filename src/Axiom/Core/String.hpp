@@ -552,12 +552,12 @@ public:
 using String  = StringBase<char, int>;
 using WString = StringBase<wchar_t, int>;
 
-inline bool BigStringEqualsSSE(const String& a, const String& b)
+inline bool BigStringCompareEqualsSSE(const String& a, const String& b)
 {
 	return false;
 }
 
-inline bool BigStringEqualsSSE(const WString& a, const WString& b)
+inline bool BigStringCompareEqualsSSE(const WString& a, const WString& b)
 {
 	return false;
 }

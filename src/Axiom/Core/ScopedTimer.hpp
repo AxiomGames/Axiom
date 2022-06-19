@@ -42,8 +42,7 @@ struct ScopedTimer
 		message.Append(_duration * 0.001);
 		message.Append("ms");
 		Logger::ShowFileName(false);
-		AX_LOG(message.CStr());
+		AXLOG(message.CStr());
 		Logger::ShowFileName(true);
-
 	}
 };

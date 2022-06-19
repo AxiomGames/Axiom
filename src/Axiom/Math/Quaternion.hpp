@@ -22,6 +22,8 @@ struct Quaternion
 	const float  operator [] (int index) const { return arr[index]; }
 	      float& operator [] (int index)       { return arr[index]; }
 
+	FINLINE static Quaternion Identity() { return g_XMIdentityR3.vec; }
+
 	inline static __m128 VECTORCALL Mul(const __m128 Q1, const __m128 Q2) noexcept
 	{
 		static const __m128 ControlWZYX = { 1.0f,-1.0f, 1.0f,-1.0f };

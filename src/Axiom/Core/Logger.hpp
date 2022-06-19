@@ -1,10 +1,10 @@
 #pragma once
 
 #if !(defined(__GNUC__) || defined(__GNUG__))
-#define AX_LOG(format, ...)		Logger::Log    (__FILE__, __LINE__, format, __VA_ARGS__)
-#define AX_WARNING(format, ...) Logger::Warning(__FILE__, __LINE__, format, __VA_ARGS__)
-#define AX_ERROR(format, ...)	Logger::Error  (__FILE__, __LINE__, format, __VA_ARGS__)
-#define AX_FILELOG(outputDir, message, severity) Logger::FileLog(__FILE__, outputDir, __LINE__, message, severity)
+#define AXLOG(format, ...)		Logger::Log    (__FILE__, __LINE__, format, __VA_ARGS__)
+#define AXWARNING(format, ...) Logger::Warning(__FILE__, __LINE__, format, __VA_ARGS__)
+#define AXERROR(format, ...)	Logger::Error  (__FILE__, __LINE__, format, __VA_ARGS__)
+#define AXFILELOG(outputDir, message, severity) Logger::FileLog(__FILE__, outputDir, __LINE__, message, severity)
 #else
 #define AX_LOG(format, ...)		Logger::Log    (__FILE__, __LINE__, format,##__VA_ARGS__)
 #define AX_WARNING(format, ...) Logger::Warning(__FILE__, __LINE__, format,##__VA_ARGS__)

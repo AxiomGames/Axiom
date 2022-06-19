@@ -21,6 +21,16 @@ struct Matrix4
 	Matrix4 VECTORCALL  operator *  (const Matrix4 M)  noexcept { return Matrix4::Multiply(*this, M); };
 	Matrix4& VECTORCALL operator *= (const Matrix4 M) noexcept  { *this = Matrix4::Multiply(*this, M); return *this; };
 
+	FINLINE static Matrix4 Identity()
+	{
+		Matrix4 M;
+		M.r[0] = g_XMIdentityR0;
+		M.r[1] = g_XMIdentityR1;
+		M.r[2] = g_XMIdentityR2;
+		M.r[3] = g_XMIdentityR3;
+		return M;
+	}
+
 	FINLINE static Matrix4 FromPosition(const float x, const float y, const float z)
 	{
 		Matrix4 M;

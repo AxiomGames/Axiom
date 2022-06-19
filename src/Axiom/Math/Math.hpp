@@ -62,7 +62,7 @@ FINLINE double LerpAngle(const double a, const double b, const double t) noexcep
 	return a + delta * Clamp(t, 0.0, 1.0);
 }
 
-
+// Code below adapted from DirectX::Math
 inline void ScalarSinCos(float* pSin, float* pCos, float  Value) noexcept
 {
 	float quotient = (1.0f / PI) * Value;

@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <type_traits>
+#include <memory>
 
 #include "Axiom/Core/Array.hpp"
 #include "Axiom/Core/robin_hood.h"
@@ -61,7 +62,7 @@ private:
 public:
 	ComponentView() : m_DataVector() {}
 
-	explicit ComponentView(const Array<std::uintptr_t>& data) : m_DataVector(data)
+	explicit ComponentView(Array<std::uintptr_t>& data) : m_DataVector(std::move(data))
 	{
 	}
 

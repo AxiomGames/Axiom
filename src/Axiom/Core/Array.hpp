@@ -133,8 +133,7 @@ public:
 	FINLINE Array(uint32_t defaultSize = 12) : m_Data(static_cast<T*>(calloc(1, sizeof(T) * defaultSize))), m_Size(0), m_Capacity(defaultSize)
 	{}
 
-	FINLINE ~Array()
-	{ if (m_Data != nullptr) free(m_Data); }
+	FINLINE ~Array() { if (m_Data != nullptr) free(m_Data); }
 
 	FINLINE Array(const Array& other) : m_Data(), m_Size(other.m_Size), m_Capacity(other.m_Capacity)
 	{
@@ -166,35 +165,18 @@ public:
 		return *this;
 	}
 
-	FINLINE iterator begin()
-	{ return iterator{m_Data}; }
+	FINLINE iterator begin() { return iterator{m_Data}; }
+	FINLINE iterator end()   { return iterator{m_Data + m_Size}; }
+	FINLINE const_iterator begin() const { return const_iterator{m_Data}; }
+	FINLINE const_iterator end() const   { return const_iterator{m_Data + m_Size}; }
 
-	FINLINE iterator end()
-	{ return iterator{m_Data + m_Size}; }
+	[[nodiscard]] FINLINE bool Any() const { return m_Size > 0; }
+	[[nodiscard]] FINLINE bool Empty() const { return m_Size == 0; }
 
-	FINLINE const_iterator begin() const
-	{ return const_iterator{m_Data}; }
+	FINLINE T& operator[](int index) { return m_Data[index]; }
+	FINLINE T& operator[](uint32_t index) { return m_Data[index]; }
 
-	FINLINE const_iterator end() const
-	{ return const_iterator{m_Data + m_Size}; }
-
-	[[nodiscard]] FINLINE bool Any() const
-	{ return m_Size > 0; }
-
-	[[nodiscard]] FINLINE bool Empty() const
-	{ return m_Size == 0; }
-
-	FINLINE T& operator[](int index)
-	{
-		return m_Data[index];
-	}
-
-	FINLINE T& operator[](uint32_t index)
-	{
-		return m_Data[index];
-	}
-
-	FINLINE T& Add(T type)
+	FINLINE T& Add(T type) 
 	{
 		if (m_Size + 1 > m_Capacity)
 		{
@@ -404,14 +386,9 @@ public:
 		return m_Data[index];
 	}
 
-	[[nodiscard]] FINLINE size_type Size() const
-	{ return m_Size; }
-
-	[[nodiscard]] FINLINE size_type DataSize() const
-	{ return m_Size * sizeof(T); }
-
-	[[nodiscard]] FINLINE size_type Capacity() const
-	{ return m_Capacity; }
+	[[nodiscard]] FINLINE size_type Size() const { return m_Size; }
+	[[nodiscard]] FINLINE size_type DataSize() const { return m_Size * sizeof(T); }
+	[[nodiscard]] FINLINE size_type Capacity() const { return m_Capacity; }
 
 	FINLINE Array& operator+=(T type)
 	{
