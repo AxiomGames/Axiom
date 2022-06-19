@@ -513,13 +513,14 @@ public:
 	}
 
 	// returns true if pointers are same
-	FINLINE static bool StringCompare(const CharType* const a, const CharType* const b)
+	FINLINE static bool Compare(const CharType*  a, const CharType*  b)
 	{
 		while (true)
 		{
-			if ((*a == NullTerminator || *b == NullTerminator) || *a != *b)
+			char nullity = *a == NullTerminator | (2 << (*b == NullTerminator));
+			if (nullity == (1 | 4)) return true; // check both of the strings ended same index
+			if (nullity > 2 || *a++ != *b++) // check one of the strings are null or string indicies are not equal
 				return false;
-			a++; b++;
 		}
 		return true;
 	}
