@@ -328,6 +328,21 @@ public:
 		return numCleared; // removed item count
 	}
 
+	// faster but unordered, returns true if succesfuly removed(value is exist)
+	FINLINE bool RemoveUnordered(T value)
+	{ 
+		for (int i = 0; i < m_Size; ++i)
+		{
+			if (value == m_Data[i])
+			{
+				// put last element to removed place
+				m_Data[i] = m_Data[--m_Size];
+				return true;
+			}
+		}
+		return false;
+	}
+
 	FINLINE bool RemoveAt(uint32_t index)
 	{
 		if (index >= m_Size)
@@ -358,7 +373,7 @@ public:
 	FINLINE void Remove(bool(* match)(const T&))
 	{
 		for (uint32_t i = 0; i < m_Size; i++)
-		{
+		{	
 			if (match(m_Data[i]) == true)
 			{
 				memmove(m_Data + i, m_Data + i + 1, (m_Size - i - 1) * sizeof(T));
