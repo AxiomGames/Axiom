@@ -5,6 +5,7 @@
 #include <sstream>
 
 #include "Common.hpp"
+#include <immintrin.h>
 #include "Logger.hpp"
 
 AX_NAMESPACE
@@ -14,7 +15,7 @@ typedef uint64_t StrHashID;
 template<typename T>
 constexpr StrHashID HashDjb2(const T* str)
 {
-	unsigned long int hash = 5381;
+	uint64 hash = 5381;
 
 	T c = *str;
 	while (c != 0)
@@ -451,10 +452,10 @@ public:
 	inline StringBase& operator << (const CharType* str) { Append(str, StrLength(str)); return *this; }
 	inline StringBase& operator << (const StringBase& added) { Append(added); return *this; }
 
-	FINLINE bool operator == (const StringBase& other) const { return  StringCompare(CStr(), other.CStr()); }
-	FINLINE bool operator != (const StringBase& other) const { return !StringCompare(CStr(), other.CStr()); }
-	FINLINE bool operator == (const CharType* other) const { return  StringCompare(CStr(), other); }
-	FINLINE bool operator != (const CharType* other) const { return !StringCompare(CStr(), other); }
+	FINLINE bool operator == (const StringBase& other) const { return  Compare(CStr(), other.CStr()); }
+	FINLINE bool operator != (const StringBase& other) const { return !Compare(CStr(), other.CStr()); }
+	FINLINE bool operator == (const CharType* other) const { return  Compare(CStr(), other); }
+	FINLINE bool operator != (const CharType* other) const { return !Compare(CStr(), other); }
 
 	inline StringBase& operator +  (const char* str) { Append(str, StrLength(str)); return *this; }
 	inline StringBase& operator += (const char* str) { Append(str, StrLength(str)); return *this; }
@@ -513,16 +514,14 @@ public:
 	}
 
 	// returns true if pointers are same
-	FINLINE static bool Compare(const CharType*  a, const CharType*  b)
+	FINLINE static bool Compare(const CharType* str1, const CharType* str2)
 	{
-		while (true)
+		int idx = 0;
+		while (str1[idx] == str2[idx])
 		{
-			char nullity = *a == NullTerminator | (2 << (*b == NullTerminator));
-			if (nullity == (1 | 4)) return true; // check both of the strings ended same index
-			if (nullity > 2 || *a++ != *b++) // check one of the strings are null or string indicies are not equal
-				return false;
+			if (!str1[idx] || !str2[idx++]) break;
 		}
-		return true;
+		return !str1[idx] && !str2[idx];
 	}
 
 	template<typename T>
@@ -553,13 +552,42 @@ public:
 using String  = StringBase<char, int>;
 using WString = StringBase<wchar_t, int>;
 
-inline bool BigStringCompareEqualsSSE(const String& a, const String& b)
-{
-	return false;
+FINLINE bool BigStringCompareEqualsSSE(const char* a, const int aLen, const char* b, int bLen)
+{	
+	if (aLen != bLen) return false;
+	
+	while (bLen >= 32)
+	{
+		if (_mm256_movemask_epi8(
+			_mm256_cmpeq_epi8(
+				_mm256_loadu_epi8(a),
+				_mm256_loadu_epi8(b)
+			)) != -1) return false;
+		a += 32;
+		b += 32;
+		bLen -= 32;
+	}
+
+	while (bLen >= 16)
+	{
+		if (_mm_movemask_epi8(
+			_mm_cmpeq_epi8(
+				_mm_loadu_epi8(a),
+				_mm_loadu_epi8(b))) != 0xffff) return false;
+		a += 16;
+		b += 16;
+		bLen -= 16;
+	}
+
+	while (bLen--)
+	{
+		if (*a++ != *b++) return false;
+	}
+	return true;
 }
 
-inline bool BigStringCompareEqualsSSE(const WString& a, const WString& b)
-{
+inline bool BigStringCompareEqualsSSE(wchar_t const* a, wchar_t const* b)
+{	// this functions will be added if necessarry
 	return false;
 }
 
