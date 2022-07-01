@@ -337,18 +337,25 @@ public:
 			{
 				// put last element to removed place
 				m_Data[i] = m_Data[--m_Size];
+				memset(m_Data + m_Size, 0, sizeof(T)); // memset0 for old element
 				return true;
 			}
 		}
 		return false;
 	}
 
+	FINLINE bool RemoveAtUnordered(uint32_t index)
+	{
+		if (index >= m_Size) return false;
+	    // put last element to removed place
+		m_Data[index] = m_Data[--m_Size];
+		memset(m_Data + m_Size, 0, sizeof(T));// memset0 for old element
+		return true;
+	}
+
 	FINLINE bool RemoveAt(uint32_t index)
 	{
-		if (index >= m_Size)
-		{
-			return false;
-		}
+		if (index >= m_Size) return false;
 
 		memmove(m_Data + index, m_Data + index + 1, (m_Size - index - 1) * sizeof(T));
 		m_Size--;
