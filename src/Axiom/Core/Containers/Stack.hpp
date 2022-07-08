@@ -17,13 +17,11 @@ namespace ax
 			}
 		}
 
-		Stack()
-		: size(0), capacity(32)
+		Stack() : size(0), capacity(32)
 		{
 			ptr = (T*)calloc(capacity, sizeof(T));
 		}
-		Stack(int _size)
-		: size(0), capacity(_size)
+		Stack(int _size) : size(0), capacity(_size)
 		{
 			ptr = (T*)calloc(capacity, sizeof(T));
 		}

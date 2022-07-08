@@ -38,8 +38,8 @@ struct ScopedTimer
 		auto start = time_point_cast<microseconds>(start_point).time_since_epoch().count();
 		auto end = time_point_cast<microseconds>(end_point).time_since_epoch().count();
 		auto _duration = end - start;
-		message.Append(' ');
-		message.Append(_duration * 0.001);
+		message.AppendChar(' ');
+		message.Append(_duration * 0.001f);
 		message.Append("ms");
 		Logger::ShowFileName(false);
 		AXLOG(message.CStr());
