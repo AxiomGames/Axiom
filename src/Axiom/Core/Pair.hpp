@@ -4,19 +4,19 @@
 
 AX_NAMESPACE
 
-template<typename Key, typename Val>
+template<typename TKey, typename TVal>
 struct Pair
 {
-	Key key;
-	Val value;
+	TKey Key;
+	TVal Value;
 
 	bool operator<(const Pair& other) const
 	{
-		if (key > other.key) return false;
-		if (other.key > key) return false;
+		if (Key > other.Key) return false;
+		if (other.Key > Key) return false;
 
-		if (value > other.value) return false;
-		if (other.value > value) return false;
+		if (Value > other.Value) return false;
+		if (other.Value > Value) return false;
 
 		return true;
 	}

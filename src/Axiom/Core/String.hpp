@@ -49,8 +49,8 @@ inline char* ToCharArray(const wchar_t* string)
 
 enum class StrResult : int
 {
-	None   = 0, NotFinded = 0, False = 0, // negatives
-	Finded = 1, Success   = 1, True  = 1, // positives
+	None   = 0, NotFound = 0, False = 0, // negatives
+	Found = 1, Success   = 1, True  = 1, // positives
 	IndexOutOfArray = 2                   // errors
 };
 
@@ -280,7 +280,7 @@ public:
 	inline StrResult Remove(char _char)
 	{
 		const int index = FindIndex(_char);
-		if (index == -1) return StrResult::NotFinded;
+		if (index == -1) return StrResult::NotFound;
 		memmove(ptr + index, ptr + index + 1ull, 1ull);
 		ptr[--size] = '\0';
 		return StrResult::Success;
@@ -306,7 +306,7 @@ public:
 			
 			return StrResult::Success;
 		}
-		return StrResult::NotFinded;
+		return StrResult::NotFound;
 	}
 
 	inline StrResult StartsWith(const char* other, int len) const
@@ -336,11 +336,11 @@ public:
 		return Remove(str.CStr());
 	}
 
-	StrResult Find(char _char) const        { return FindIndex(_char) ? StrResult::Success : StrResult::NotFinded; }
+	StrResult Find(char _char) const        { return FindIndex(_char) ? StrResult::Success : StrResult::NotFound; }
 
-	StrResult Find(const char* _char) const { return FindIndex(_char) ? StrResult::Success : StrResult::NotFinded; }
+	StrResult Find(const char* _char) const { return FindIndex(_char) ? StrResult::Success : StrResult::NotFound; }
 
-	StrResult Find(const String& str) const { return FindIndex(str.CStr()) ? StrResult::Success : StrResult::NotFinded; }
+	StrResult Find(const String& str) const { return FindIndex(str.CStr()) ? StrResult::Success : StrResult::NotFound; }
 
 	StrResult Replace(int start, int end, const char* cstr)
 	{
@@ -369,7 +369,7 @@ public:
 			memcpy(ptr + fromIndex, _new, toLen * sizeof(char));
 			return StrResult::Success;
 		}
-		return StrResult::NotFinded;
+		return StrResult::NotFound;
 	}
 
 	/// <summary> not suitable for big strings (1k-2k char) you can generate your own algorithm for that </summary>
@@ -653,7 +653,7 @@ public:
 	inline StrResult Remove(wchar_t _char)
 	{
 		const int index = FindIndex(_char);
-		if (index == -1) return StrResult::NotFinded;
+		if (index == -1) return StrResult::NotFound;
 		memmove(ptr + index, ptr + index + 1, sizeof(wchar_t));
 		ptr[--size] = L'\0';
 		return StrResult::Success;
@@ -679,7 +679,7 @@ public:
 			
 			return StrResult::Success;
 		}
-		return StrResult::NotFinded;
+		return StrResult::NotFound;
 	}
 
 	inline StrResult StartsWith(const wchar_t* other, int len) const
@@ -710,11 +710,11 @@ public:
 		return Remove(str.CStr());
 	}
 
-	StrResult Find(wchar_t _char) const        { return FindIndex(_char) ? StrResult::Success : StrResult::NotFinded; }
+	StrResult Find(wchar_t _char) const        { return FindIndex(_char) ? StrResult::Success : StrResult::NotFound; }
 
-	StrResult Find(const wchar_t* _char) const { return FindIndex(_char) ? StrResult::Success : StrResult::NotFinded; }
+	StrResult Find(const wchar_t* _char) const { return FindIndex(_char) ? StrResult::Success : StrResult::NotFound; }
 
-	StrResult Find(const WString& str) const   { return FindIndex(str.CStr()) ? StrResult::Success : StrResult::NotFinded; }
+	StrResult Find(const WString& str) const   { return FindIndex(str.CStr()) ? StrResult::Success : StrResult::NotFound; }
 
 	StrResult Replace(int start, int end, const wchar_t* cstr)
 	{
@@ -742,7 +742,7 @@ public:
 			memcpy(ptr + fromIndex, _new, toLen * sizeof(char));
 			return StrResult::Success;
 		}
-		return StrResult::NotFinded;
+		return StrResult::NotFound;
 	}
 	/// <summary> not suitable for big strings (1k-2k char) you can generate your own algorithm for that </summary>
 	/// <returns> removed instance count </returns>
