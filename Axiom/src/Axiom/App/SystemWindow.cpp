@@ -1,5 +1,5 @@
 #include "SystemWindow.hpp"
-#include "Axiom/Graphics/RenderDevice.hpp"
+#include "../Graphics/RenderDevice.hpp"
 
 #include <DXGI.h>
 #include <D3D11.h>

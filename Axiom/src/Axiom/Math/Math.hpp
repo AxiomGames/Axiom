@@ -2,7 +2,7 @@
 
 #include <cmath>
 #include <immintrin.h>
-#include "Axiom/Core/Common.hpp"
+#include "../Core/Common.hpp"
 
 #ifndef AMATH_NAMESPACE
 	#define AMATH_NAMESPACE namespace ax {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Axiom/Core/String.hpp>
+#include "../Core/String.hpp"
 
 AX_NAMESPACE
 

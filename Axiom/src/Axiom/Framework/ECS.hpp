@@ -4,10 +4,10 @@
 #include <type_traits>
 #include <memory>
 
-#include "Axiom/Core/Array.hpp"
-#include "Axiom/Core/robin_hood.h"
-#include "Axiom/Core/CMBAllocator.hpp"
-#include "Axiom/Framework/Object.hpp"
+#include "../Core/Array.hpp"
+#include "../Core/robin_hood.h"
+#include "../Core/CMBAllocator.hpp"
+#include "Object.hpp"
 
 AX_NAMESPACE
 

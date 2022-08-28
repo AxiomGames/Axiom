@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Axiom/Core/String.hpp"
-#include "Axiom/Math/Vector2.hpp"
+#include "../Core/String.hpp"
+#include "../Math/Vector2.hpp"
 
 #include <Windows.h>
-#include <GLFW/glfw3.h>
+#include "GLFW/glfw3.h"
 
 class IDXGISwapChain;
 class ID3D11Texture2D;

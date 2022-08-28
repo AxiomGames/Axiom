@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Axiom/Core/Pair.hpp"
-#include "Axiom/Core/robin_hood.h"
-#include "Axiom/Core/Array.hpp"
-#include "Axiom/Core/String.hpp"
+#include "../Core/Pair.hpp"
+#include "../Core/robin_hood.h"
+#include "../Core/Array.hpp"
+#include "../Core/String.hpp"
 
 #include <DXGI.h>
 #include <D3D11.h>

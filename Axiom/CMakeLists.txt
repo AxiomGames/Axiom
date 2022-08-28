@@ -1,0 +1,8 @@
+project(Axiom)
+
+file(GLOB_RECURSE AXIOM_SOURCES src/*.hpp src/*.cpp)
+add_library(Axiom ${AXIOM_SOURCES})
+target_include_directories(Axiom PUBLIC src)
+
+target_link_libraries(Axiom PUBLIC glfw EnTT d3d11 d3d12 dxgi dxguid d3dcompiler)
+target_compile_definitions(Axiom PUBLIC NOMINMAX)

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Axiom/Core/Common.hpp"
+#include "../Core/Common.hpp"
 
 AX_NAMESPACE
 class Application
