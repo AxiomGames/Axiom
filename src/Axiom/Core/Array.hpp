@@ -6,6 +6,7 @@
 #include <limits>
 
 #include "Common.hpp"
+#include "Archive.hpp"
 
 
 /*
@@ -175,6 +176,17 @@ public:
 
 	FINLINE T& operator[](int index) { return m_Data[index]; }
 	FINLINE T& operator[](uint32_t index) { return m_Data[index]; }
+
+	FINLINE void Clear(int capacity = 12)
+	{
+		if (m_Size == 0)
+			return;
+
+		m_Size = 0;
+		m_Capacity = capacity;
+		m_Data = static_cast<T*>(realloc(m_Data, sizeof(T) * m_Capacity));
+		// TODO: Should we do memset 0 here ?
+	}
 
 	FINLINE T& Add(T type) 
 	{
@@ -408,6 +420,62 @@ public:
 		return m_Data[index];
 	}
 
+	FINLINE void Resize(uint64 size)
+	{
+		m_Capacity = size;
+		m_Data = static_cast<T*>(realloc(m_Data, sizeof(T) * m_Capacity));
+	}
+
+	FINLINE size_type AddUninitialized(size_type count = 1)
+	{
+		ax_assert(count > 0);
+
+		const size_type oldNum = Size();
+
+		if ((m_Size += count) > m_Capacity)
+		{
+			m_Capacity += m_Size - m_Capacity;
+			m_Data = static_cast<T*>(realloc(m_Data, sizeof(T) * m_Capacity));
+		}
+
+		return oldNum;
+	}
+
+	friend Archive& operator<<(Archive& archive, Array& array)
+	{
+		size_type numberOfElements = archive.IsLoading() ? 0 : array.Size();
+		archive << numberOfElements;
+
+		if (numberOfElements == 0)
+		{
+			if (archive.IsLoading())
+			{
+				array.Clear();
+			}
+
+			return archive;
+		}
+
+		if (archive.IsLoading())
+		{
+			array.Clear(numberOfElements);
+
+			for (size_type i = 0; i < numberOfElements; ++i)
+			{
+				archive << *::new(array) T;
+			}
+		}
+		else
+		{
+			for (size_type i = 0; i < numberOfElements; ++i)
+			{
+				archive << array[i];
+			}
+		}
+
+		return archive;
+	}
+
 	[[nodiscard]] FINLINE size_type Size() const { return m_Size; }
 	[[nodiscard]] FINLINE size_type DataSize() const { return m_Size * sizeof(T); }
 	[[nodiscard]] FINLINE size_type Capacity() const { return m_Capacity; }
@@ -451,3 +519,17 @@ private:
 };
 
 AX_END_NAMESPACE
+
+template <typename T> void* operator new( size_t size, ax::Array<T>& array )
+{
+	ax_assert(size == sizeof(T));
+	const auto Index = array.AddUninitialized(1);
+	return &array[Index];
+}
+
+template <typename T> void* operator new( size_t size, ax::Array<T>& array, typename ax::Array<T>::size_type index )
+{
+	ax_assert(size == sizeof(T));
+	array.InsertUninitialized(index);
+	return &array[index];
+}

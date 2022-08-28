@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <sstream>
 #include <iosfwd> // for overriding << operator for std::cout
 #include "Common.hpp"
@@ -59,131 +59,133 @@ ENUM_FLAGS(StrResult, int);
 class String
 {
 public:
+	using CharType = char;
+
 	~String() {
-		if (ptr) { free(ptr); ptr = nullptr;  size = 0; capacity = 0; }
+		if (m_Ptr) { free(m_Ptr); m_Ptr = nullptr;  m_Size = 0; m_Capacity = 0; }
 	}
-	String(int _size) : size(0), capacity(_size + 1)
+	String(int _size) : m_Size(0), m_Capacity(_size + 1)
 	{
-		ptr = (char*)calloc(capacity, sizeof(char));
+		m_Ptr = (CharType*)calloc(m_Capacity, sizeof(CharType));
 	}
 	// copy constructor
-	String(const String& other) : size(other.size), capacity(other.capacity)
+	String(const String& other) : m_Size(other.m_Size), m_Capacity(other.m_Capacity)
 	{
-		ptr = (char*)calloc(capacity, sizeof(char));
-		memcpy(ptr, other.ptr, size);
+		m_Ptr = (CharType*)calloc(m_Capacity, sizeof(CharType));
+		memcpy(m_Ptr, other.m_Ptr, m_Size);
 	}
 	// move constructor 
-	String(String&& other) noexcept : size(other.size), capacity(other.capacity), ptr(other.ptr)
+	String(String&& other) noexcept : m_Size(other.m_Size), m_Capacity(other.m_Capacity), m_Ptr(other.m_Ptr)
 	{
-		other.ptr = nullptr;
+		other.m_Ptr = nullptr;
 	}
 
-	String() : size(0), capacity(32)
+	String() : m_Size(0), m_Capacity(32)
 	{
-		ptr = (char*)calloc(capacity, 1);
+		m_Ptr = (char*)calloc(m_Capacity, 1);
 	}
 
-	String(const char* _ptr) : size(strlen(_ptr))
+	String(const char* _ptr) : m_Size(strlen(_ptr))
 	{
-		capacity = size + 32;
-		ptr = (char*)calloc(capacity, 1);
-		memcpy(ptr, _ptr, size);
+		m_Capacity = m_Size + 32;
+		m_Ptr = (char*)calloc(m_Capacity, 1);
+		memcpy(m_Ptr, _ptr, m_Size);
 	}
 
-	String(char* _ptr) : size(strlen(_ptr))
+	String(CharType* _ptr) : m_Size(strlen(_ptr))
 	{
-		capacity = size + 32; 
-		ptr = (char*)calloc(capacity, 1);
-		memcpy(ptr, _ptr, size);
+		m_Capacity = m_Size + 32;
+		m_Ptr = (CharType*)calloc(m_Capacity, 1);
+		memcpy(m_Ptr, _ptr, m_Size);
 	}
 	// asign operator
 	String& operator = (const String& right)
 	{
-		CapacityCheck(right.size);
-		memcpy(ptr, right.ptr, right.size);
-		size = right.size;
+		CapacityCheck(right.m_Size);
+		memcpy(m_Ptr, right.m_Ptr, right.m_Size);
+		m_Size = right.m_Size;
 		return *this;
 	}
 
 	bool operator == (const String& b) const { return  Compare(*this, b); }
 	bool operator != (const String& b) const { return !Compare(*this, b); }
-	char operator[](int index)         const { return ptr[index]; }
+	char operator[](int index)         const { return m_Ptr[index]; }
 
-	char* begin() { return ptr; }
-	char* end()   { return ptr + size; }
-	const char* cbegin() const { return ptr; }
-	const char* cend()   const { return ptr + size; }
+	CharType* begin() { return m_Ptr; }
+	CharType* end()   { return m_Ptr + m_Size; }
+	[[nodiscard]] const CharType* cbegin() const { return m_Ptr; }
+	[[nodiscard]] const CharType* cend()   const { return m_Ptr + m_Size; }
 
-	const char* CStr() const { return ptr; };
+	[[nodiscard]] const CharType* CStr() const { return m_Ptr; };
 
 	static FINLINE bool Compare(const String& a, const String& b)
 	{
-		return a.size == b.size && !strcmp(a.ptr, b.ptr);
+		return a.m_Size == b.m_Size && !strcmp(a.m_Ptr, b.m_Ptr);
 	}
 
 	inline void Reset()
 	{
-		memset(ptr, 0, size);
-		size = 0;
+		memset(m_Ptr, 0, m_Size);
+		m_Size = 0;
 	}
 
 	inline void Set(const char* str)
 	{
 		Clear();
 		CapacityCheck(strlen(str));
-		memcpy(ptr, str, strlen(str));
+		memcpy(m_Ptr, str, strlen(str));
 	}
 
 	inline void Set(const String& str)
 	{
 		Clear();
-		CapacityCheck(str.size);
-		size = str.Length();
-		memcpy(ptr, str.CStr(), str.size);
+		CapacityCheck(str.m_Size);
+		m_Size = str.Length();
+		memcpy(m_Ptr, str.CStr(), str.m_Size);
 	}
 
 	inline void Reserve(int size)
 	{
-		if (size > capacity) {
-			capacity = size;
-			ptr = (char*)realloc(ptr, capacity);
+		if (size > m_Capacity) {
+			m_Capacity = size;
+			m_Ptr = (CharType*)realloc(m_Ptr, m_Capacity);
 		}
 	}
 
-	inline void Clear() { memset(ptr, 0, capacity); size = 0; }
+	inline void Clear() { memset(m_Ptr, 0, m_Capacity); m_Size = 0; }
 
 	// Append
 	StrResult Insert(int index, char value)
 	{
-		if (index > size || index < 0) return StrResult::IndexOutOfArray;
+		if (index > m_Size || index < 0) return StrResult::IndexOutOfArray;
 		const int oldLen = Length();
 		Reserve(oldLen + 2);
-		char* slow = ptr + oldLen;
-		char* fast = slow - 1;
+		CharType* slow = m_Ptr + oldLen;
+		CharType* fast = slow - 1;
 		// shift all right characters to 1 char right
-		while (fast >= ptr + index)
+		while (fast >= m_Ptr + index)
 		{
 			*slow-- = *fast--;
 		}
-		ptr[index] = value;
-		ptr[++size] = '\0';
+		m_Ptr[index] = value;
+		m_Ptr[++m_Size] = '\0';
 		return StrResult::Success;
 	}
 	
 	StrResult Insert(int index, const char* other)
 	{
-		if (index > size || index < 0) return StrResult::IndexOutOfArray;
+		if (index > m_Size || index < 0) return StrResult::IndexOutOfArray;
 		const int otherLen = (int)strlen(other);
 		const int oldLen = Length();
 		Reserve(oldLen + otherLen + 2);
-		char* curr = ptr + oldLen - 1;
-		while (curr >= ptr + index)
+		CharType* curr = m_Ptr + oldLen - 1;
+		while (curr >= m_Ptr + index)
 		{
 			curr[otherLen + 1] = *curr--;
 		}
-		memcpy(ptr + index, other, otherLen);
-		size += otherLen;
-		ptr[++size] = '\0';
+		memcpy(m_Ptr + index, other, otherLen);
+		m_Size += otherLen;
+		m_Ptr[++m_Size] = '\0';
 		return StrResult::Success;
 	}
 
@@ -196,9 +198,9 @@ public:
 	void Append(int32 value) { char buff[16]; sprintf(buff, "%d", value);   Append(buff); }
 	void Append(float value) { char buff[16]; sprintf(buff, "%f", value);   Append(buff); }
 
-	static String From(int64 value) { char buff[16]; sprintf(buff, "%lld", value); return buff; }
-	static String From(int32 value) { char buff[16]; sprintf(buff, "%d"  , value); return buff; }
-	static String From(float value) { char buff[16]; sprintf(buff, "%f"  , value); return buff; }
+	static String From(int64 value) { char buff[16]; sprintf(buff, "%lld", value); return String(buff); }
+	static String From(int32 value) { char buff[16]; sprintf(buff, "%d"  , value); return String(buff); }
+	static String From(float value) { char buff[16]; sprintf(buff, "%f"  , value); return String(buff); }
 
 	void operator += (char _char)           { AppendChar(_char); }
 	void operator += (const String& string) { Append(string);    }
@@ -218,8 +220,8 @@ public:
 	void AppendChar(char _char)
 	{
 		CapacityCheck(1);
-		ptr[size++] = _char;
-		ptr[size] = '\0'; 
+		m_Ptr[m_Size++] = _char;
+		m_Ptr[m_Size] = '\0';
 	}
 
 	inline void Append(const char* _char)
@@ -227,27 +229,27 @@ public:
 		const size_t len = strlen(_char);
 		CapacityCheck((int)len);
 #pragma warning(suppress : 4996)
-		strncat(ptr + size, _char, len + 1ull);
-		size += len;
-		ptr[size] = '\0';
+		strncat(m_Ptr + m_Size, _char, len + 1ull);
+		m_Size += len;
+		m_Ptr[m_Size] = '\0';
 	}
 
 	inline void Append(const char* _char, const size_t len)
 	{
 		CapacityCheck((int)len);
 #pragma warning(suppress : 4996)
-		strncat(ptr + size, _char, len + 1ull);
-		size += len;
-		ptr[size] = '\0'; // for safety
+		strncat(m_Ptr + m_Size, _char, len + 1ull);
+		m_Size += len;
+		m_Ptr[m_Size] = '\0'; // for safety
 	}
 
-	inline String AppendCopy(const char* _char)
+	inline String AppendCopy(const char* _char) const
 	{
 		const size_t len = strlen(_char);
-		char* buffer = (char*)calloc(len + size, sizeof(char));
-		memcpy(buffer, ptr, size);
+		CharType* buffer = (CharType*)calloc(len + m_Size, sizeof(CharType));
+		memcpy(buffer, m_Ptr, m_Size);
 #pragma warning(suppress : 4996)
-		strncat(buffer + size, _char, len + 1ull);
+		strncat(buffer + m_Size, _char, len + 1ull);
 		return String(buffer);
 	}
 
@@ -256,23 +258,23 @@ public:
 	// Find
 	int FindIndex(char _char) const
 	{
-		for (int i = 0; i < size; ++i)
-			if (ptr[i] == _char) return i;
+		for (int i = 0; i < m_Size; ++i)
+			if (m_Ptr[i] == _char) return i;
 		return -1;
 	}
 
 	inline int FindIndex(const char* str, const int len) const
 	{
-		for (int i = 0; i < size - (len - 1); ++i)
-			if (!strncmp(str, ptr + i, len)) return i;
+		for (int i = 0; i < m_Size - (len - 1); ++i)
+			if (!strncmp(str, m_Ptr + i, len)) return i;
 		return -1;
 	}
 
 	inline int FindIndex(const char* str) const
 	{
 		const int len = (int)strlen(str);
-		for (int i = 0; i < size - (len - 1); ++i)
-			if (!strncmp(str, ptr + i, len)) return i;
+		for (int i = 0; i < m_Size - (len - 1); ++i)
+			if (!strncmp(str, m_Ptr + i, len)) return i;
 		return -1;
 	}
 
@@ -281,8 +283,8 @@ public:
 	{
 		const int index = FindIndex(_char);
 		if (index == -1) return StrResult::NotFound;
-		memmove(ptr + index, ptr + index + 1ull, 1ull);
-		ptr[--size] = '\0';
+		memmove(m_Ptr + index, m_Ptr + index + 1ull, 1ull);
+		m_Ptr[--m_Size] = '\0';
 		return StrResult::Success;
 	}
 
@@ -293,7 +295,7 @@ public:
 
 		if (findIndex != -1)
 		{
-			char* findPos  = ptr + findIndex;
+			char* findPos  = m_Ptr + findIndex;
 			char* otherEnd = findPos + otherLen;
 			// shift all right characters to the find pos
 			while (*otherEnd) {
@@ -311,11 +313,11 @@ public:
 
 	inline StrResult StartsWith(const char* other, int len) const
 	{
-		if (size < len) StrResult::IndexOutOfArray;
+		if (m_Size < len) StrResult::IndexOutOfArray;
 
 		while (len--)
 		{
-			if (other[len] != ptr[len]) return StrResult::False;
+			if (other[len] != m_Ptr[len]) return StrResult::False;
 		}
 		return StrResult::True;
 	}
@@ -323,10 +325,10 @@ public:
 	StrResult StartsWith(const String& other) const
 	{
 		int len = other.Length();
-		if (size < len) StrResult::IndexOutOfArray;
+		if (m_Size < len) StrResult::IndexOutOfArray;
 		while (len--)
 		{
-			if (other[len] != ptr[len]) return StrResult::False;
+			if (other[len] != m_Ptr[len]) return StrResult::False;
 		}
 		return StrResult::True;
 	}
@@ -344,9 +346,9 @@ public:
 
 	StrResult Replace(int start, int end, const char* cstr)
 	{
-		if (end > capacity) return StrResult::IndexOutOfArray;
+		if (end > m_Capacity) return StrResult::IndexOutOfArray;
 		const int len = end - start;
-		memcpy(ptr + start, cstr, len);
+		memcpy(m_Ptr + start, cstr, len);
 		return StrResult::Success;
 	}
 
@@ -363,10 +365,10 @@ public:
 			const int newLen = Length() + (fromLen - toLen);
 
 			Reserve(newLen);
-			size = newLen;
-			const int tailLen = strlen(ptr + fromIndex + fromLen);
-			memmove(ptr + fromIndex + toLen, ptr + fromIndex + fromLen, tailLen + 1 * sizeof(char));
-			memcpy(ptr + fromIndex, _new, toLen * sizeof(char));
+			m_Size = newLen;
+			const int tailLen = strlen(m_Ptr + fromIndex + fromLen);
+			memmove(m_Ptr + fromIndex + toLen, m_Ptr + fromIndex + fromLen, tailLen + 1 * sizeof(CharType));
+			memcpy(m_Ptr + fromIndex, _new, toLen * sizeof(CharType));
 			return StrResult::Success;
 		}
 		return StrResult::NotFound;
@@ -395,10 +397,10 @@ public:
 
 	String SubString(int begin, int end) const
 	{
-		if (begin > size) return String();
+		if (begin > m_Size) return String();
 		const int buffSize = end - begin;
-		char* buffer = (char*)calloc(buffSize + 1ull, 1ull);
-		memcpy(buffer, ptr, buffSize);
+		CharType* buffer = (CharType*)calloc(buffSize + 1ull, 1ull);
+		memcpy(buffer, m_Ptr, buffSize);
 		return String(buffer);
 	}
 
@@ -406,24 +408,22 @@ public:
 		return cout << wstr.CStr();
 	}
 
-	int Capacity() const { return capacity; }
-	int Length()   const { return size; }
-
+	[[nodiscard]] int Capacity() const { return m_Capacity; }
+	[[nodiscard]] int Length()   const { return m_Size; }
 private:
 	FINLINE void CapacityCheck(int len)
 	{
-		if (size + len + 1 >= capacity)
+		if (m_Size + len + 1 >= m_Capacity)
 		{
-			int newLen = size + len;
-			capacity = newLen + (newLen / 2);
-			ptr = (char*)realloc(ptr, capacity + 1);
+			int newLen = m_Size + len;
+			m_Capacity = newLen + (newLen / 2);
+			m_Ptr = (CharType*)realloc(m_Ptr, m_Capacity + 1);
 		}
 	}
 private:
-	int capacity;
-	int size;
-public:	
-	char* ptr;
+	int m_Capacity;
+	int m_Size;
+	CharType* m_Ptr;
 };
 
 class WString

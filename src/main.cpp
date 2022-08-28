@@ -1,6 +1,7 @@
 #include <iostream>
 #include <chrono>
 #include <string>
+#include "Axiom/App/Application.hpp"
 #include "Axiom/Core/String.hpp"
 #include "Axiom/Core/Array.hpp"
 #include "Axiom/App/SystemWindow.hpp"
@@ -113,7 +114,7 @@ int TestEnTT()
 	return 0;
 }
 
-int main()
+int main2()
 {
 	printf("Begin EnTT\n");
 	TestEnTT();
@@ -232,7 +233,42 @@ int mainaa()
 	return 0;
 }
 
-int maina()
+#include "Axiom/Core/Array.hpp"
+#include "Axiom/Core/MemoryArchive.hpp"
+
+ax::Application* CreateApplication(int argc, char* argv[])
+{
+	MemoryArchive archive;
+	archive.SetSaving(true);
+	Array<int> test;
+	test.Add(10);
+	test.Add(50);
+	archive << test;
+	String str = "yooo123";
+	archive << str;
+
+	Array<int> newOne;
+	archive.SetSaving(false);
+	archive.SetLoading(true);
+	archive.ResetCursor();
+	archive << newOne;
+
+	for (int i = 0; i < newOne.Size(); ++i)
+	{
+		int a = newOne[i];
+		int b = 0;
+	}
+
+	String newString;
+	archive << newString;
+
+	std::cout << newString << std::endl;
+	std::cout << "yoi" << std::endl;
+
+	return nullptr;
+}
+
+int oldMain(int argc, char* argv[])
 {
 	SystemWindow* window = SystemWindow::Create(WindowDesc(), true);
 	RenderContext renderContext;
