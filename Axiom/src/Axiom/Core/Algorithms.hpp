@@ -60,7 +60,7 @@ namespace ax
 		{
 			Random::PCG rand(Random::RandomSeed64());
 
-			for (uint64 i = len - 1; ptr > begin; --i)
+			for (uint64 i = len - 1; i > 1; --i)
 			{
 				Swap(begin[rand.Range(0u, i)], begin[i]);
 			}

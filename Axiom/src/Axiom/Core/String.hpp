@@ -200,6 +200,12 @@ public:
 	{
 		int64 len = log10l(x);
 		Reserve(m_Size + len + 1);
+		int blen = len;
+		while (++blen < afterPoint)
+		{
+			m_Ptr[m_Size++] = '0';
+			m_Ptr[m_Size] = '\0';
+		}
 		len = powl(10, len);
 
 		while (len)
@@ -215,6 +221,7 @@ public:
 	void Append(int x, int afterPoint = 0)
 	{
 		int len = log10(x);
+		Reserve(m_Size + len + 1);
 		
 		// these 4 line is for adding zeros after float friction for example this two zeros: .005
 		// another usage of this is using same number of digits for all numbers. example: 0053, 0145, 7984 but this is rare circumstance
@@ -225,7 +232,6 @@ public:
 			m_Ptr[m_Size] = '\0';
 		}
 		
-		Reserve(m_Size + len + 1);
 		len = pow(10, len);
 
 		while (len)
