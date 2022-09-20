@@ -13,7 +13,7 @@ int Accumulate(const int* ptr, int size)
 	// if 8 element remains, sum all of the remainings
 	while (size < 9) sum += ptr[--size];
 
-	if (size == 0) return sum;
+	if (size < 1) return sum;
 
 	size >>= 3;
 	const __m256i* vptr = (const __m256i*)ptr;
@@ -52,7 +52,8 @@ float Accumulate(const float* ptr, int size)
 	float sum = 0.0f;
 #ifdef __AVX__
 	while (size & 7) sum += ptr[--size];
-	if (size == 0) return sum;
+	while (size < 9) sum += ptr[--size];
+	if (size < 1) return sum;
 	size >>= 3;
 	const __m256* vptr = (const __m256*)ptr;
 	const __m256* vend = vptr + size;
@@ -67,6 +68,7 @@ float Accumulate(const float* ptr, int size)
 		+ sums[4] + sums[5] + sums[6] + sums[7];
 #elif __SSE2__
 	while (size & 3) sum += ptr[--size];
+	while (size < 5) sum += ptr[--size];
 	if (size == 0) return sum;
 	size >>= 2;
 
