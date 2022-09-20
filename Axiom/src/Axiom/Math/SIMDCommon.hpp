@@ -4,7 +4,7 @@
 
 AMATH_NAMESPACE
 
-int Accumulate(const int* ptr, int size)
+inline int Accumulate(const int* ptr, int size)
 {
 	int sum = 0;
 #ifdef __AVX__
@@ -47,7 +47,7 @@ int Accumulate(const int* ptr, int size)
 	return sum;
 }
 
-float Accumulate(const float* ptr, int size)
+inline float Accumulate(const float* ptr, int size)
 {
 	float sum = 0.0f;
 #ifdef __AVX__
@@ -83,7 +83,6 @@ float Accumulate(const float* ptr, int size)
 
 	const float* sums = (const float*)&begin;
 	sum += sums[0] + sums[1] + sums[2] + sums[3];
-	return sum;
 #else
 	for (int i = 0; i < len; ++i) sum += ptr[i];
 #endif
