@@ -1,6 +1,5 @@
 #pragma once
-
-#include "Math.hpp"
+#include "SIMDCommon.hpp"
 
 AMATH_NAMESPACE
 

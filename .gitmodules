@@ -1,6 +1,0 @@
-[submodule "glfw"]
-	path = lib/glfw
-	url = https://github.com/glfw/glfw.git
-[submodule "entt"]
-	path = lib/entt
-	url = https://github.com/skypjack/entt.git

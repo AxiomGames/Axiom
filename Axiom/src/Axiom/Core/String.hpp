@@ -4,6 +4,7 @@
 #include <sstream>
 #include <iosfwd> // for overriding << operator for std::cout
 #include "Common.hpp"
+#include "Algorithms.hpp"
 
 AX_NAMESPACE
 
@@ -154,7 +155,7 @@ public:
 
 	inline void Clear() { memset(m_Ptr, 0, m_Capacity); m_Size = 0; }
 
-	// Append
+	// insert
 	StrResult Insert(int index, char value)
 	{
 		if (index > m_Size || index < 0) return StrResult::IndexOutOfArray;
@@ -194,13 +195,63 @@ public:
 		return Insert(index, value.CStr());
 	}
 
-	void Append(int64 value) { char buff[16]; sprintf(buff, "%lld", value); Append(buff); }
-	void Append(int32 value) { char buff[16]; sprintf(buff, "%d", value);   Append(buff); }
-	void Append(float value) { char buff[16]; sprintf(buff, "%f", value);   Append(buff); }
+	// time complexity O(numDigits(x)), space complexity O(1)
+	void Append(int64 x, int afterPoint = 0)
+	{
+		int64 len = log10l(x);
+		Reserve(m_Size + len + 1);
+		len = powl(10, len);
 
-	static String From(int64 value) { char buff[16]; sprintf(buff, "%lld", value); return String(buff); }
-	static String From(int32 value) { char buff[16]; sprintf(buff, "%d"  , value); return String(buff); }
-	static String From(float value) { char buff[16]; sprintf(buff, "%f"  , value); return String(buff); }
+		while (len)
+		{
+			int digit = x / len;
+			m_Ptr[m_Size++] = char(digit + '0');
+			m_Ptr[m_Size] = '\0';
+			x -= len * digit;
+			len /= 10;
+		}
+	}
+
+	void Append(int x, int afterPoint = 0)
+	{
+		int len = log10(x);
+		
+		// these 4 line is for adding zeros after float friction for example this two zeros: .005
+		// another usage of this is using same number of digits for all numbers. example: 0053, 0145, 7984 but this is rare circumstance
+		int blen = len;
+		while (++blen < afterPoint)
+		{
+			m_Ptr[m_Size++] = '0';
+			m_Ptr[m_Size] = '\0';
+		}
+		
+		Reserve(m_Size + len + 1);
+		len = pow(10, len);
+
+		while (len)
+		{
+			int digit = x / len;
+			m_Ptr[m_Size++] = char(digit + '0');
+			m_Ptr[m_Size] = '\0';
+			x -= len * digit;
+			len /= 10;
+		}
+	}
+
+	/// <summary> appends as float </summary>
+	/// <param name="afterpoint"> num digits after friction</param>
+	void Append(float f, int afterpoint = 3)
+	{
+		int iPart = (int)f;
+		Append(iPart);
+		float fPart = f - iPart;
+		AppendChar('.');
+		Append(int(fPart * pow(10, afterpoint)), afterpoint);
+	}
+
+	static String From(int64 value) { String str{}; str.Append(value); return str; }
+	static String From(int32 value) { String str{}; str.Append(value); return str; }
+	static String From(float value) { String str{}; str.Append(value); return str; }
 
 	void operator += (char _char)           { AppendChar(_char); }
 	void operator += (const String& string) { Append(string);    }
@@ -411,6 +462,7 @@ public:
 	[[nodiscard]] int Capacity() const { return m_Capacity; }
 	[[nodiscard]] int Length()   const { return m_Size; }
 private:
+
 	FINLINE void CapacityCheck(int len)
 	{
 		if (m_Size + len + 1 >= m_Capacity)
