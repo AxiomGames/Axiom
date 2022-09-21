@@ -13,6 +13,8 @@
 #		define AXGLOBALCONST extern const __declspec(selectany)
 #	elif defined(__GNUC__) && !defined(__MINGW32__)
 #		define AXGLOBALCONST extern const __attribute__((weak))
+#   else 
+#       define AXGLOBALCONST 
 #	endif
 #endif
 
@@ -28,6 +30,8 @@ constexpr float TwoPI    = PI   * 2.0f;
 template<typename T> FINLINE T Max(const T a, const T b) { return a > b ? a : b; }
 template<typename T> FINLINE T Min(const T a, const T b) { return a < b ? a : b; }
 template<typename T> FINLINE T Clamp(const T x, const T a, const T b) { return Max(a, Min(b, x)); }
+
+template<typename T> FINLINE T RemapMinusOneOne();
 
 FINLINE float  IsZero(const float x)	noexcept { return fabsf(x) > 1e-10f; }
 FINLINE double IsZero(const double x)	noexcept { return fabs(x)  > 1e-10; }
@@ -52,6 +56,30 @@ FINLINE float LerpAngle(const RealT a, const RealT b, const RealT t) noexcept
 	return a + delta * Clamp(t, 0.0, 1.0);
 }
 
+// (0,1) to (-1,1) range
+FINLINE float ZeroOneToSinRange(float f) {
+	return f * 2.0f - 1.0f;
+}
+
+// (0,1) to (-1,1) range
+FINLINE double ZeroOneToSinRange(double d) {
+	return d * 2.0 - 1.0;
+}
+
+// (-1,1) to (0,1) range
+FINLINE float SinRangeToZeroOne(float f) {
+	return f + 1.0f / 2.0f;
+}
+
+// (-1,1) to (0,1) range
+FINLINE double SinRangeToZeroOne(double d) {
+	return f + 1.0 / 2.0;
+}
+
+FINLINE float Remap(float x, float inMin, float inMax, float outMin, float outMax)
+{
+	return outMin + (outMax - outMin) * ((x - inMin) / (inMax - inMin));
+}
 
 // Code below adapted from DirectX::Math
 inline void ScalarSinCos(float* pSin, float* pCos, float  Value) noexcept

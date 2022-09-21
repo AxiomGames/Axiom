@@ -6,7 +6,7 @@ namespace ax
 	namespace Random
 	{
 		// these random seeds slower than PCG and MTwister but good choice for random seed
-		inline uint32 RandomSeed32()
+		FINLINE uint32 RandomSeed32()
 		{
 			uint32 result;
 #if defined(__SSE__ )|| defined(__AVX__ ) || defined(__AVX2__)
@@ -17,7 +17,7 @@ namespace ax
 			return result;
 		}
 
-		inline uint64 RandomSeed64()
+		FINLINE uint64 RandomSeed64()
 		{
 			uint64 result;
 #if defined(__SSE__ )|| defined(__AVX__ ) || defined(__AVX2__)
@@ -49,59 +49,36 @@ namespace ax
 			double NextDouble01()
 			{
 				constexpr double c_DMul = (1.0 / 4294967296.0);
-				return Next() * c_DMul;
-			}
-			int NextInt(const int _min, const int _max)
-			{
-				// max function is for range overflow, preventing this: min + max > int.max
-				return _min + Range(Max(abs(_min) + abs(_max), _max - _min) ); 
-			}
-			uint64 NextUlong(uint64 min, uint64 max)
-			{
-				return min + (Next64() % (min + max));
-			}
-			/* returns a random number 0 <= x < bound */
-			uint32 Range(uint32 bound)
-			{
-				return Next() % bound;
-			}
-		};
-
-		class IRandom64
-		{
-		public:
-			virtual uint64 Next() = 0;
-
-			float NextFloat(float min, float max)
-			{
-				return min + (NextFloat01() * fabs(min - max));
-			}
-			float NextFloat01()
-			{
-				return float(NextDouble01());
-			}
-			double NextDouble01()
-			{
-				constexpr float dMul = 1.0 / 9007199254740992.0;
-				return double(Next() >> 11) * dMul;
+				return Next64() * c_DMul;
 			}
 			double NextDouble(double min, double max)
 			{
 				return min + (NextDouble01() * abs(min - max));
 			}
-			double NextDouble()
+			int NextInt(const int _min, const int _max)
 			{
-				constexpr float dMul = 1.0 / 9007199254740992.0;
-				return double(Next() >> 11) * dMul;
+				return _min + NextBound(_max - _min) ); 
 			}
-			long Next(long min, long max)
+			uint32 NextUint32(uint32 min, uint32 max)
 			{
-				return min + Range(Max(labs(min) + labs(max), max - min));
+				return min + NextBound(max-Min);
+			}
+			uint64 NextUint64(uint64 min, uint64 max)
+			{
+				return min + NextBound(max-Min);
 			}
 			/* returns a random number 0 <= x < bound */
-			uint64 Range(uint64 bound)
+			int NextBound(uint bound)
 			{
 				return Next() % bound;
+			}
+			uint32 NextBound(uint32 bound)
+			{
+				return Next() % bound;
+			}
+			uint64 NextBound(uint64 bound)
+			{
+				return Next64() % bound;
 			}
 		};
 
@@ -145,9 +122,7 @@ namespace ax
 			uint64 Next64()
 			{
 				uint64 oldstate = state;
-				// Advance internal state
 				state = oldstate * 6364136223846793005ULL + (inc | 1);
-				// Calculate output function (XSH RR), uses old state for max ILP
 				uint64 xorshifted = ((oldstate >> 18u) ^ oldstate) >> 27u;
 				uint64 rot = oldstate >> 59u;
 				return (xorshifted >> rot) | (xorshifted << ((-rot) & 31));
@@ -156,14 +131,13 @@ namespace ax
 
 
 		// Copyright (c) 2011, 2013 Mutsuo Saito, Makoto Matsumoto,
-		// Hiroshima University and The University of Tokyo.
-		// All rights reserved.
+		// Hiroshima University and The University of Tokyo. All rights reserved.
 		// generated from paper: http://www.math.sci.hiroshima-u.ac.jp/~m-mat/m_MT/ARTICLES/mt.pdf
 
 		// important: you need to create m_MT classes for each thread
 		// 	also I don't recommend using more than one instance in a therad
 
-		class MTwister64 : public IRandom64
+		class MTwister64 : public IRandom
 		{
 			static constexpr int N = 624, M = 367;
 
@@ -179,7 +153,18 @@ namespace ax
 					m_MT[m_Index] = (69069 * m_MT[m_Index - 1]) & ~0ul;
 			}
 
-			uint64 Next()
+			uint32 Next()
+			{
+				if (m_Index >= N) GenerateNumbers();
+				uint64 x = m_MT[m_Index++];
+				x ^= x >> 11;
+				x ^= x << 7 & 0x9d2c5680ul;
+				x ^= x << 15 & 0xefc60000ul;
+				x ^= x >> 18;
+				return int(x >> 16);
+			}
+
+			uint64 Next64()
 			{
 				if (m_Index >= N) GenerateNumbers();
 				uint64 x = m_MT[m_Index++];
@@ -211,6 +196,7 @@ namespace ax
 					m_MT[kk] = m_MT[kk + M] ^ (y >> 1) ^ mag01[y & 0x1];
 					kk++;
 				}
+				kk--;
 
 				while (kk < N - 1)
 				{
@@ -226,7 +212,7 @@ namespace ax
 				}
 
 				y = (m_MT[N - 1] & 0x80000000ul) | (m_MT[0] & 0x7ffffffful);
-				m_MT[N - 1] = m_MT[kk + (M - 1)] ^ (y >> 1) ^ mag01[y & 0x1];
+				m_MT[N - 1] = m_MT[M - 1] ^ (y >> 1) ^ mag01[y & 0x1];
 
 				m_Index = 0;
 			}
@@ -250,24 +236,25 @@ namespace ax
 				m_MT[0] = value;
 				m_Index = SIZE;
 
-				for (uint32 i = 1; i < SIZE; ++i)
+				for (uint32 i = 1; i < SIZE; ++i) 
 					m_MT[i] = 0x6c078965 * (m_MT[i - 1] ^ m_MT[i - 1] >> 30) + i;
 			}
 
 			uint32 Next()
 			{
-				if (m_Index == SIZE) {
+				if (m_Index >= SIZE) {
 					GenerateNumbers();
 					m_Index = 0;
 				}
 				uint32 y = m_MT[m_Index++];
-				y ^= y >> 11;
-				y ^= y << 7 & 0x9d2c5680;
-				y ^= y << 15 & 0xefc60000;
-				y ^= y >> 18;
+				y ^= y >> 11u;
+				y ^= y << 7u & 0x9d2c5680u;
+				y ^= y << 15u & 0xefc60000u;
+				y ^= y >> 18u;
 				return y;
 			}
 
+			// in this case MTwister64 will be more performant
 			uint64 Next64()
 			{
 				if (m_Index + 1 >= SIZE) {
@@ -276,10 +263,10 @@ namespace ax
 				}
 				uint64 y  = m_MT[m_Index++];
 				uint64 y1 = m_MT[m_Index++];
-				y ^= y  >> 11ul | (y1 >> 34);
+				y ^= y  >> 11ul | (y1 >> 34ul);
 				y ^= y1 << 7ul  | (y  << 39ul) & 0x9d2c5680ul;
-				y ^= y  << 15ul | (y1 << 47)   & 0xefc60000ul;
-				y ^= y1 >> 18ul | (y  >> 50);
+				y ^= y  << 15ul | (y1 << 47ul)  & 0xefc60000ul;
+				y ^= y1 >> 18ul | (y  >> 50ul);
 				return y;
 			}
 

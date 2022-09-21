@@ -4,7 +4,6 @@
 #include <sstream>
 #include <iosfwd> // for overriding << operator for std::cout
 #include "Common.hpp"
-#include "Algorithms.hpp"
 
 AX_NAMESPACE
 

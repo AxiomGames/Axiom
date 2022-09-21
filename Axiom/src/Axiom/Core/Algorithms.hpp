@@ -2,7 +2,6 @@
 
 #include "Common.hpp"
 #include "Random.hpp"
-#include "TemplateBase.hpp"
 
 namespace ax
 {
@@ -62,7 +61,7 @@ namespace ax
 
 			for (uint64 i = len - 1; i > 1; --i)
 			{
-				Swap(begin[rand.Range(0u, i)], begin[i]);
+				Swap(begin[rand.NextBound(i)], begin[i]);
 			}
 		}
 
