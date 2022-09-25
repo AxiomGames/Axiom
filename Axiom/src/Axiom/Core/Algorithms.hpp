@@ -30,7 +30,20 @@ namespace ax
 			Swap(arr[low], arr[j]);
 			return j;
 		}
-  
+
+		template<typename T>
+		inline void BubbleSort(T* arr, int len)
+		{
+			for (int i = 0; i < len; ++i)
+			{
+				for (int j = 0; j < len - i - 1; ++j)
+				{
+					if (arr[i + 1] < arr[i])
+						Swap(arr[i], arr[i + 1]);
+				}
+			}
+		}
+
 		// QuickSort(arr.begin(), 0, arr.size()-1);
 		template<typename T>
 		inline void QuickSort(T* arr, int low, int high)
@@ -38,8 +51,13 @@ namespace ax
 			if (low < high)
 			{
 				int pivot = Partition(arr, low, high);
-				QuickSort(arr, low, pivot - 1);
-				QuickSort(arr, pivot + 1, high);
+				#pragma omp parallel sections
+				{
+					#pragma omp section
+					QuickSort(arr, low, pivot - 1);
+					#pragma omp section
+					QuickSort(arr, pivot + 1, high);
+				}
 			}
 		}
 

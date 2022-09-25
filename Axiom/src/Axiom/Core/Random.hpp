@@ -57,18 +57,18 @@ namespace ax
 			}
 			int NextInt(const int _min, const int _max)
 			{
-				return _min + NextBound(_max - _min) ); 
+				return _min + NextBound(_max - _min); 
 			}
 			uint32 NextUint32(uint32 min, uint32 max)
 			{
-				return min + NextBound(max-Min);
+				return min + NextBound(max - min);
 			}
 			uint64 NextUint64(uint64 min, uint64 max)
 			{
-				return min + NextBound(max-Min);
+				return min + NextBound(max - min);
 			}
 			/* returns a random number 0 <= x < bound */
-			int NextBound(uint bound)
+			int NextBound(int bound)
 			{
 				return Next() % bound;
 			}

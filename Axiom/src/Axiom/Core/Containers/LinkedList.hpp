@@ -1,4 +1,4 @@
-#include <stdlib.h>
+#include "Common.hpp"
 
 typedef int T;
 
@@ -81,7 +81,7 @@ public:
 		if (!rootNode) return;
 		Node* currentNode = rootNode;
 
-		if (Compare::Equal(rootNode->data, ptr)) {
+		if (rootNode->data == ptr) {
 			rootNode = rootNode->next;
 			delete currentNode;
 			--nodeCount;
@@ -90,7 +90,7 @@ public:
 		}
 
 		do {
-			if (Compare::Equal(currentNode->next->data, ptr))
+			if (currentNode->next->data == ptr)
 			{
 				Node* removedNode = currentNode->next;
 				currentNode->next = removedNode->next;
@@ -102,7 +102,7 @@ public:
 		} while (currentNode->next != nullptr);
 	}
 
-	_Template bool TryGetData(Derived* component)
+	_Template bool TryGetData(Derived* onent)
 	{
 		*component = FindNodeByType<Derived>();
 		return component[0];

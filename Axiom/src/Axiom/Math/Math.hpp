@@ -31,7 +31,6 @@ template<typename T> FINLINE T Max(const T a, const T b) { return a > b ? a : b;
 template<typename T> FINLINE T Min(const T a, const T b) { return a < b ? a : b; }
 template<typename T> FINLINE T Clamp(const T x, const T a, const T b) { return Max(a, Min(b, x)); }
 
-template<typename T> FINLINE T RemapMinusOneOne();
 
 FINLINE float  IsZero(const float x)	noexcept { return fabsf(x) > 1e-10f; }
 FINLINE double IsZero(const double x)	noexcept { return fabs(x)  > 1e-10; }
@@ -68,12 +67,12 @@ FINLINE double ZeroOneToSinRange(double d) {
 
 // (-1,1) to (0,1) range
 FINLINE float SinRangeToZeroOne(float f) {
-	return f + 1.0f / 2.0f;
+	return f + 1.0f * 0.5;
 }
 
 // (-1,1) to (0,1) range
 FINLINE double SinRangeToZeroOne(double d) {
-	return f + 1.0 / 2.0;
+	return d + 1.0 * 0.5;
 }
 
 FINLINE float Remap(float x, float inMin, float inMax, float outMin, float outMax)

@@ -25,45 +25,45 @@ struct ArrayIteratorBase
 template<typename T>
 struct ArrayIterator : ArrayIteratorBase<T>
 {
-	FINLINE T& operator*() const noexcept
+	T& operator*() const noexcept
 	{
 		return *this->Ptr;
 	}
 
-	FINLINE T* operator->() const noexcept
+	T* operator->() const noexcept
 	{
 		return this->Ptr;
 	}
 
-	FINLINE ArrayIterator& operator++()
+	ArrayIterator& operator++()
 	{
 		this->Ptr++;
 		return *this;
 	}
 
-	FINLINE ArrayIterator operator++(int)
+	ArrayIterator operator++(int)
 	{
 		ArrayIterator tmp = *this;
 		++(*this);
 		return tmp;
 	}
 
-	FINLINE bool operator==(const ArrayIterator<T>& other) const
+	bool operator==(const ArrayIterator<T>& other) const
 	{
 		return this->Ptr == other.Ptr;
 	}
 
-	FINLINE bool operator!=(const ArrayIterator<T>& other) const
+	bool operator!=(const ArrayIterator<T>& other) const
 	{
 		return this->Ptr != other.Ptr;
 	}
 
-	FINLINE ArrayIterator operator+(uint32_t index) const
+	ArrayIterator operator+(uint32 index) const
 	{
 		return {this->Ptr + index};
 	}
 
-	FINLINE ArrayIterator& operator+=(uint32_t index) const
+	ArrayIterator& operator+=(uint32 index) const
 	{
 		this->Ptr += index;
 		return *this;
@@ -73,45 +73,45 @@ struct ArrayIterator : ArrayIteratorBase<T>
 template<typename T>
 struct ArrayConstIterator : ArrayIteratorBase<T>
 {
-	FINLINE T& operator*() const noexcept
+	T& operator*() const noexcept
 	{
 		return *this->Ptr;
 	}
 
-	FINLINE T& operator->() const noexcept
+	T& operator->() const noexcept
 	{
 		return *this->Ptr;
 	}
 
-	FINLINE const ArrayConstIterator& operator++()
+	const ArrayConstIterator& operator++()
 	{
 		this->Ptr++;
 		return *this;
 	}
 
-	FINLINE ArrayConstIterator operator++(int)
+	ArrayConstIterator operator++(int)
 	{
 		ArrayConstIterator tmp = *this;
 		++(*this);
 		return tmp;
 	}
 
-	FINLINE bool operator==(const ArrayConstIterator<T>& other) const
+	bool operator==(const ArrayConstIterator<T>& other) const
 	{
 		return this->Ptr == other.Ptr;
 	}
 
-	FINLINE bool operator!=(const ArrayConstIterator<T>& other) const
+	bool operator!=(const ArrayConstIterator<T>& other) const
 	{
 		return this->Ptr != other.Ptr;
 	}
 
-	FINLINE ArrayConstIterator operator+(uint32_t index) const
+	ArrayConstIterator operator+(uint32 index) const
 	{
 		return {this->Ptr + index};
 	}
 
-	FINLINE ArrayConstIterator& operator+=(uint32_t index) const
+	ArrayConstIterator& operator+=(uint32 index) const
 	{
 		this->Ptr += index;
 		return *this;
@@ -122,31 +122,35 @@ template<typename T>
 class Array
 {
 private:
+	using size_type = uint32;
+
 	T* m_Data = nullptr;
-	uint32_t m_Size = 0;
-	uint32_t m_Capacity = 0;
+	size_type m_Size = 0;
+	size_type m_Capacity = 0;
 public:
 	using iterator_base = ArrayIteratorBase<T>;
 	using iterator = ArrayIterator<T>;
 	using const_iterator = ArrayConstIterator<T>;
-	using size_type = uint32_t;
 
-	FINLINE Array(uint32_t defaultSize = 12) : m_Data(static_cast<T*>(calloc(1, sizeof(T) * defaultSize))), m_Size(0), m_Capacity(defaultSize)
+	Array(size_type defaultSize = 12) : m_Data(static_cast<T*>(calloc(1, sizeof(T) * defaultSize))), m_Size(0), m_Capacity(defaultSize)
 	{}
 
-	FINLINE ~Array() { if (m_Data != nullptr) free(m_Data); }
+	~Array() { if (m_Data != nullptr) free(m_Data); }
 
-	FINLINE Array(const Array& other) : m_Data(), m_Size(other.m_Size), m_Capacity(other.m_Capacity)
+	Array(const Array& other) : m_Data(), m_Size(other.m_Size), m_Capacity(other.m_Capacity)
 	{
 		m_Data = static_cast<T*>(calloc(1, sizeof(T) * other.m_Capacity));
 
 		memcpy(m_Data, other.m_Data, other.DataSize());
 	}
 
-	/*FINLINE Array(Array&& other) noexcept: m_Data(other.m_Data), m_Size(other.m_Size), m_Capacity(other.m_Capacity)
+	Array(Array&& other) noexcept : m_Data(other.m_Data), m_Size(other.m_Size), m_Capacity(other.m_Capacity)
 	{
+		m_Data = other.m_Data;
 		other.m_Data = nullptr;
-	}*/
+		other.m_Size = 0;
+		other.m_Capacity = 0;
+	}
 
 	Array& operator=(const Array& other)
 	{
@@ -174,21 +178,20 @@ public:
 	[[nodiscard]] FINLINE bool Any() const { return m_Size > 0; }
 	[[nodiscard]] FINLINE bool Empty() const { return m_Size == 0; }
 
-	FINLINE T& operator[](int index) { return m_Data[index]; }
-	FINLINE T& operator[](uint32_t index) { return m_Data[index]; }
+	FINLINE T& operator[](size_type index) { return m_Data[index]; }
 
-	FINLINE void Clear(int capacity = 12)
+	void Clear(int capacity = 12)
 	{
-		if (m_Size == 0)
-			return;
+		if (m_Size == 0) return;
 
 		m_Size = 0;
 		m_Capacity = capacity;
 		m_Data = static_cast<T*>(realloc(m_Data, sizeof(T) * m_Capacity));
-		// TODO: Should we do memset 0 here ?
+		// TODO: Should we do memset 0 here ? answer: yes.
+		memset(m_Data, 0, sizeof(T) * m_Size);
 	}
 
-	FINLINE T& Add(T type) 
+	T& Add(T type) 
 	{
 		if (m_Size + 1 > m_Capacity)
 		{
@@ -199,10 +202,10 @@ public:
 		return (m_Data[m_Size++] = type);
 	}
 
-	FINLINE void AddRange(T* begin, T* end)
+	void AddRange(T* begin, T* end)
 	{
-		uint64 len = uint64(end - begin) / sizeof(T);
-		
+		uint64 len = Distance(begin, end);
+
 		if (m_Size + len - 1 > m_Capacity)
 		{
 			m_Capacity = CalculateGrowth(m_Size + len);
@@ -215,12 +218,12 @@ public:
 		}
 	}
 
-	FINLINE void SetRange(int start, int end, T value) 
+	void SetRange(size_type start, size_type end, T value) 
 	{
 		for (; start < end; ++start) m_Data[start] = value;
 	}
 
-	FINLINE T& Emplace(T&& type)
+	T& Emplace(T&& type)
 	{
 		if (m_Size + 1 > m_Capacity)
 		{
@@ -228,10 +231,10 @@ public:
 			m_Data = static_cast<T*>(realloc(m_Data, sizeof(T) * m_Capacity));
 		}
 
-		return (m_Data[m_Size++] = std::move(type));
+		return (m_Data[m_Size++] = (T&&)(type));
 	}
 
-	FINLINE void InsertAt(uint32_t index, T type)
+	void InsertAt(size_type  index, T type)
 	{
 		ax_assert(index > m_Size);
 
@@ -250,7 +253,21 @@ public:
 		m_Data[index] = type;
 	}
 
-	FINLINE void EmplaceAt(uint32_t index, T&& type)
+	void InsertAtUnordered(size_type index, T type)
+	{
+		ax_assert(index > m_Size);
+
+		if (m_Size + 1 > m_Capacity)
+		{
+			m_Capacity = CalculateGrowth(m_Size + 1);
+			m_Data = static_cast<T*>(realloc(m_Data, sizeof(T) * m_Capacity));
+		}
+
+		m_Data[m_Size++] = m_Data[index];
+		m_Data[index] = type;
+	}
+
+	void EmplaceAt(size_type index, T&& type)
 	{
 		ax_assert(index > m_Size);
 
@@ -266,10 +283,10 @@ public:
 		memmove(m_Data + index + 1, m_Data + index, (m_Size - index) * sizeof(T));
 		m_Size++;
 
-		m_Data[index] = std::move(type);
+		m_Data[index] = (T&&)(type);
 	}
 
-	FINLINE void Insert(const Array& other)
+	void Insert(const Array& other)
 	{
 		if (other.m_Size > m_Capacity)
 		{
@@ -283,36 +300,8 @@ public:
 	}
 
 	// <summary> returns number of elements removed </summary>
-	int RemoveAll(const T& what)
-	{
-		int freeIndex = 0;   // the first free slot in items array
-
-		// Find the first item which needs to be removed.
-		while (freeIndex < m_Size && m_Data[freeIndex] != what) freeIndex++;
-		if (freeIndex >= m_Size) return 0;
-
-		int current = freeIndex + 1;
-		while (current < m_Size)
-		{
-			// Find the first item which needs to be kept.
-			while (current < m_Size && m_Data[current] == what) current++;
-
-			if (current < m_Size)
-			{
-				// copy item to the free slot.
-				m_Data[freeIndex++] = m_Data[current++];
-			}
-		}
-
-		int numCleared = m_Size - freeIndex;
-		memset(m_Data + freeIndex, 0, numCleared * sizeof(T));
-		m_Size = freeIndex;
-
-		return numCleared; // removed item count
-	}
-
-	// <summary> returns number of elements removed </summary>
-	int RemoveAll(bool(* match)(const T&))
+	template<typename Func_t>
+	int RemoveAll(Func_t match)
 	{
 		int freeIndex = 0;   // the first free slot in items array
 
@@ -341,7 +330,7 @@ public:
 	}
 
 	// faster but unordered, returns true if succesfuly removed(value is exist)
-	FINLINE bool RemoveUnordered(T value)
+	bool RemoveUnordered(T value)
 	{ 
 		for (int i = 0; i < m_Size; ++i)
 		{
@@ -356,7 +345,7 @@ public:
 		return false;
 	}
 
-	FINLINE bool RemoveAtUnordered(uint32_t index)
+	bool RemoveAtUnordered(uint32_t index)
 	{
 		if (index >= m_Size) return false;
 	    // put last element to removed place
@@ -365,7 +354,7 @@ public:
 		return true;
 	}
 
-	FINLINE bool RemoveAt(uint32_t index)
+	bool RemoveAt(uint32_t index)
 	{
 		if (index >= m_Size) return false;
 
@@ -375,7 +364,7 @@ public:
 		return true;
 	}
 
-	FINLINE void Remove(T value)
+	void Remove(T value)
 	{
 		for (uint32_t i = 0; i < m_Size; i++)
 		{
@@ -383,13 +372,12 @@ public:
 			{
 				memmove(m_Data + i, m_Data + i + 1, (m_Size - i - 1) * sizeof(T));
 				m_Size--;
-				//i--;
 				return;
 			}
 		}
 	}
 
-	FINLINE void Remove(bool(* match)(const T&))
+	void Remove(bool(* match)(const T&))
 	{
 		for (uint32_t i = 0; i < m_Size; i++)
 		{	
@@ -397,13 +385,12 @@ public:
 			{
 				memmove(m_Data + i, m_Data + i + 1, (m_Size - i - 1) * sizeof(T));
 				m_Size--;
-				//i--;
 				return;
 			}
 		}
 	}
 
-	FINLINE void Remove(const iterator_base& it)
+	void Remove(const iterator_base& it)
 	{
 		int32_t index = it.Ptr - m_Data;
 
@@ -415,18 +402,18 @@ public:
 		}
 	}
 
-	FINLINE T& At(uint32_t index)
+	T& At(size_type index)
 	{
 		return m_Data[index];
 	}
 
-	FINLINE void Resize(uint64 size)
+	void Resize(uint64 size)
 	{
 		m_Capacity = size;
 		m_Data = static_cast<T*>(realloc(m_Data, sizeof(T) * m_Capacity));
 	}
 
-	FINLINE size_type AddUninitialized(size_type count = 1)
+	size_type AddUninitialized(size_type count = 1)
 	{
 		ax_assert(count > 0);
 
@@ -480,20 +467,20 @@ public:
 	[[nodiscard]] FINLINE size_type DataSize() const { return m_Size * sizeof(T); }
 	[[nodiscard]] FINLINE size_type Capacity() const { return m_Capacity; }
 
-	FINLINE Array& operator+=(T type)
+	Array& operator+=(T type)
 	{
 		Add(type);
 		return *this;
 	}
 
-	FINLINE Array& operator-=(T type)
+	Array& operator-=(T type)
 	{
 		Remove(type);
 		return *this;
 	}
 public:
 	
-	FINLINE static void SetRange(T* start, T* end, T value) {
+	static void SetRange(T* start, T* end, T value) {
 		for (; start < end; ++start) *start = value;
 	}
 

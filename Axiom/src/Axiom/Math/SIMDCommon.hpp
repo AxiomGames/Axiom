@@ -42,6 +42,7 @@ inline int Accumulate(const int* ptr, int size)
 	const int* sums = (const int*)&begin;
 	sum += sums[0] + sums[1] + sums[2] + sums[3];
 #else
+	#pragma omp parallel reduction(+ : sum)
 	for (int i = 0; i < len; ++i) sum += ptr[i];
 #endif
 	return sum;
@@ -84,6 +85,7 @@ inline float Accumulate(const float* ptr, int size)
 	const float* sums = (const float*)&begin;
 	sum += sums[0] + sums[1] + sums[2] + sums[3];
 #else
+	#pragma omp parallel reduction(+ : sum)
 	for (int i = 0; i < len; ++i) sum += ptr[i];
 #endif
 	return sum;
