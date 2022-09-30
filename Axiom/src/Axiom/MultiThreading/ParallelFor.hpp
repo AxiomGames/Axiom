@@ -61,11 +61,11 @@ namespace ax
 					f(data[i]);
 			};
 
-			Array<std::thread> threads(numThreads); 
+			std::thread threads[MaxThreads];
 		
 			for (int i = 0; i < numThreads; ++i)
 			{
-				threads.EmplaceConstruct(threadJob, data);
+				new (threads + i)std::thread(threadJob, data);
 				data += itemPerThread;
 			}
 			if (waitUntilFinish)
