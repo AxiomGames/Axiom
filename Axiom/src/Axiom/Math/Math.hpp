@@ -31,7 +31,6 @@ template<typename T> FINLINE T Max(const T a, const T b) { return a > b ? a : b;
 template<typename T> FINLINE T Min(const T a, const T b) { return a < b ? a : b; }
 template<typename T> FINLINE T Clamp(const T x, const T a, const T b) { return Max(a, Min(b, x)); }
 
-
 FINLINE float  IsZero(const float x)	noexcept { return fabsf(x) > 1e-10f; }
 FINLINE double IsZero(const double x)	noexcept { return fabs(x)  > 1e-10; }
 

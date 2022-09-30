@@ -4,93 +4,6 @@
 
 AMATH_NAMESPACE
 
-inline int Accumulate(const int* ptr, int size)
-{
-	int sum = 0;
-#ifdef __AVX__
-	// sum until size divisible by 8
-	while (size & 7) sum += ptr[--size];
-	// if 8 element remains, sum all of the remainings
-	while (size < 9) sum += ptr[--size];
-
-	if (size < 1) return sum;
-
-	size >>= 3;
-	const __m256i* vptr = (const __m256i*)ptr;
-	const __m256i* vend = vptr + size;
-	__m256i vsum = _mm256_setzero_si256();
-
-	while (vptr < vend) {
-		vsum = _mm256_add_epi32(vsum, *vptr++);
-	}
-
-	const int* sums = (const int*)&vsum;
-	sum += sums[0] + sums[1] + sums[2] + sums[3]
-		+ sums[4] + sums[5] + sums[6] + sums[7];
-#elif __SSE2__
-	while (size & 3) sum += ptr[--size];
-	if (size == 0) return sum;
-	size >>= 2;
-	const __m128i* vptr = (const __m128i*)ptr;
-	const __m128i* end = (const __m128i*)ptr;
-	__m128i begin = _mm_setzero_si128();
-
-	while (vptr < end) {
-		begin = _mm_add_epi32(begin, *vptr++);
-	}
-
-	const int* sums = (const int*)&begin;
-	sum += sums[0] + sums[1] + sums[2] + sums[3];
-#else
-	#pragma omp parallel reduction(+ : sum)
-	for (int i = 0; i < len; ++i) sum += ptr[i];
-#endif
-	return sum;
-}
-
-inline float Accumulate(const float* ptr, int size)
-{
-	float sum = 0.0f;
-#ifdef __AVX__
-	while (size & 7) sum += ptr[--size];
-	while (size < 9) sum += ptr[--size];
-	if (size < 1) return sum;
-	size >>= 3;
-	const __m256* vptr = (const __m256*)ptr;
-	const __m256* vend = vptr + size;
-	__m256 vsum = _mm256_setzero_ps();
-
-	while (vptr < vend) {
-		vsum = _mm256_add_ps(vsum, *vptr++);
-	}
-
-	const float* sums = (const float*)&vsum;
-	sum += sums[0] + sums[1] + sums[2] + sums[3]
-		+ sums[4] + sums[5] + sums[6] + sums[7];
-#elif __SSE2__
-	while (size & 3) sum += ptr[--size];
-	while (size < 5) sum += ptr[--size];
-	if (size == 0) return sum;
-	size >>= 2;
-
-	const __m128* vptr = (const __m128*)ptr;
-	const __m128* end = (const __m128*)ptr;
-
-	__m128 begin = _mm_setzero_ps();
-
-	while (vptr < end) {
-		begin = _mm_add_ps(begin, *vptr++);
-	}
-
-	const float* sums = (const float*)&begin;
-	sum += sums[0] + sums[1] + sums[2] + sums[3];
-#else
-	#pragma omp parallel reduction(+ : sum)
-	for (int i = 0; i < len; ++i) sum += ptr[i];
-#endif
-	return sum;
-}
-
 struct Vector4UI
 {
 	union
@@ -159,6 +72,13 @@ FINLINE __m128 VECTORCALL SSESelect(const __m128 V1, const __m128 V2, const __m1
 	return _mm_or_ps(vTemp1, vTemp2);
 }
 
+FINLINE __m256i VECTORCALL SSESelect(const __m256i V1, const __m256i V2, const __m256i& Control)
+{
+	__m256i vTemp1 = _mm256_andnot_epi32(Control, V1);
+	__m256i vTemp2 = _mm256_and_epi32(V2, Control);
+	return _mm256_or_epi32(vTemp1, vTemp2);
+}
+
 FINLINE __m128 VECTORCALL SSESplatX(const __m128 V1)  { return _mm_permute_ps(V1, _MM_SHUFFLE(0, 0, 0, 0)); }
 FINLINE __m128 VECTORCALL SSESplatY(const __m128 V1)  { return _mm_permute_ps(V1, _MM_SHUFFLE(1, 1, 1, 1)); }
 FINLINE __m128 VECTORCALL SSESplatZ(const __m128 V1)  { return _mm_permute_ps(V1, _MM_SHUFFLE(2, 2, 2, 2)); }
@@ -193,4 +113,110 @@ FINLINE __m128 VECTORCALL SSEVector3Dot(const __m128 V1, const __m128 V2)
 	// Splat x
 	return _mm_permute_ps(vDot, _MM_SHUFFLE(0, 0, 0, 0));
 }
+
+FINLINE int VECTORCALL hsum_128_epi32avx(__m128i x)
+{
+	__m128i hi64 = _mm_unpackhi_epi64(x, x); // 3-operand non-destructive AVX lets us save a byte without needing a movdqa
+	__m128i sum64 = _mm_add_epi32(hi64, x);
+	__m128i hi32 = _mm_shuffle_epi32(sum64, _MM_SHUFFLE(2, 3, 0, 1));    // Swap the low two elements
+	__m128i sum32 = _mm_add_epi32(sum64, hi32);
+	return _mm_cvtsi128_si32(sum32);       // movd
+}
+
+FINLINE float VECTORCALL hsum_ps_sse3(__m128 v) {
+	__m128 shuf = _mm_movehdup_ps(v);        // broadcast elements 3,1 to 2,0
+	__m128 sums = _mm_add_ps(v, shuf);
+	shuf = _mm_movehl_ps(shuf, sums); // high half -> low half
+	sums = _mm_add_ss(sums, shuf);
+	return _mm_cvtss_f32(sums);
+}
+
+FINLINE int VECTORCALL hsum_256_epi32(__m256i v)
+{
+	__m128i sum128 = _mm_add_epi32( _mm256_castsi256_si128(v), _mm256_extracti128_si256(v, 1) ); 
+	return hsum_128_epi32avx(sum128);
+}
+
+FINLINE float VECTORCALL hsum256_ps_avx(__m256 v) {
+	__m128 vlow = _mm256_castps256_ps128(v);
+	__m128 vhigh = _mm256_extractf128_ps(v, 1); // high 128
+	vlow = _mm_add_ps(vlow, vhigh);     // add the low 128
+	return hsum_ps_sse3(vlow);         // and inline the sse3 version, which is optimal for AVX
+}
+
+// if compiler doesn't convert our code to vectorized code we can use our avx or sse instructions
+// otherwise compiler generates better code for us
+
+inline int Accumulate(const int* ptr, int size)
+{
+	int sum = 0;
+#ifdef __AVX__
+	// sum until size divisible by 8
+	while (size & 7) sum += ptr[--size];
+	if (size < 1) return sum;
+
+	size >>= 3;
+	const __m256i* vptr = (const __m256i*)ptr;
+	const __m256i* vend = vptr + size;
+	__m256i vsum = _mm256_setzero_si256();
+
+	while (vptr < vend) {
+		vsum = _mm256_add_epi32(vsum, *vptr++);
+	}
+	sum += hsum_256_epi32(vsum);
+#elif __SSE2__
+	while (size & 3) sum += ptr[--size];
+	if (size == 0) return sum;
+	size >>= 2;
+	const __m128i* vptr = (const __m128i*)ptr;
+	const __m128i* end  = vptr  + size;
+	__m128i vsum = _mm_setzero_si128();
+
+	while (vptr < end) {
+		vsum = _mm_add_epi32(begin, *vptr++);
+	}
+	sum += hsum_128_epi32avx(vsum);
+#else
+#pragma omp parallel for reduction(+ : sum)
+	for (int i = 0; i < len; ++i) sum += ptr[i];
+#endif
+	return sum;
+}
+
+inline float Accumulate(const float* ptr, int size)
+{
+	float sum = 0.0f;
+#ifdef __AVX__
+	while (size & 7) sum += ptr[--size];
+	if (size < 1) return sum;
+	size >>= 3;
+	const __m256* vptr = (const __m256*)ptr;
+	const __m256* vend = vptr + size;
+	__m256 vsum = _mm256_setzero_ps();
+
+	while (vptr < vend) {
+		vsum = _mm256_add_ps(vsum, *vptr++);
+	}
+	sum += hsum256_ps_avx(vsum);
+	
+#elif __SSE2__
+	while (size & 3) sum += ptr[--size];
+	if (size == 0) return sum;
+	size >>= 2;
+
+	const __m128* vptr = (const __m128*)ptr;
+	const __m128* end = vptr + size;
+	__m128 begin = _mm_setzero_ps();
+
+	while (vptr < end) {
+		begin = _mm_add_ps(begin, *vptr++);
+	}
+	sum += hsum_ps_sse3(vptr);
+#else
+#pragma omp parallel for reduction(+ : sum)
+	for (int i = 0; i < len; ++i) sum += ptr[i];
+#endif
+	return sum;
+}
+
 AMATH_END_NAMESPACE

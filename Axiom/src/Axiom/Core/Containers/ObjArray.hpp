@@ -12,8 +12,8 @@ namespace ax
 		using const_iterator = ArrayConstIterator<T>;
 		using size_type = int;
 
-		ObjArray(size_type capacity = 12)
-		: m_Data(new T[capacity]), m_Capacity(12)
+		explicit ObjArray(size_type capacity = 12)
+		: m_Data(new T[capacity]), m_Capacity(capacity)
 		{}
 
 		ObjArray(size_type capacity, const T& filledObj)

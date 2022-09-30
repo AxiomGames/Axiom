@@ -15,23 +15,6 @@ namespace ax
 		}
 
 		template<typename T>
-		inline int Partition(T* arr, int low, int high)
-		{
-			int i = low;
-			int j = high;
-			T pivot = arr[low];
-			while (i < j)
-			{
-				while (pivot >= arr[i]) i++;
-				while (pivot < arr[j])  j--;
-				
-				if (i < j) Swap(arr[i], arr[j]);
-			}
-			Swap(arr[low], arr[j]);
-			return j;
-		}
-
-		template<typename T>
 		inline void BubbleSort(T* arr, int len)
 		{
 			for (int i = 0; i < len; ++i)
@@ -44,19 +27,51 @@ namespace ax
 			}
 		}
 
-		// QuickSort(arr.begin(), 0, arr.size()-1);
+		// smaller stack size compared to quicksort
 		template<typename T>
-		inline void QuickSort(T* arr, int low, int high)
+		void ShellSort(T* arr, int n)
 		{
-			if (low < high)
+			for (int gap = n / 2; gap > 0; gap /= 2)
 			{
-				int pivot = Partition(arr, low, high);
-				#pragma omp parallel sections
+				for (int i = gap; i < n; ++i)
 				{
-					#pragma omp section
-					QuickSort(arr, low, pivot - 1);
-					#pragma omp section
-					QuickSort(arr, pivot + 1, high);
+					int temp = arr[i];
+
+					int j = i;
+					for (; j >= gap && arr[j - gap] > temp; j -= gap)
+						arr[j] = arr[j - gap];
+
+					arr[j] = temp;
+				}
+			}
+		}
+
+		template<typename T>
+		void QuickSort(T* arr, int left, int right)
+		{
+			int i, j, v;
+			while (right > left) {
+				j = right;
+				i = left - 1;
+				v = arr[right];
+
+				while (true) {
+					do i++; while (arr[i] < v && i < j);
+					do j--; while (arr[j] > v && i < j);
+
+					if (i >= j) break;
+					Swap(arr[i], arr[j]);
+				}
+
+				Swap(arr[i], arr[right]);
+
+				if ((i - 1 - left) <= (right - i - 1)) {
+					QuickSort(arr, left, i - 1);
+					left = i + 1;
+				}
+				else {
+					QuickSort(arr, i + 1, right);
+					right = i - 1;
 				}
 			}
 		}

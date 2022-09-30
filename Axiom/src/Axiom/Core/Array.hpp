@@ -6,6 +6,7 @@
 #include <limits>
 
 #include "Common.hpp"
+#include "TemplateBase.hpp"
 #include "Archive.hpp"
 
 
@@ -132,7 +133,7 @@ public:
 	using iterator = ArrayIterator<T>;
 	using const_iterator = ArrayConstIterator<T>;
 
-	Array(size_type defaultSize = 12) : m_Data(static_cast<T*>(calloc(1, sizeof(T) * defaultSize))), m_Size(0), m_Capacity(defaultSize)
+	explicit Array(size_type defaultSize = 12) : m_Data(static_cast<T*>(calloc(1, sizeof(T) * defaultSize))), m_Size(0), m_Capacity(defaultSize)
 	{}
 
 	~Array() { if (m_Data != nullptr) free(m_Data); }
@@ -221,6 +222,15 @@ public:
 	void SetRange(size_type start, size_type end, T value) 
 	{
 		for (; start < end; ++start) m_Data[start] = value;
+	}
+	template<typename... Args>
+	void EmplaceConstruct(Args&&... args)
+	{
+		if (m_Size + 1 > m_Capacity) {
+			m_Capacity = CalculateGrowth(m_Size + 1);
+			m_Data = static_cast<T*>(realloc(m_Data, sizeof(T) * m_Capacity));
+		}
+		m_Data[m_Size++] = T(args...); // forward here
 	}
 
 	T& Emplace(T&& type)
