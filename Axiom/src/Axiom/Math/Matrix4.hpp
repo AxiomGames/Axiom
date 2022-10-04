@@ -433,9 +433,7 @@ struct Matrix4
 
 	FINLINE static Vector3 VECTORCALL ExtractScale(const Matrix4 matrix) noexcept
 	{
-		return Vector3(Vector3::Length(Vector3(matrix.r[0])),
-			Vector3::Length(Vector3(matrix.r[2])),
-			Vector3::Length(Vector3(matrix.r[1])));
+		return Vector3(SSEVec3Length(matrix.r[0]), SSEVec3Length(matrix.r[2]), SSEVec3Length(matrix.r[1]));
 	}
 
 	inline static Quaternion VECTORCALL ExtractRotation(const Matrix4 matrix, bool rowNormalize = true) noexcept

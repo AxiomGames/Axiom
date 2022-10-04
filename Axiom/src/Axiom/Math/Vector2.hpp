@@ -16,8 +16,8 @@ struct Vector2
 	FINLINE Vector2(T scale)    noexcept : x(scale), y(scale) {}
 	FINLINE Vector2(T _x, T _y) noexcept : x(_x)   , y(_y)    {}
 
-	[[nodiscard]] FINLINE float Length()		const noexcept { return sqrtf(LengthSquared()); }
-	[[nodiscard]] FINLINE float LengthSquared() const noexcept { return x * x + y * y; }
+	FINLINE float Length()		const noexcept { return sqrtf(LengthSquared()); }
+	FINLINE float LengthSquared() const noexcept { return x * x + y * y; }
 
 	FINLINE static float Distance(const Vector2<T> a, const Vector2<T> b)
 	{
@@ -28,18 +28,18 @@ struct Vector2
 
 	FINLINE void Normalize() const { *this /= Length(); }
 
-	[[nodiscard]] FINLINE Vector2<T> operator + (Vector2<T> b) const noexcept { return Vector2<T>(x + b.x, y + b.y); }
-	[[nodiscard]] FINLINE Vector2<T> operator - (Vector2<T> b) const noexcept { return Vector2<T>(x - b.x, y - b.y); }
-	[[nodiscard]] FINLINE Vector2<T> operator * (Vector2<T> b) const noexcept { return Vector2<T>(x * b.x, y * b.y); }
-	[[nodiscard]] FINLINE Vector2<T> operator / (Vector2<T> b) const noexcept { return Vector2<T>(x / b.x, y / b.y); }
-	[[nodiscard]] FINLINE Vector2<T> operator += (Vector2<T> b) noexcept { x += b.x; y += b.y; return *this; }
-	[[nodiscard]] FINLINE Vector2<T> operator -= (Vector2<T> b) noexcept { x -= b.x; y -= b.y; return *this; }
-	[[nodiscard]] FINLINE Vector2<T> operator *= (Vector2<T> b) noexcept { x *= b.x; y *= b.y; return *this; }
-	[[nodiscard]] FINLINE Vector2<T> operator /= (Vector2<T> b) noexcept { x /= b.x; y /= b.y; return *this; }
-	[[nodiscard]] FINLINE Vector2<T> operator *  (T b) const noexcept    { return Vector2<T>(x * b, y * b); }
-	[[nodiscard]] FINLINE Vector2<T> operator /  (T b) const noexcept    { return Vector2<T>(x / b, y / b); }
-	[[nodiscard]] FINLINE Vector2<T> operator *= (T b) noexcept { x *= b; y *= b; return *this; }
-	[[nodiscard]] FINLINE Vector2<T> operator /= (T b) noexcept { x /= b; y /= b; return *this; }
+	FINLINE Vector2<T> operator + (Vector2<T> b) const noexcept { return Vector2<T>(x + b.x, y + b.y); }
+	FINLINE Vector2<T> operator - (Vector2<T> b) const noexcept { return Vector2<T>(x - b.x, y - b.y); }
+	FINLINE Vector2<T> operator * (Vector2<T> b) const noexcept { return Vector2<T>(x * b.x, y * b.y); }
+	FINLINE Vector2<T> operator / (Vector2<T> b) const noexcept { return Vector2<T>(x / b.x, y / b.y); }
+	FINLINE Vector2<T> operator += (Vector2<T> b) noexcept { x += b.x; y += b.y; return *this; }
+	FINLINE Vector2<T> operator -= (Vector2<T> b) noexcept { x -= b.x; y -= b.y; return *this; }
+	FINLINE Vector2<T> operator *= (Vector2<T> b) noexcept { x *= b.x; y *= b.y; return *this; }
+	FINLINE Vector2<T> operator /= (Vector2<T> b) noexcept { x /= b.x; y /= b.y; return *this; }
+	FINLINE Vector2<T> operator *  (T b) const noexcept    { return Vector2<T>(x * b, y * b); }
+	FINLINE Vector2<T> operator /  (T b) const noexcept    { return Vector2<T>(x / b, y / b); }
+	FINLINE Vector2<T> operator *= (T b) noexcept { x *= b; y *= b; return *this; }
+	FINLINE Vector2<T> operator /= (T b) noexcept { x /= b; y /= b; return *this; }
 };
 
 typedef Vector2<double> Vector2d;

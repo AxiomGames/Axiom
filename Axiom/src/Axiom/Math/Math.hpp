@@ -73,6 +73,20 @@ FINLINE float Remap(float x, float inMin, float inMax, float outMin, float outMa
 	return outMin + (outMax - outMin) * ((x - inMin) / (inMax - inMin));
 }
 
+FINLINE float rsqrt(float number)
+{
+	long i;
+	float x2, y;
+
+	x2 = number * 0.5F;
+	y = number;
+	i = *(long*)&y;                       // evil floating point bit level hacking
+	i = 0x5f3759df - (i >> 1);               // what the fuck? 
+	y = *(float*)&i;
+	y = y * (1.5f - (x2 * y * y));   // 1st iteration
+	return y;
+}
+
 // Code below adapted from DirectX::Math
 inline void ScalarSinCos(float* pSin, float* pCos, float  Value) noexcept
 {

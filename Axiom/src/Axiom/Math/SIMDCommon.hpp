@@ -82,11 +82,25 @@ FINLINE __m128 VECTORCALL SSESplatY(const __m128 V1)  { return _mm_permute_ps(V1
 FINLINE __m128 VECTORCALL SSESplatZ(const __m128 V1)  { return _mm_permute_ps(V1, _MM_SHUFFLE(2, 2, 2, 2)); }
 FINLINE __m128 VECTORCALL SSESplatW(const __m128 V1)  { return _mm_permute_ps(V1, _MM_SHUFFLE(3, 3, 3, 3)); }
 
+FINLINE float VECTORCALL XMVectorGetX(__m128 V) {
+	return _mm_cvtss_f32(V);
+}
+
+FINLINE float VECTORCALL SSEVectorGetW(__m128 V) {
+	return _mm_cvtss_f32(_mm_shuffle_ps(V, V, _MM_SHUFFLE(1, 1, 1, 1)));
+}
+
+FINLINE float VECTORCALL SSEVectorGetW(__m128 V) {
+	return _mm_cvtss_f32(_mm_shuffle_ps(V, V, _MM_SHUFFLE(2, 2, 2, 2)));
+}
+
+FINLINE float VECTORCALL SSEVectorGetW(__m128 V) {
+	return _mm_cvtss_f32(_mm_shuffle_ps(V, V, _MM_SHUFFLE(3, 3, 3, 3)));
+}
+
 FINLINE __m128 VECTORCALL SSEVector3Normalize(const __m128 V)
 {
-	__m128 vTemp = _mm_dp_ps(V, V, 0x7f);
-	__m128 vResult = _mm_rsqrt_ps(vTemp);
-	return _mm_mul_ps(vResult, V);
+	return _mm_mul_ps(_mm_rsqrt_ps(_mm_dp_ps(V, V, 0x7f)), V);
 }
 
 FINLINE __m128 VECTORCALL SSEVector3Cross(const __m128 V1, const __m128  V2)
@@ -140,6 +154,11 @@ FINLINE float VECTORCALL hsum256_ps_avx(__m256 v) {
 	__m128 vhigh = _mm256_extractf128_ps(v, 1); // high 128
 	vlow = _mm_add_ps(vlow, vhigh);     // add the low 128
 	return hsum_ps_sse3(vlow);         // and inline the sse3 version, which is optimal for AVX
+}
+
+FINLINE float VECTORCALL SSEVec3Length(const __m128 v)
+{
+	return _mm_cvtss_f32(_mm_sqrt_ss(_mm_dp_ps(v, v, 0x71)));
 }
 
 // if compiler doesn't convert our code to vectorized code we can use our avx or sse instructions

@@ -13,9 +13,9 @@ struct Matrix3
 	{
 		Matrix3 result;
 		result.vec[2] = direction;
-		Vector3f const& Right = Vector3f::Cross(up, result.vec[2]);
-		result.vec[0] = Right * rsqrt(max(0.00001f, Vector3f::Dot(Right, Right)));
-		result.vec[1] = Vector3f::Cross(result.vec[2], result.vec[0]);
+		Vector3 const& Right = Vector3::Cross(up, result.vec[2]);
+		result.vec[0] = Right * rsqrt(Max(0.00001f, Vector3::Dot(Right, Right)));
+		result.vec[1] = Vector3::Cross(result.vec[2], result.vec[0]);
 		return result;
 	}
 
