@@ -1,6 +1,5 @@
 #include "CMBAllocator.hpp"
 
-AX_NAMESPACE
 CMBAllocator::CMBAllocator(MemSize blockSize) : m_BlockSize(blockSize)
 {
 	AllocateMemoryBlock();
@@ -142,5 +141,3 @@ FINLINE MemPtr CMBAllocator::AllocFromFragment(MemoryBlock& memoryBlock, const A
 	// Return new memory
 	return newMemoryStart;
 }
-
-AX_END_NAMESPACE

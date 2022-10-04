@@ -15,8 +15,6 @@
  * if it's going to make problems.
  */
 
-AX_NAMESPACE
-
 template<typename T>
 struct ArrayIteratorBase
 {
@@ -515,16 +513,14 @@ private:
 	}
 };
 
-AX_END_NAMESPACE
-
-template <typename T> void* operator new( size_t size, ax::Array<T>& array )
+template <typename T> void* operator new( size_t size, Array<T>& array )
 {
 	ax_assert(size == sizeof(T));
 	const auto Index = array.AddUninitialized(1);
 	return &array[Index];
 }
 
-template <typename T> void* operator new( size_t size, ax::Array<T>& array, typename ax::Array<T>::size_type index )
+template <typename T> void* operator new( size_t size, Array<T>& array, typename Array<T>::size_type index )
 {
 	ax_assert(size == sizeof(T));
 	array.InsertUninitialized(index);

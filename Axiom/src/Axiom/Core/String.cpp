@@ -1,8 +1,6 @@
 #include "String.hpp"
 #include "Archive.hpp"
 
-AX_NAMESPACE
-
 Archive& operator<<(Archive& archive, String& str)
 {
 	int32 numChars = archive.IsLoading() ? 0 : str.Length();
@@ -23,5 +21,3 @@ Archive& operator<<(Archive& archive, String& str)
 
 	return archive;
 }
-
-AX_END_NAMESPACE

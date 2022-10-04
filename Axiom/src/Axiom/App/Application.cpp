@@ -1,19 +1,28 @@
 #include "Application.hpp"
+#include "Axiom/Core/Timer.hpp"
+#include "Axiom/Engine.hpp"
+
+#include <iostream>
 
 extern bool ax_IsRunning;
 
-AX_NAMESPACE
+GlobalEngineObjects* GEngine = nullptr;
 
 void Application::Run()
 {
+	GEngine = new GlobalEngineObjects();
+
 	OnInit();
+
+	DeltaTimer deltaTimer;
 
 	while (m_IsRunning)
 	{
-		int a = 0;
+		float delta = deltaTimer.Update();
 	}
 
 	OnShutdown();
+	delete GEngine;
 }
 
 void Application::Shutdown()
@@ -26,5 +35,3 @@ void Application::Restart()
 {
 	m_IsRunning = false;
 }
-
-AX_END_NAMESPACE

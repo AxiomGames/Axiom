@@ -1,15 +1,25 @@
 #include "EditorApplication.hpp"
-
-AX_NAMESPACE
+#include "Axiom/Core/TypeID.hpp"
+#include <iostream>
+#include "Axiom/Engine.hpp"
+#include "Axiom/App/WindowManager.hpp"
+#include "Axiom/Core/Optional.hpp"
 
 void EditorApplication::OnInit()
 {
+	GEngine->Initialize<WindowManager>();
 
+	SharedPtr<UIWindow> window = MakeShared<UIWindow>();
+
+	//GEngine->Get<WindowManager>()->AddWindow();
 }
 
-AX_END_NAMESPACE
-
-ax::Application* CreateApplication(int argc, char* argv[])
+void EditorApplication::OnShutdown()
 {
-	return new ax::EditorApplication();
+	GEngine->Destroy<WindowManager>();
+}
+
+Application* CreateApplication(int argc, char* argv[])
+{
+	return new EditorApplication();
 }

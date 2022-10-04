@@ -1,8 +1,6 @@
 #pragma once
 #include "Vector3.hpp"
 
-AMATH_NAMESPACE
-
 struct Quaternion
 {
 	union
@@ -161,6 +159,3 @@ struct Quaternion
 	FINLINE Quaternion operator *  (const Quaternion& b) { return Mul(this->vec, b.vec); }
 	FINLINE Quaternion operator *= (const Quaternion& b) { this->vec = Mul(this->vec, b.vec); return *this; }
 };
-
-
-AMATH_END_NAMESPACE

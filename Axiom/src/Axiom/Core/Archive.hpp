@@ -2,8 +2,6 @@
 
 #include "Common.hpp"
 
-AX_NAMESPACE
-
 class String;
 
 class Archive
@@ -35,5 +33,3 @@ public:
 
 	friend Archive& operator<<(Archive& archive, String& str);
 };
-
-AX_END_NAMESPACE

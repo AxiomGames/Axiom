@@ -1,11 +1,7 @@
 #pragma once
 
 #include <cstdint>
-
-#ifndef AX_NAMESPACE
-#define AX_NAMESPACE namespace ax {
-#define AX_END_NAMESPACE }
-#endif
+#include <memory>
     
 #if AX_SHARED
 #ifdef AX_EXPORT
@@ -57,6 +53,56 @@ typedef int8_t int8;
 typedef int16_t int16;
 typedef int32_t int32;
 typedef int64_t int64;
+
+template<typename T>
+using SharedPtr = std::shared_ptr<T>;
+
+template<typename T>
+using WeakPtr = std::weak_ptr<T>;
+
+template<typename T, typename... Types>
+static SharedPtr<T> MakeShared(Types&&... args)
+{
+	return std::make_shared<T>(args...);
+}
+
+template<typename T>
+static SharedPtr<T> MakeShareable(T* pointer)
+{
+	return SharedPtr<T> { pointer };
+}
+
+template<typename T>
+class SharedFromThis : public std::enable_shared_from_this<T>
+{
+public:
+	virtual ~SharedFromThis() = default;
+	template<typename B>
+	std::shared_ptr<B> AsShared();
+
+	template<typename B>
+	std::shared_ptr<B> AsSharedSafe();
+
+	inline std::shared_ptr<T> ThisShared()
+	{
+		return this->shared_from_this();
+	}
+};
+
+template<typename T>
+template<typename B>
+std::shared_ptr<B> SharedFromThis<T>::AsShared()
+{
+	return std::static_pointer_cast<B, T>(this->shared_from_this());
+}
+
+template<typename T>
+template<typename B>
+std::shared_ptr<B> SharedFromThis<T>::AsSharedSafe()
+{
+
+	return std::dynamic_pointer_cast<B, T>(this->shared_from_this());
+}
 
 // maybe we should move this to Algorithms.hpp
 template<typename T, typename size_type = uint64> 

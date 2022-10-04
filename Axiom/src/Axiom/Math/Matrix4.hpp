@@ -3,8 +3,6 @@
 #include "Vector4.hpp"
 #include "Quaternion.hpp"
 
-AMATH_NAMESPACE
-
 struct Matrix4
 {
 	union
@@ -498,6 +496,3 @@ struct Matrix4
 	}
 
 };
-
-
-AMATH_END_NAMESPACE

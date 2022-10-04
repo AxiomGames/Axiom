@@ -1,8 +1,6 @@
 #pragma once
 #include "Math.hpp"
 
-AMATH_NAMESPACE
-
 struct Color32
 {
 	union
@@ -86,5 +84,3 @@ struct Color
 	static FINLINE Color Blue()		{ return Color(0.0, 0.0, 1.0, 1.0); }
 	static FINLINE Color Orange()	{ return Color(0.5, 0.5, 0.0, 1.0); }
 };
-
-AMATH_END_NAMESPACE

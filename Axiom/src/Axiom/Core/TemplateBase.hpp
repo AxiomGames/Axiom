@@ -3,8 +3,6 @@
 #include "Common.hpp"
 #include <cstring>
 
-AX_NAMESPACE
-
 template<typename T>
 struct RemoveRef { typedef T Type; };
 
@@ -67,5 +65,3 @@ FINLINE T DynamicCast(ArgType&& arg)
 {
 	return dynamic_cast<T>(arg);
 }
-
-AX_END_NAMESPACE

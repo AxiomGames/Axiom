@@ -5,8 +5,6 @@
 #include <iosfwd> // for overriding << operator for std::cout
 #include "Common.hpp"
 
-AX_NAMESPACE
-
 typedef uint64_t StrHashID;
 
 template<typename T>
@@ -924,6 +922,3 @@ inline String ToString(const WString& string)
 // 	*bytes.Str += StringFormatBytes(num);
 // 	return *bytes.Str;
 // }
-
-
-AX_END_NAMESPACE

@@ -3,11 +3,6 @@
 #include <math.h>
 #include "../Core/Common.hpp"
 
-#ifndef AMATH_NAMESPACE
-	#define AMATH_NAMESPACE namespace ax {
-	#define AMATH_END_NAMESPACE }
-#endif
-
 #ifndef AXGLOBALCONST
 #	if _MSC_VER
 #		define AXGLOBALCONST extern const __declspec(selectany)
@@ -18,7 +13,6 @@
 #	endif
 #endif
 
-AMATH_NAMESPACE
 // constants
 constexpr float PI = 3.141592653;
 constexpr float RadToDeg = 180.0f / PI;
@@ -109,8 +103,6 @@ inline void ScalarSinCos(float* pSin, float* pCos, float  Value) noexcept
 	float p = ((((-2.6051615e-07f * y2 + 2.4760495e-05f) * y2 - 0.0013888378f) * y2 + 0.041666638f) * y2 - 0.5f) * y2 + 1.0f;
 	*pCos = sign * p;
 }
-
-AMATH_END_NAMESPACE
 
 
 

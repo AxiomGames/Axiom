@@ -2,8 +2,6 @@
 
 #include "Common.hpp"
 
-AX_NAMESPACE
-
 template<typename TKey, typename TVal>
 struct Pair
 {
@@ -31,5 +29,3 @@ struct Pair
 		return true;
 	}
 };
-
-AX_END_NAMESPACE

@@ -13,9 +13,9 @@ struct ScopedTimer
 	std::chrono::time_point<std::chrono::high_resolution_clock> start_point;
 	bool printMilisecond;
 
-	ax::String message;
+	String message;
 
-	ScopedTimer(const ax::String& _message) : message(_message), printMilisecond(true)
+	ScopedTimer(const String& _message) : message(_message), printMilisecond(true)
 	{
 		start_point = std::chrono::high_resolution_clock::now();
 	}

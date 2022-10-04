@@ -1,8 +1,6 @@
 #pragma once
 #include "Math.hpp"
-#include <immintrin.h> 
-
-AMATH_NAMESPACE
+#include <immintrin.h>
 
 struct Vector4UI
 {
@@ -218,5 +216,3 @@ inline float Accumulate(const float* ptr, int size)
 #endif
 	return sum;
 }
-
-AMATH_END_NAMESPACE

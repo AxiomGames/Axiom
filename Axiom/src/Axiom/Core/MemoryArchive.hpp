@@ -2,8 +2,6 @@
 
 #include "Archive.hpp"
 
-AX_NAMESPACE
-
 class MemoryArchive : public Archive
 {
 private:
@@ -78,5 +76,3 @@ private:
 		return geometric_size; // geometric growth is sufficient
 	}
 };
-
-AX_END_NAMESPACE

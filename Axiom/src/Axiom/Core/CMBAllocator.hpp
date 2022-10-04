@@ -3,8 +3,6 @@
 #include "Array.hpp"
 #include "robin_hood.h"
 
-AX_NAMESPACE
-
 typedef uint8_t* MemPtr;
 typedef uint32_t MemSize;
 static constexpr MemSize MemSizeOf = sizeof(MemSize);
@@ -87,5 +85,3 @@ private:
 	MemoryBlock& AllocateMemoryBlock();
 	MemPtr AllocFromFragment(MemoryBlock& memoryBlock, const Array<MemoryFragment>::iterator& framentIt, MemSize size);
 };
-
-AX_END_NAMESPACE

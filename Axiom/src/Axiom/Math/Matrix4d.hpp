@@ -5,8 +5,6 @@
 #include "Vector3.hpp"
 #include "Vector4.hpp"
 
-AMATH_NAMESPACE
-
 struct Matrix4d
 {
 	union
@@ -29,5 +27,3 @@ struct Matrix4d
 	VECTORCALL Matrix4d(const __m256d x, const __m256d y, const __m256d& z, const __m256d& w) : r1(x), r2(y), r3(z), r4(w) {}
 	VECTORCALL Matrix4d(const Vector4d x, const Vector4d y, const Vector4d& z, const Vector4d& w) : vec1(x), vec2(y), vec3(z), vec4(w) {}
 };
-
-AMATH_END_NAMESPACE

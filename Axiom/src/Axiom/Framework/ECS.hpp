@@ -9,8 +9,6 @@
 #include "../Core/CMBAllocator.hpp"
 #include "Object.hpp"
 
-AX_NAMESPACE
-
 typedef uint32_t EntityID;
 
 struct ComponentBase : ObjectBase
@@ -312,5 +310,3 @@ private:
 		m_ComponentPointers[componentID].Remove((uintptr_t)component);
 	}
 };
-
-AX_END_NAMESPACE

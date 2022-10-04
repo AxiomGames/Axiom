@@ -2,8 +2,7 @@
 
 #include "../Core/Common.hpp"
 
-AX_NAMESPACE
-class Application
+class AX_API Application
 {
 private:
 	bool m_IsRunning = true;
@@ -18,6 +17,4 @@ public:
 	virtual void OnShutdown() {}
 };
 
-AX_END_NAMESPACE
-
-extern ax::Application* CreateApplication(int argc, char* argv[]);
+extern Application* CreateApplication(int argc, char* argv[]);

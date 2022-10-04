@@ -1,9 +1,6 @@
 #pragma once
 
 #include "../Core/Common.hpp"
-	
-namespace ax
-{
 
 template<typename T = float>
 struct Vector2
@@ -40,12 +37,11 @@ struct Vector2
 	[[nodiscard]] FINLINE Vector2<T> operator *= (Vector2<T> b) noexcept { x *= b.x; y *= b.y; return *this; }
 	[[nodiscard]] FINLINE Vector2<T> operator /= (Vector2<T> b) noexcept { x /= b.x; y /= b.y; return *this; }
 	[[nodiscard]] FINLINE Vector2<T> operator *  (T b) const noexcept    { return Vector2<T>(x * b, y * b); }
-	[[nodiscard]] FINLINE Vector2<T> operator /  (T b) const noexcept    { return Vector2<T>(x / b, y / b); } 
+	[[nodiscard]] FINLINE Vector2<T> operator /  (T b) const noexcept    { return Vector2<T>(x / b, y / b); }
 	[[nodiscard]] FINLINE Vector2<T> operator *= (T b) noexcept { x *= b; y *= b; return *this; }
 	[[nodiscard]] FINLINE Vector2<T> operator /= (T b) noexcept { x /= b; y /= b; return *this; }
 };
 
 typedef Vector2<double> Vector2d;
+typedef Vector2<float> Vector2f;
 typedef Vector2<int> Vector2i;
-
-}
