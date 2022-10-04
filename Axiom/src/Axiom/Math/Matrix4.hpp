@@ -11,8 +11,24 @@ struct Matrix4
 		float m[4][4];
 	};
 
+	Matrix4()
+	{
+		r[0] = g_XMIdentityR0;
+		r[1] = g_XMIdentityR1;
+		r[2] = g_XMIdentityR2;
+		r[3] = g_XMIdentityR3;
+	}
+
+	Matrix4(__m128 x, __m128 y, __m128 z, __m128 w)
+	{
+		r[0] = x; r[1] = y; r[2] = z; r[3] = w;
+	}
+
 	const float* operator [] (int index) const { return m[index]; }
 		  float* operator [] (int index)	   { return m[index]; }
+
+	Vector4 VECTORCALL  operator *  (const Vector3 v)  noexcept { return Vector3Transform(v, *this); };
+	Vector4 VECTORCALL  operator *  (const Vector4 v)  noexcept { return Vector4Transform(v, *this); };
 
 	Matrix4 VECTORCALL  operator *  (const Matrix4 M)  noexcept { return Matrix4::Multiply(*this, M); };
 	Matrix4& VECTORCALL operator *= (const Matrix4 M) noexcept  { *this = Matrix4::Multiply(*this, M); return *this; };
@@ -495,4 +511,21 @@ struct Matrix4
 		return vResult;
 	}
 
+	FINLINE static Vector4 VECTORCALL Vector4Transform(Vector4 v, const Matrix4 m)
+	{
+		__m128 v0 = _mm_shuffle_ps(v, v, _MM_SHUFFLE(0, 0, 0, 0));
+		__m128 v1 = _mm_shuffle_ps(v, v, _MM_SHUFFLE(1, 1, 1, 1));
+		__m128 v2 = _mm_shuffle_ps(v, v, _MM_SHUFFLE(2, 2, 2, 2));
+		__m128 v3 = _mm_shuffle_ps(v, v, _MM_SHUFFLE(3, 3, 3, 3));
+
+		v0 = _mm_mul_ps(m.r[0], v0);
+		v1 = _mm_mul_ps(m.r[1], v1);
+		v2 = _mm_mul_ps(m.r[2], v2);
+		v3 = _mm_mul_ps(m.r[3], v3);
+
+		__m128 a0 = _mm_add_ps(v0, v1);
+		__m128 a1 = _mm_add_ps(v2, v3);
+		__m128 a2 = _mm_add_ps(a0, a1);
+		return a2;
+	}
 };

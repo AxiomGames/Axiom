@@ -33,6 +33,15 @@
 #   endif
 #endif
 
+#if defined( __GNUC__ ) || defined(__INTEGRITY)
+#define AX_ALIGNAS(_x)          __attribute__ ((aligned(_x)))
+#elif defined( _WIN32) && (_MSC_VER)                                                                                   
+#define AX_ALIGNAS(_x)          __declspec(align(_x))      
+#else
+#warning  Need to implement some method to align data here
+#define  AX_ALIGNAS(_x)
+#endif
+
 #define ENUM_FLAGS(ENUMNAME, ENUMTYPE) \
 inline ENUMNAME& operator |= (ENUMNAME& a, ENUMNAME b)          noexcept { return (ENUMNAME&)(((ENUMTYPE&)a) |= ((ENUMTYPE)b)); } \
 inline ENUMNAME& operator &= (ENUMNAME& a, ENUMNAME b)			noexcept { return (ENUMNAME&)(((ENUMTYPE&)a) &= ((ENUMTYPE)b)); } \

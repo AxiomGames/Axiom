@@ -1,7 +1,7 @@
 #pragma once
 #include "Vector3.hpp"
 
-struct Quaternion
+AX_ALIGNAS(16) struct Quaternion
 {
 	union
 	{
@@ -10,11 +10,13 @@ struct Quaternion
 		__m128 vec;
 	};
 
-	Quaternion() : x(0), y(0), z(0), w(0) {}
+	Quaternion() : x(0), y(0), z(0), w(1) {}
 	Quaternion(float scale) : x(scale), y(scale), z(scale), w(scale) {}
 	Quaternion(float _x, float _y, float _z, float _w) : x(_x), y(_y), z(_z), w(_w) {}
 	VECTORCALL Quaternion(__m128 _vec) : vec(_vec) {}
 	
+	operator __m128 () const { return vec; }
+
 	const float  operator [] (int index) const { return arr[index]; }
 	      float& operator [] (int index)       { return arr[index]; }
 
@@ -45,6 +47,15 @@ struct Quaternion
 		Q2Y = _mm_add_ps(Q2Y, Q2Z);
 		vResult = _mm_add_ps(vResult, Q2Y);
 		return vResult;
+	}
+
+	inline static __m128 VECTORCALL MulVec3(__m128 vec, __m128 quat)
+	{
+		__m128 temp = SSEVector3Cross(quat, vec);
+		__m128 temp1 = _mm_mul_ps(vec, SSESplatZ(quat));
+		temp = _mm_add_ps(temp, temp1);
+		temp1 = _mm_mul_ps(SSEVector3Cross(quat, temp), _mm_set1_ps(2.0f));
+		return _mm_add_ps(vec, temp1);
 	}
 
 	FINLINE static __m128 VECTORCALL Dot(const Quaternion V1, const Quaternion V2) noexcept
@@ -154,6 +165,12 @@ struct Quaternion
 			eulerAngles.x = atan2(2 * ((q.w * q.x) - (q.y * q.z)), sqw - sqx - sqy + sqz);
 		}
 		return eulerAngles;
+	}
+
+	FINLINE static __m128 VECTORCALL Conjugate(const __m128 vec)
+	{
+		static const Vector432F NegativeOne3 = { 1.0f,-1.0f,-1.0f,-1.0f };
+		return _mm_mul_ps(vec, NegativeOne3);
 	}
 
 	FINLINE Quaternion operator *  (const Quaternion& b) { return Mul(this->vec, b.vec); }

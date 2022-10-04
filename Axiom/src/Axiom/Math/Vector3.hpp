@@ -10,9 +10,9 @@ struct Vector3
 		float arr[3];
 	};
 
-	FINLINE Vector3() : x(0), y(0), z(0) {}
-	FINLINE Vector3(float scale)		  noexcept : x(scale), y(scale), z(scale) {}
-	FINLINE Vector3(float _x, float _y, float _z) noexcept : x(_x), y(_y), z(_z) {}
+	FINLINE constexpr Vector3() : x(0), y(0), z(0) {}
+	FINLINE constexpr Vector3(float scale)		  noexcept : x(scale), y(scale), z(scale) {}
+	FINLINE constexpr Vector3(float _x, float _y, float _z) noexcept : x(_x), y(_y), z(_z) {}
 	VECTORCALL Vector3(__m128 _vec) { _mm_store_ps(arr, _vec); }
 
 	FINLINE float Length() const { return sqrtf(LengthSquared()); }
@@ -64,11 +64,11 @@ struct Vector3
 		return a / a.Length();
 	}
 
-	[[nodiscard]] FINLINE static Vector3 One()		noexcept { return  Vector3(1.0f, 1.0f, 1.0f); }
-	[[nodiscard]] FINLINE static Vector3 Zero()		noexcept { return  Vector3(0.0f, 0.0f, 0.0f); }
-	[[nodiscard]] FINLINE static Vector3 Up()		noexcept { return  Vector3(0.0f, 1.0f, 0.0f); }
-	[[nodiscard]] FINLINE static Vector3 Right()	noexcept { return  Vector3(1.0f, 0.0f, 0.0f); }
-	[[nodiscard]] FINLINE static Vector3 Forward()	noexcept { return  Vector3(0.0f, 0.0f, 1.0f); }
+	FINLINE static constexpr Vector3 One()		noexcept { return  Vector3(1.0f, 1.0f, 1.0f); }
+	FINLINE static constexpr Vector3 Zero()		noexcept { return  Vector3(0.0f, 0.0f, 0.0f); }
+	FINLINE static constexpr Vector3 Up()		noexcept { return  Vector3(0.0f, 1.0f, 0.0f); }
+	FINLINE static constexpr Vector3 Right()	noexcept { return  Vector3(1.0f, 0.0f, 0.0f); }
+	FINLINE static constexpr Vector3 Forward()	noexcept { return  Vector3(0.0f, 0.0f, 1.0f); }
 
 	FINLINE Vector3 VECTORCALL operator - () const { return Vector3(-x, -y, -z); }
 	FINLINE Vector3 VECTORCALL operator + (const Vector3 b) const { return Vector3(x + b.x, y + b.y, z + b.z); }
