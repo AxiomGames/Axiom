@@ -23,7 +23,7 @@ IMPLEMENT_ALIGNED(2)
 #undef IMPLEMENT_ALIGNED
 
 template<typename T>
-struct RawByteStorageBytes : public TAlignedBytes<sizeof(T), alignof(T)>
+struct RawByteStorage : public TAlignedBytes<sizeof(T), alignof(T)>
 {
 	T* GetPtr() { return (T*)this; }
 	const T* GetPtr() const { return (const T*)this; }

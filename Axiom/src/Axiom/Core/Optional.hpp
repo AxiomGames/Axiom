@@ -7,7 +7,7 @@ template<typename OptionalType>
 class Optional
 {
 private:
-	RawByteStorageBytes<OptionalType> m_Value;
+	RawByteStorage<OptionalType> m_Value;
 	bool m_IsSet;
 public:
 	Optional(const OptionalType& value)
