@@ -86,11 +86,11 @@ FINLINE float VECTORCALL XMVectorGetX(__m128 V) {
 	return _mm_cvtss_f32(V);
 }
 
-FINLINE float VECTORCALL SSEVectorGetW(__m128 V) {
+FINLINE float VECTORCALL SSEVectorGetY(__m128 V) {
 	return _mm_cvtss_f32(_mm_shuffle_ps(V, V, _MM_SHUFFLE(1, 1, 1, 1)));
 }
 
-FINLINE float VECTORCALL SSEVectorGetW(__m128 V) {
+FINLINE float VECTORCALL SSEVectorGetZ(__m128 V) {
 	return _mm_cvtss_f32(_mm_shuffle_ps(V, V, _MM_SHUFFLE(2, 2, 2, 2)));
 }
 
