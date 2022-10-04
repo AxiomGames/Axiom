@@ -2,6 +2,6 @@
 
 SharedPtr<UIWindow> WindowManager::AddWindow(const SharedPtr<UIWindow>& window, bool showImmediately)
 {
-	return SharedPtr<UIWindow>();
+	return window;
 }
 

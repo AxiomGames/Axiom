@@ -9,9 +9,11 @@ void EditorApplication::OnInit()
 {
 	GEngine->Initialize<WindowManager>();
 
-	SharedPtr<UIWindow> window = MakeShared<UIWindow>();
+	SharedPtr<UIWindow> window = UINew(UIWindow)
+									.AutoCenter(true)
+									.Title("Window test");
 
-	//GEngine->Get<WindowManager>()->AddWindow();
+	GEngine->Get<WindowManager>()->AddWindow(window, true);
 }
 
 void EditorApplication::OnShutdown()

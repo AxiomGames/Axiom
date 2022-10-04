@@ -3,6 +3,13 @@
 #include "Axiom/Core/Optional.hpp"
 #include "Axiom/Math/Vector2.hpp"
 
+// Widget args helpers
+template<typename T>
+class UIAttribute : public Optional<T>
+{
+
+};
+
 #define BEGIN_WIDGET_ARGS(WidgetType) \
 	public: \
 		struct WArguments \
@@ -13,9 +20,39 @@
 	};
 
 #define WIDGET_ATTRIBUTE(Type, Name) \
-	Type m_##Name;
+	Type m_##Name;            \
+	WArguments& Name(Type val)          \
+	{ m_##Name = val; return *this; }
 
+// Widget construction
+template<typename WidgetType>
+class WidgetConstructor
+{
+private:
+	SharedPtr<WidgetType> m_Widget;
+public:
 
+	WidgetConstructor() : m_Widget(new WidgetType())
+	{
+
+	}
+
+	WidgetConstructor& ExposeAs(SharedPtr<WidgetType>& asposeAs)
+	{
+		asposeAs = m_Widget;
+	}
+
+	SharedPtr<WidgetType> operator<<=(const typename WidgetType::WArguments& args)
+	{
+		m_Widget->Construct(args);
+		return m_Widget;
+	}
+};
+
+#define UINew(Type) WidgetConstructor<Type>() <<= typename Type::WArguments()
+#define UINewAssign(Var, Type) WidgetConstructor<Type>().ExposeAs(Var) <<= typename Type::WArguments();
+
+// Begin widget
 using LayerID = uint32;
 
 class Widget : public SharedFromThis<Widget>
