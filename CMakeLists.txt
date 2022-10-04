@@ -24,5 +24,6 @@ endif()
 
 add_subdirectory(lib)
 
+add_subdirectory(AxiomPlatform)
 add_subdirectory(Axiom)
 add_subdirectory(AxiomEditor)

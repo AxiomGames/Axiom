@@ -21,7 +21,7 @@ class UIAttribute : public Optional<T>
 
 #define WIDGET_ATTRIBUTE(Type, Name) \
 	Type m_##Name;            \
-	WArguments& Name(Type val)          \
+	WArguments& Name(const Type& val)          \
 	{ m_##Name = val; return *this; }
 
 // Widget construction
@@ -57,7 +57,7 @@ using LayerID = uint32;
 
 class Widget : public SharedFromThis<Widget>
 {
-private:
+protected:
 	WeakPtr<Vector2i> m_ParentWidgetPtr;
 
 	Vector2i m_Location;

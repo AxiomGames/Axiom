@@ -2,6 +2,8 @@
 #include "Axiom/Core/Timer.hpp"
 #include "Axiom/Engine.hpp"
 
+#include "Axiom/App/PlatformBase.hpp"
+
 #include <iostream>
 
 extern bool ax_IsRunning;
@@ -12,6 +14,8 @@ void Application::Run()
 {
 	GEngine = new GlobalEngineObjects();
 
+	Platform::Init();
+
 	OnInit();
 
 	DeltaTimer deltaTimer;
@@ -19,10 +23,12 @@ void Application::Run()
 	while (m_IsRunning)
 	{
 		float delta = deltaTimer.Update();
+		Platform::Update();
 	}
 
 	OnShutdown();
 	delete GEngine;
+	Platform::Shutdown();
 }
 
 void Application::Shutdown()

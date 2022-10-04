@@ -39,13 +39,16 @@ enum class ECursorMode
 struct WindowInitDesc
 {
 	Optional<EWindowType> WindowType;
-	Optional<Vector2i> DesiredSize;
+	Vector2i DesiredSize;
 	Optional<Vector2i> WindowLocation;
 	String Title;
 
 	bool IsDecorated = true;
 	bool Maximized = false;
 	bool FullScreen = false;
+
+	bool SupportsMinimize = true;
+	bool SupportsMaximize = true;
 };
 
 class INativeWindow
@@ -54,7 +57,7 @@ private:
 	int m_Width = 0;
 	int m_Height = 0;
 public:
-	virtual void Initialize(const WindowInitDesc& windowInitDesc) = 0;
+	virtual void Initialize(const WindowInitDesc& windowInitDesc, const SharedPtr<INativeWindow>& parentWindow) = 0;
 
 	virtual void Resize(int w, int h) = 0;
 	virtual void Resize(const Vector2i& size) = 0;

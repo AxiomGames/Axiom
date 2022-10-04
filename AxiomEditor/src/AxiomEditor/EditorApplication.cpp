@@ -11,7 +11,8 @@ void EditorApplication::OnInit()
 
 	SharedPtr<UIWindow> window = UINew(UIWindow)
 									.AutoCenter(true)
-									.Title("Window test");
+									.Size(Vector2i(1270, 720))
+									.Title("Axiom");
 
 	GEngine->Get<WindowManager>()->AddWindow(window, true);
 }

@@ -11,7 +11,7 @@ struct TAlignedBytes<Size, 1>
 	uint8 Data[Size];
 };
 
-#define IMPLEMENT_ALIGNED(Align) template<int32 Size> struct TAlignedBytes<Size, Align> { struct alignas(Align) PaddingContainer { uint8 Data[Size]; }; PaddingContainer Padding; };
+#define IMPLEMENT_ALIGNED(Align) template<int32 Size> struct TAlignedBytes<Size, Align> { struct AX_ALIGNAS(Align) PaddingContainer { uint8 Data[Size]; }; PaddingContainer Padding; };
 
 IMPLEMENT_ALIGNED(64)
 IMPLEMENT_ALIGNED(32)
