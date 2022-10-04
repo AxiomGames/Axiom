@@ -43,18 +43,18 @@ void GLFWNativeWindow::Initialize(const WindowInitDesc& windowInitDesc, const Sh
 
 	m_WindowHandle = glfwCreateWindow(GetSize().x, GetSize().y, windowInitDesc.Title.CStr(), windowInitDesc.FullScreen ? primary : nullptr, nullptr);
 
+	if(!m_WindowHandle) {
+		std::cerr << "Cannot create window !" << std::endl;
+		glfwTerminate();
+		exit(1);
+	}
+
 	// Fix for linux not getting the right size by glfw event on fullscreen mode
 	{
 		int width, height;
 		glfwGetWindowSize(m_WindowHandle, &width, &height);
 
 		SetSize(width, height);
-	}
-
-	if(!m_WindowHandle) {
-		std::cerr << "Cannot create window !" << std::endl;
-		glfwTerminate();
-		exit(1);
 	}
 
 	if(parentWindow != nullptr && !windowInitDesc.Maximized)
