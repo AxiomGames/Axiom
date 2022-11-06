@@ -22,6 +22,18 @@ constexpr StrHashID HashDjb2(const T* str)
 	return hash;
 }
 
+constexpr StrHashID HashDjb2(const std::string_view& view)
+{
+	uint64 hash = 5381;
+
+	for (const char c : view)
+	{
+		hash = ((hash << 5) + hash) + c;
+	}
+
+	return hash;
+}
+
 StrHashID constexpr operator "" _HASH(const char* s, size_t)
 {
 	return HashDjb2(s);
@@ -83,14 +95,14 @@ public:
 		m_Ptr = (char*)calloc(m_Capacity, 1);
 	}
 
-	String(const char* _ptr) : m_Size(strlen(_ptr))
+	String(const char* _ptr) : m_Size(strlen(_ptr) + 1)
 	{
 		m_Capacity = m_Size + 32;
 		m_Ptr = (char*)calloc(m_Capacity, 1);
 		memcpy(m_Ptr, _ptr, m_Size);
 	}
 
-	String(CharType* _ptr) : m_Size(strlen(_ptr))
+	String(CharType* _ptr) : m_Size(strlen(_ptr) + 1)
 	{
 		m_Capacity = m_Size + 32;
 		m_Ptr = (CharType*)calloc(m_Capacity, 1);
