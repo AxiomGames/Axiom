@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <intrin.h>
 
 #if AX_SHARED
 #ifdef AX_EXPORT
@@ -53,24 +52,26 @@
 #endif
 
 #ifdef _MSC_VER
-#	ifndef AXPopCount(x)
+#include <intrin.h>
+#	ifndef AXPopCount
 #		define AXPopCount(x) __popcnt(x)
 #   endif
-#	ifndef AXPopCount64(x)
+#	ifndef AXPopCount64
 #		define AXPopCount64(x) __popcnt64(x)
 #   endif
 #elif defined(__GNUC__) && !defined(__MINGW32__)
-#	ifndef AXPopCount(x)
+#include <builtins.h>
+#	ifndef AXPopCount
 #		define AXPopCount(x) __builtin_popcount(x)
 #   endif
-#	ifndef AXPopCount64(x)
-#		define AXPopCount64(x) __builtin_popcountl(x)
+#	ifndef AXPopCount64()
+#		define AXPopCount64() __builtin_popcountl(x)
 #   endif
 #else
-#	ifndef AXPopCount(x)
+#	ifndef AXPopCount
 #		define AXPopCount(x) PopCount(x)
 #   endif
-#	ifndef AXPopCount64(x)
+#	ifndef AXPopCount64
 #		define AXPopCount64(x) PopCount(x)
 #   endif
 #endif
