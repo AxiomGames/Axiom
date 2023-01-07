@@ -141,7 +141,7 @@ struct Vector3
 	}
 	// for more accuracy you can use sqrt instead of rsqrt: a / sqrt(dot(a,a)) 
 	static Vector3 Normalize(const Vector3& a) {
-		return a * rsqrt(Dot(a, a));
+		return a * Math::RSqrt(Dot(a, a));
 	}
 
 	Vector3 operator-() { return Vector3f(-x, -y, -z); }
