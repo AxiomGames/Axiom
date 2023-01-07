@@ -127,7 +127,7 @@ BlockAllocator::MemoryBlock& BlockAllocator::AllocateMemoryBlock()
 	return m_Memory.Add(memoryBlock);
 }
 
-FINLINE MemPtr BlockAllocator::AllocFromFragment(MemoryBlock& memoryBlock, const Array<MemoryFragment>::iterator& fragmentIt, uint64 size)
+FINLINE MemPtr BlockAllocator::AllocFromFragment(MemoryBlock& memoryBlock, const Array<MemoryFragment>::Iterator& fragmentIt, uint64 size)
 {
 	MemoryFragment& fragment = *fragmentIt;
 

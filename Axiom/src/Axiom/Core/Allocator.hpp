@@ -4,9 +4,6 @@
 #include "TemplateBase.hpp"
 #include <malloc.h>
 
-using MemPtr = uint8*;
-using VoidPtr = void*;
-
 template<typename T>
 constexpr T Align(T val, uint64_t alignment)
 {

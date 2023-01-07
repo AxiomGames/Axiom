@@ -107,6 +107,9 @@ typedef int16_t int16;
 typedef int32_t int32;
 typedef int64_t int64;
 
+using MemPtr = uint8*;
+using VoidPtr = void*;
+
 enum EForceInit
 {
 	ForceInit
