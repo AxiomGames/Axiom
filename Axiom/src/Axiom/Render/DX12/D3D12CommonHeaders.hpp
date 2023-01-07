@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Axiom/Core/Common.hpp"
+#include "Axiom/CoreMinimal.hpp"
 
 #include <iostream>
 

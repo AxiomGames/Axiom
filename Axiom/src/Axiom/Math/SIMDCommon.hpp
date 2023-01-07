@@ -1,6 +1,18 @@
 #pragma once
-#include "Math.hpp"
+
+#include "Axiom/Core/Common.hpp"
+#include "MathConstants.hpp"
 #include <immintrin.h>
+
+#ifndef AXGLOBALCONST
+#	if _MSC_VER
+#		define AXGLOBALCONST extern const __declspec(selectany)
+#	elif defined(__GNUC__) && !defined(__MINGW32__)
+#		define AXGLOBALCONST extern const __attribute__((weak))
+#   else
+#       define AXGLOBALCONST
+#	endif
+#endif
 
 struct Vector4UI
 {

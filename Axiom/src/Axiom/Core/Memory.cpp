@@ -1,4 +1,5 @@
 #include "Memory.hpp"
+#include "SharedPtr.hpp"
 
 IAllocator* GetDefaultAllocator()
 {

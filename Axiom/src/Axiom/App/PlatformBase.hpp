@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Axiom/Core/Common.hpp"
+#include "Axiom/Core/SharedPtr.hpp"
 
 class INativeWindow;
 

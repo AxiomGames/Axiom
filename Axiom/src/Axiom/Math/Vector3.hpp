@@ -1,7 +1,7 @@
 #pragma once
 
 #include "SIMDCommon.hpp"
-
+/*
 struct Vector3
 {
 	union
@@ -232,3 +232,4 @@ FINLINE void VECTORCALL RadianToDegree(const Vector3 radian, Vector3& degree) {
 FINLINE void VECTORCALL DegreeToRadian(const Vector3 degree, Vector3& radian) {
 	radian = degree * DegToRad;
 }
+*/

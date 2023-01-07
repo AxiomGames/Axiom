@@ -1,4 +1,5 @@
 #pragma once
+/*
 #include "Vector3.hpp"
 
 AX_ALIGNAS(16) struct Quaternion
@@ -176,3 +177,4 @@ AX_ALIGNAS(16) struct Quaternion
 	FINLINE Quaternion operator *  (const Quaternion& b) { return Mul(this->vec, b.vec); }
 	FINLINE Quaternion operator *= (const Quaternion& b) { this->vec = Mul(this->vec, b.vec); return *this; }
 };
+*/

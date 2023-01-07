@@ -1,4 +1,5 @@
 #pragma once
+/*
 #include "Vector3.hpp"
 #include "Vector4.hpp"
 #include "Quaternion.hpp"
@@ -527,3 +528,4 @@ struct Matrix4
 		return a2;
 	}
 };
+*/

@@ -1,5 +1,6 @@
 #pragma once
-#include "Math.hpp"
+
+#include "SIMDCommon.hpp"
 
 struct Color32
 {

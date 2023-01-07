@@ -4,6 +4,7 @@
 #include <sstream>
 #include <iosfwd> // for overriding << operator for std::cout
 #include "Common.hpp"
+#include "Enum.hpp"
 
 typedef uint64_t StrHashID;
 

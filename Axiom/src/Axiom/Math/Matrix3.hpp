@@ -1,4 +1,5 @@
 #pragma once
+
 #include "Quaternion.hpp"
 
 struct Matrix3

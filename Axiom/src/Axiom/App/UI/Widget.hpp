@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Axiom/Core/Optional.hpp"
-#include "Axiom/Math/Vector2.hpp"
+#include "Axiom/CoreMinimal.hpp"
 
 // Widget args helpers
 template<typename T>
