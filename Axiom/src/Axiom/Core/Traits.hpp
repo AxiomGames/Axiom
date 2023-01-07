@@ -24,10 +24,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TINYSTL_TRAITS_H
-#define TINYSTL_TRAITS_H
+#pragma once
 
 #include "New.hpp"
+#include <type_traits>
 
 #if defined(__GNUC__)
 #	define TINYSTL_TRY_POD_OPTIMIZATION(t) __is_pod(t)
@@ -112,5 +112,3 @@ namespace Traits
         typedef T type;
     };
 }
-
-#endif

@@ -91,7 +91,7 @@ namespace AxSTL
 	static inline void buffer_move_urange_traits(T* dest, T* first, T* last, Traits::PodTraits<T, false>)
 	{
 		for (T* it = first; it != last; ++it, ++dest)
-			move_construct(dest, *it);
+			Traits::move_construct(dest, *it);
 		buffer_destroy_range(first, last);
 	}
 
@@ -108,7 +108,7 @@ namespace AxSTL
 		dest += (last - first);
 		for (T* it = last; it != first; --it, --dest)
 		{
-			move_construct(dest - 1, *(it - 1));
+			Traits::move_construct(dest - 1, *(it - 1));
 			buffer_destroy_range(it - 1, it);
 		}
 	}
@@ -124,25 +124,25 @@ namespace AxSTL
 	template<typename T>
 	static inline void buffer_move_urange(T* dest, T* first, T* last)
 	{
-		buffer_move_urange_traits(dest, first, last, pod_traits<T>());
+		buffer_move_urange_traits(dest, first, last, Traits::PodTraits<T>());
 	}
 
 	template<typename T>
 	static inline void buffer_bmove_urange(T* dest, T* first, T* last)
 	{
-		buffer_bmove_urange_traits(dest, first, last, pod_traits<T>());
+		buffer_bmove_urange_traits(dest, first, last, Traits::PodTraits<T>());
 	}
 
 	template<typename T>
 	static inline void buffer_fill_urange(T* first, T* last)
 	{
-		buffer_fill_urange_traits(first, last, pod_traits<T>());
+		buffer_fill_urange_traits(first, last, Traits::PodTraits<T>());
 	}
 
 	template<typename T>
 	static inline void buffer_fill_urange(T* first, T* last, const T& value)
 	{
-		buffer_fill_urange_traits(first, last, value, pod_traits<T>());
+		buffer_fill_urange_traits(first, last, value, Traits::PodTraits<T>());
 	}
 
 	template<typename T, typename Alloc>
@@ -168,9 +168,9 @@ namespace AxSTL
 
 		typedef T* pointer;
 		const size_t size = (size_t) (b->last - b->first);
-		pointer newfirst = (pointer) Alloc::static_allocate(sizeof(T) * capacity);
+		pointer newfirst = (pointer) Alloc::Malloc(sizeof(T) * capacity);
 		buffer_move_urange(newfirst, b->first, b->last);
-		Alloc::static_deallocate(b->first, sizeof(T) * capacity);
+		Alloc::Free(b->first);
 
 		b->first = newfirst;
 		b->last = newfirst + size;
@@ -205,16 +205,16 @@ namespace AxSTL
 			if (b->last == b->first)
 			{
 				const size_t capacity = (size_t) (b->capacity - b->first);
-				Alloc::static_deallocate(b->first, sizeof(T) * capacity);
+				Alloc::Free(b->first, sizeof(T) * capacity);
 				b->capacity = b->first = b->last = nullptr;
 			}
 			else
 			{
 				const size_t capacity = (size_t) (b->capacity - b->first);
 				const size_t size = (size_t) (b->last - b->first);
-				T* newfirst = (T*) Alloc::static_allocate(sizeof(T) * size);
+				T* newfirst = (T*) Alloc::Malloc(sizeof(T) * size);
 				buffer_move_urange(newfirst, b->first, b->last);
-				Alloc::static_deallocate(b->first, sizeof(T) * capacity);
+				Alloc::Free(b->first, sizeof(T) * capacity);
 				b->first = newfirst;
 				b->last = newfirst + size;
 				b->capacity = b->last;
@@ -313,13 +313,36 @@ namespace AxSTL
 		}
 	}
 
+	template<typename T, typename Alloc, typename ...Args>
+	static inline T* buffer_emplace(Buffer<T, Alloc>* b, Args&& ... args)
+	{
+		auto where = b->last;
+		if (where == b->capacity)
+		{
+			where = buffer_insert_common(b, b->last, 1);
+		}
+		else
+		{
+			++b->last;
+		}
+		if constexpr (std::is_aggregate_v<T>)
+		{
+			new(PlaceHolder(), where) T{std::forward<Args>(args)...};
+		}
+		else
+		{
+			new(PlaceHolder(), where) T(std::forward<Args>(args)...);
+		}
+		return where;
+	}
+
 	template<typename T, typename Alloc>
 	static inline T* buffer_erase(Buffer<T, Alloc>* b, T* first, T* last)
 	{
 		typedef T* pointer;
 		const size_t count = (last - first);
 		for (pointer it = last, end = b->last, dest = first; it != end; ++it, ++dest)
-			move(*dest, *it);
+			Traits::move(*dest, *it);
 
 		buffer_destroy_range(b->last - count, b->last);
 
