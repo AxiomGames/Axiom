@@ -18,15 +18,7 @@ using namespace Microsoft::WRL;
 #define DXCall(x) \
 	if (FAILED(x))    \
 	{                 \
-		char lineNum[32];\
-		sprintf_s(lineNum, "%u", __LINE__);\
-		std::cout << ("Error in: ");\
-		std::cout << (__FILE__);\
-		std::cout << ("\nLine: ");\
-		std::cout << (lineNum);\
-		std::cout << ("\n");\
-		std::cout << (#x);\
-		std::cout << ("\n");\
+		printf("Error in: %s \nLine: %d \n %s\n", __FILE__, __LINE__, #x);\
 		AX_DEBUG_BREAK;\
 	}
 	#else

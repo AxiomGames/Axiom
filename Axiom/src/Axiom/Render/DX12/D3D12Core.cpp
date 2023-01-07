@@ -233,7 +233,6 @@ namespace DX12
 		IDXGIAdapter4* adapter = DetermineMainAdapter(DXFactory);
 		D3D_FEATURE_LEVEL maxFeatureLevel = GetMaxFeatureLevel(adapter);
 
-
 		HRESULT hr = S_OK;
 		DXCall(hr = D3D12CreateDevice(adapter, maxFeatureLevel, IID_PPV_ARGS(&MainDevice)));
 
@@ -256,8 +255,6 @@ namespace DX12
 			infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
 		};
 #endif
-
-
 	}
 
 	void Shutdown()

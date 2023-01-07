@@ -1,6 +1,7 @@
 #pragma once
-/*
-#include "Vector3.hpp"
+#include "Vector.hpp"
+#include "Vector4.hpp"
+#include "SIMDCommon.hpp"
 
 AX_ALIGNAS(16) struct Quaternion
 {
@@ -14,12 +15,12 @@ AX_ALIGNAS(16) struct Quaternion
 	Quaternion() : x(0), y(0), z(0), w(1) {}
 	Quaternion(float scale) : x(scale), y(scale), z(scale), w(scale) {}
 	Quaternion(float _x, float _y, float _z, float _w) : x(_x), y(_y), z(_z), w(_w) {}
-	VECTORCALL Quaternion(__m128 _vec) : vec(_vec) {}
-	
-	operator __m128 () const { return vec; }
+	Quaternion(__m128 _vec) : vec(_vec) {}
+
+	operator __m128() const { return vec; }
 
 	const float  operator [] (int index) const { return arr[index]; }
-	      float& operator [] (int index)       { return arr[index]; }
+	float& operator [] (int index) { return arr[index]; }
 
 	FINLINE static Quaternion Identity() { return g_XMIdentityR3.vec; }
 
@@ -53,7 +54,7 @@ AX_ALIGNAS(16) struct Quaternion
 	inline static __m128 VECTORCALL MulVec3(__m128 vec, __m128 quat)
 	{
 		__m128 temp = SSEVector3Cross(quat, vec);
-		__m128 temp1 = _mm_mul_ps(vec, SSESplatZ(quat));
+		__m128 temp1 = _mm_mul_ps(vec, SSESplatZ(quat)) ;
 		temp = _mm_add_ps(temp, temp1);
 		temp1 = _mm_mul_ps(SSEVector3Cross(quat, temp), _mm_set1_ps(2.0f));
 		return _mm_add_ps(vec, temp1);
@@ -75,7 +76,7 @@ AX_ALIGNAS(16) struct Quaternion
 		const __m128 T = _mm_set_ps1(t);
 		// Result = Q0 * sin((1.0 - t) * Omega) / sin(Omega) + Q1 * sin(t * Omega) / sin(Omega)
 		static const Vector4 OneMinusEpsilon = { { { 1.0f - 0.00001f, 1.0f - 0.00001f, 1.0f - 0.00001f, 1.0f - 0.00001f } } };
-		static const Vector4UI SignMask2 = { 0x80000000, 0x00000000, 0x00000000, 0x00000000 } ;
+		static const Vector4UI SignMask2 = { 0x80000000, 0x00000000, 0x00000000, 0x00000000 };
 
 		__m128 CosOmega = _mm_dp_ps(Q0.vec, Q1.vec, 0xff);
 
@@ -109,72 +110,66 @@ AX_ALIGNAS(16) struct Quaternion
 
 		S1 = _mm_mul_ps(S1, Sign);
 		__m128 Result = _mm_mul_ps(Q0.vec, S0);
-		S1 = _mm_mul_ps(S1, Q1.vec);
+		S1 = _mm_mul_ps(S1, Q1.vec); // _mm_fmadd_ps(S1, Q1.vec, Result) ?
 		return _mm_add_ps(Result, S1);
 	}
 
-	FINLINE Quaternion static VECTORCALL FromEuler(float x, float y, float z) noexcept
+	FINLINE Quaternion static FromEuler(float x, float y, float z) noexcept
 	{
-		// Abbreviations for the various angular functions
 		x *= 0.5f; y *= 0.5f; z *= 0.5f;
-		float cy = cos(x);
-		float sy = sin(x);
-		float cp = cos(y);
-		float sp = sin(y);
-		float cr = cos(z);
-		float sr = sin(z);
+		float cx = cosf(x), cy = cosf(y), cz = cosf(z);
+		float sx = sinf(x), sy = sinf(y), sz = sinf(z);
 		Quaternion q;
-		q.w = cr * cp * cy + sr * sp * sy;
-		q.x = sr * cp * cy - cr * sp * sy;
-		q.y = cr * sp * cy + sr * cp * sy;
-		q.z = cr * cp * sy - sr * sp * cy;
+		q.w = cx * cy * cz + sx * sy * sz;
+		q.x = sx * cy * cz - cx * sy * sz;
+		q.y = cx * sy * cz + sx * cy * sz;
+		q.z = cx * cy * sz - sx * sy * cz;
 		return q;
 	}
 
-	FINLINE Quaternion static VECTORCALL FromEuler(Vector3 euler) noexcept
+	FINLINE Quaternion static VECTORCALL FromEuler(Vector3f euler) noexcept
 	{
 		return FromEuler(euler.x, euler.y, euler.z);
 	}
 
-	inline Vector3 static ToEulerAngles(const Quaternion& q) noexcept {
-		Vector3 eulerAngles;
-
-		// Threshold for the singularities found at the north/south poles.
-		constexpr float SINGULARITY_THRESHOLD = 0.4999995f;
-
-		const float sqw = q.w * q.w;
-		const float sqx = q.x * q.x;
-		const float sqy = q.y * q.y;
-		const float sqz = q.z * q.z;
-		const float unit = sqx + sqy + sqz + sqw; // if normalised is one, otherwise is correction factor
-		const float singularityTest = (q.x * q.z) + (q.w * q.y);
-
-		if (singularityTest > SINGULARITY_THRESHOLD * unit) {
-			eulerAngles.z = 2.0f * atan2(q.x, q.w);
-			eulerAngles.y = PI / 2;
-			eulerAngles.x = 0;
-		}
-		else if (singularityTest < -SINGULARITY_THRESHOLD * unit)
-		{
-			eulerAngles.z = -2.0f * atan2(q.x, q.w);
-			eulerAngles.y = -(PI / 2);
-			eulerAngles.x = 0;
-		}
-		else {
-			eulerAngles.z = atan2(2 * ((q.w * q.z) - (q.x * q.y)), sqw + sqx - sqy - sqz);
-			eulerAngles.y = asin(2 * singularityTest / unit);
-			eulerAngles.x = atan2(2 * ((q.w * q.x) - (q.y * q.z)), sqw - sqx - sqy + sqz);
-		}
+	inline Vector3f static ToEulerAngles(const Quaternion& q) noexcept {
+		Vector3f eulerAngles;
+		eulerAngles.x = atan2f(2.0f * (q.y * q.z + q.w * q.x), q.w * q.w - q.x * q.x - q.y * q.y + q.z * q.z);
+		eulerAngles.y = asinf(Math::Clamp(-2.0f * (q.x * q.z - q.w * q.y), -1.0f, 1.0f));
+		eulerAngles.z = atan2f(2.0f * (q.x * q.y + q.w * q.z), q.w * q.w + q.x * q.x - q.y * q.y - q.z * q.z);
 		return eulerAngles;
 	}
 
 	FINLINE static __m128 VECTORCALL Conjugate(const __m128 vec)
 	{
-		static const Vector432F NegativeOne3 = { 1.0f,-1.0f,-1.0f,-1.0f };
+		static const Vector432F NegativeOne3 = { -1.0f,-1.0f,-1.0f, 1.0f};
 		return _mm_mul_ps(vec, NegativeOne3);
+	}
+
+	Vector3f GetForward() const {
+		Vector3f res;
+		SSEStoreVector3(&res.x,MulVec3(Vector432F( 0, 0, -1, 0), Conjugate(vec)));
+		return res; 
+	}
+
+	Vector3f GetRight() const {
+		Vector3f res;
+		SSEStoreVector3(&res.x, MulVec3(Vector432F( 1, 0, 0, 0), Conjugate(vec)));
+		return res; 
+	}
+
+	Vector3f GetLeft() const {
+		Vector3f res;
+		SSEStoreVector3(&res.x, MulVec3(Vector432F(-1, 0, 0, 0), Conjugate(vec))); 
+		return res; 
+	}
+
+	Vector3f GetUp() const {
+		Vector3f res;
+		SSEStoreVector3(&res.x, MulVec3(Vector432F( 0, 1, 0, 0), Conjugate(vec)));
+		return res; 
 	}
 
 	FINLINE Quaternion operator *  (const Quaternion& b) { return Mul(this->vec, b.vec); }
 	FINLINE Quaternion operator *= (const Quaternion& b) { this->vec = Mul(this->vec, b.vec); return *this; }
 };
-*/

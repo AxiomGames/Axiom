@@ -1,4 +1,5 @@
 #include "Allocator.hpp"
+#include <memory>
 
 MemPtr DefaultAllocator::Malloc(uint64 size, uint64_t alignment)
 {

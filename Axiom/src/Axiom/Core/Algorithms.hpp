@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Common.hpp"
-#include "Random.hpp"
 
 template<typename T, typename size_type = uint64>
 inline size_type Distance(const T* begin, const T* end)
@@ -50,7 +49,7 @@ namespace Algorithms
 		}
 	}
 
-// smaller stack size compared to quicksort
+    // smaller stack size compared to quicksort
 	template<typename T>
 	void ShellSort(T* arr, int n)
 	{
@@ -115,17 +114,6 @@ namespace Algorithms
 	}
 
 	template<typename T>
-	inline void Suffle(T* begin, uint64 len)
-	{
-		Random::PCG rand(Random::RandomSeed64());
-
-		for (uint64 i = len - 1; i > 1; --i)
-		{
-			Swap(begin[rand.NextBound(i)], begin[i]);
-		}
-	}
-
-	template<typename T>
 	inline T* BinarySearch(T* begin, int len, T value)
 	{
 		int low = 0;
@@ -139,5 +127,17 @@ namespace Algorithms
 			else high = mid - 1; // begin[mid] > value
 		}
 		return nullptr;
+	}
+
+	template<typename T>
+	inline void Fill(T* begin, T* end, const T& val)
+	{
+		while (begin < end) *begin++ = val;
+	}
+
+	template<typename T>
+	inline constexpr void FillN(T* ptr, int len, T val) {
+		for (int i = 0; i < len; ++i)
+			ptr[i] = val;
 	}
 }

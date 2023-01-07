@@ -1,20 +1,8 @@
 #pragma once
+#include "Math.hpp"
+#include <immintrin.h> 
 
-#include "Axiom/Core/Common.hpp"
-#include "MathConstants.hpp"
-#include <immintrin.h>
-
-#ifndef AXGLOBALCONST
-#	if _MSC_VER
-#		define AXGLOBALCONST extern const __declspec(selectany)
-#	elif defined(__GNUC__) && !defined(__MINGW32__)
-#		define AXGLOBALCONST extern const __attribute__((weak))
-#   else
-#       define AXGLOBALCONST
-#	endif
-#endif
-
-struct Vector4UI
+AX_ALIGNAS(16) struct Vector4UI
 {
 	union
 	{
@@ -26,11 +14,11 @@ struct Vector4UI
 	inline operator __m128i() const noexcept { return _mm_castps_si128(vec); }
 	inline operator __m128d() const noexcept { return _mm_castps_pd(vec); }
 
-	FINLINE Vector4UI() : x(0), y(0), z(0) {}
-	FINLINE Vector4UI(uint32 _x, uint32 _y, uint32 _z, uint32 _w) : x(_x), y(_y), z(_z), w(_w) {}
+	Vector4UI() : x(0), y(0), z(0) {}
+	Vector4UI(uint32 _x, uint32 _y, uint32 _z, uint32 _w) : x(_x), y(_y), z(_z), w(_w) {}
 };
 
-struct Vector432F
+AX_ALIGNAS(16) struct Vector432F
 {
 	union
 	{
@@ -42,8 +30,8 @@ struct Vector432F
 	inline operator __m128i() const noexcept { return _mm_castps_si128(vec); }
 	inline operator __m128d() const noexcept { return _mm_castps_pd(vec); }
 
-	FINLINE Vector432F() : x(0), y(0), z(0) {}
-	FINLINE Vector432F(float _x, float _y, float _z, float _w) : x(_x), y(_y), z(_z), w(_w) {}
+	Vector432F() : x(0), y(0), z(0), w(0) {}
+	constexpr Vector432F(float _x, float _y, float _z, float _w) : x(_x), y(_y), z(_z), w(_w) {}
 };
 
 constexpr uint32_t AX_SELECT_0 = 0x00000000;
@@ -77,9 +65,7 @@ AXGLOBALCONST Vector432F g_XMOneHalf = { 0.5f, 0.5f, 0.5f, 0.5f };
 
 FINLINE __m128 VECTORCALL SSESelect(const __m128 V1, const __m128 V2, const __m128& Control)
 {
-	__m128 vTemp1 = _mm_andnot_ps(Control, V1);
-	__m128 vTemp2 = _mm_and_ps(V2, Control);
-	return _mm_or_ps(vTemp1, vTemp2);
+	return _mm_or_ps(_mm_andnot_ps(Control, V1), _mm_and_ps(V2, Control));
 }
 
 FINLINE __m256i VECTORCALL SSESelect(const __m256i V1, const __m256i V2, const __m256i& Control)
@@ -89,12 +75,20 @@ FINLINE __m256i VECTORCALL SSESelect(const __m256i V1, const __m256i V2, const _
 	return _mm256_or_epi32(vTemp1, vTemp2);
 }
 
-FINLINE __m128 VECTORCALL SSESplatX(const __m128 V1)  { return _mm_permute_ps(V1, _MM_SHUFFLE(0, 0, 0, 0)); }
-FINLINE __m128 VECTORCALL SSESplatY(const __m128 V1)  { return _mm_permute_ps(V1, _MM_SHUFFLE(1, 1, 1, 1)); }
-FINLINE __m128 VECTORCALL SSESplatZ(const __m128 V1)  { return _mm_permute_ps(V1, _MM_SHUFFLE(2, 2, 2, 2)); }
-FINLINE __m128 VECTORCALL SSESplatW(const __m128 V1)  { return _mm_permute_ps(V1, _MM_SHUFFLE(3, 3, 3, 3)); }
+FINLINE __m128 VECTORCALL SSESplatX(const __m128 V1) { return _mm_permute_ps(V1, _MM_SHUFFLE(0, 0, 0, 0)); }
+FINLINE __m128 VECTORCALL SSESplatY(const __m128 V1) { return _mm_permute_ps(V1, _MM_SHUFFLE(1, 1, 1, 1)); }
+FINLINE __m128 VECTORCALL SSESplatZ(const __m128 V1) { return _mm_permute_ps(V1, _MM_SHUFFLE(2, 2, 2, 2)); }
+FINLINE __m128 VECTORCALL SSESplatW(const __m128 V1) { return _mm_permute_ps(V1, _MM_SHUFFLE(3, 3, 3, 3)); }
 
-FINLINE float VECTORCALL XMVectorGetX(__m128 V) {
+
+FINLINE void VECTORCALL SSEStoreVector3(float* f, __m128 vec)
+{
+	_mm_store_ss(f + 0, vec);
+	_mm_store_ss(f + 1, _mm_permute_ps(vec, _MM_SHUFFLE(1,1,1,1)));
+	_mm_store_ss(f + 2, _mm_permute_ps(vec, _MM_SHUFFLE(2,2,2,2)));
+}
+
+FINLINE float VECTORCALL SSEVectorGetX(__m128 V) {
 	return _mm_cvtss_f32(V);
 }
 
@@ -110,7 +104,12 @@ FINLINE float VECTORCALL SSEVectorGetW(__m128 V) {
 	return _mm_cvtss_f32(_mm_shuffle_ps(V, V, _MM_SHUFFLE(3, 3, 3, 3)));
 }
 
-FINLINE __m128 VECTORCALL SSEVector3Normalize(const __m128 V)
+FINLINE __m128 VECTORCALL SSEVectorLength(const __m128 V)
+{
+	return _mm_sqrt_ps(_mm_dp_ps(V, V, 0x7f));
+}
+
+FINLINE __m128 VECTORCALL SSEVectorNormalize(const __m128 V)
 {
 	return _mm_mul_ps(_mm_rsqrt_ps(_mm_dp_ps(V, V, 0x7f)), V);
 }
@@ -120,8 +119,8 @@ FINLINE __m128 VECTORCALL SSEVector3Cross(const __m128 V1, const __m128  V2)
 	__m128 vTemp1 = _mm_permute_ps(V1, _MM_SHUFFLE(3, 0, 2, 1));
 	__m128 vTemp2 = _mm_permute_ps(V2, _MM_SHUFFLE(3, 1, 0, 2));
 	__m128 vResult = _mm_mul_ps(vTemp1, vTemp2);
-	vTemp1 	= _mm_permute_ps(vTemp1, _MM_SHUFFLE(3, 0, 2, 1));
-	vTemp2 	= _mm_permute_ps(vTemp2, _MM_SHUFFLE(3, 1, 0, 2));
+	vTemp1 = _mm_permute_ps(vTemp1, _MM_SHUFFLE(3, 0, 2, 1));
+	vTemp2 = _mm_permute_ps(vTemp2, _MM_SHUFFLE(3, 1, 0, 2));
 	vResult = _mm_fnmadd_ps(vTemp1, vTemp2, vResult);
 	// Set w to zero
 	return _mm_and_ps(vResult, g_XMMask3);
@@ -138,6 +137,29 @@ FINLINE __m128 VECTORCALL SSEVector3Dot(const __m128 V1, const __m128 V2)
 	return _mm_permute_ps(vDot, _MM_SHUFFLE(0, 0, 0, 0));
 }
 
+// https://stackoverflow.com/questions/17863411/sse-multiplication-of-2-64-bit-integers
+FINLINE __m256i VECTORCALL Multiply64Bit(__m256i ab, __m256i cd)
+{
+	__m256i b = _mm256_srli_epi64(ab, 64);
+	__m256i bc = _mm256_mul_epu32(b, cd);
+	__m256i d = _mm256_srli_epi64(cd, 64);
+	__m256i ad = _mm256_mul_epu32(ab, d);
+	__m256i high = _mm256_add_epi64(bc, ad);
+	high = _mm256_slli_epi64(high, 64);
+	return _mm256_add_epi64(high, _mm256_mul_epu32(ab, cd));
+}
+
+FINLINE __m128i VECTORCALL Multiply64Bit(__m128i ab, __m128i cd)
+{
+	__m128i b = _mm_srli_epi64(ab, 32);
+	__m128i bc = _mm_mul_epu32(b, cd);
+	__m128i d = _mm_srli_epi64(cd, 32);
+	__m128i ad = _mm_mul_epu32(ab, d);
+	__m128i high = _mm_add_epi64(bc, ad);
+	high = _mm_slli_epi64(high, 32);
+	return _mm_add_epi64(high, _mm_mul_epu32(ab, cd));
+}
+
 FINLINE int VECTORCALL hsum_128_epi32avx(__m128i x)
 {
 	__m128i hi64 = _mm_unpackhi_epi64(x, x); // 3-operand non-destructive AVX lets us save a byte without needing a movdqa
@@ -145,6 +167,15 @@ FINLINE int VECTORCALL hsum_128_epi32avx(__m128i x)
 	__m128i hi32 = _mm_shuffle_epi32(sum64, _MM_SHUFFLE(2, 3, 0, 1));    // Swap the low two elements
 	__m128i sum32 = _mm_add_epi32(sum64, hi32);
 	return _mm_cvtsi128_si32(sum32);       // movd
+}
+
+FINLINE double VECTORCALL hsum_128_pdavx(__m128d x)
+{
+	__m128d hi64 = _mm_unpackhi_pd(x, x); // 3-operand non-destructive AVX lets us save a byte without needing a movdqa
+	__m128d sum64 = _mm_add_pd(hi64, x);
+	__m128d hi32 = _mm_shuffle_pd(sum64, sum64, _MM_SHUFFLE(2, 3, 0, 1));    // Swap the low two elements
+	__m128d sum32 = _mm_add_pd(sum64, hi32);
+	return _mm_cvtsd_f64(sum32);       // movd
 }
 
 FINLINE float VECTORCALL hsum_ps_sse3(__m128 v) {
@@ -157,8 +188,46 @@ FINLINE float VECTORCALL hsum_ps_sse3(__m128 v) {
 
 FINLINE int VECTORCALL hsum_256_epi32(__m256i v)
 {
-	__m128i sum128 = _mm_add_epi32( _mm256_castsi256_si128(v), _mm256_extracti128_si256(v, 1) ); 
+	__m128i sum128 = _mm_add_epi32(_mm256_castsi256_si128(v), _mm256_extracti128_si256(v, 1));
 	return hsum_128_epi32avx(sum128);
+}
+
+FINLINE int VECTORCALL hsum_256_epi64(__m256i v)
+{
+	return _mm256_cvtsi256_si32(v) + _mm256_extract_epi64(v, 1) + _mm256_extract_epi64(v, 2) + _mm256_extract_epi64(v, 3);
+}
+
+FINLINE double VECTORCALL hsum_256_pd(__m256d v)
+{
+	__m128d sum128 = _mm_add_pd(_mm256_castpd256_pd128(v), _mm256_extractf128_pd(v, 1));
+	return hsum_128_pdavx(sum128);
+}
+
+// from: Faster Population Counts Using AVX2 Instructions resource paper
+FINLINE int VECTORCALL popcount256_epi64(__m256i v)
+{
+	static const __m256i lookup = _mm256_setr_epi8(0, 1, 1, 2, 1, 2, 2, 3, 1, 2,
+			2, 3, 2, 3, 3, 4, 0, 1, 1, 2, 1, 2, 2, 3,
+			1, 2, 2, 3, 2, 3, 3, 4);
+	static const __m256i low_mask = _mm256_set1_epi8(0x0f);
+	__m256i lo =  _mm256_and_si256(v, low_mask);
+	__m256i hi = _mm256_and_si256(_mm256_srli_epi32(v, 4), low_mask);
+	__m256i popcnt1 = _mm256_shuffle_epi8(lookup, lo);
+	__m256i popcnt2 = _mm256_shuffle_epi8(lookup, hi);
+	__m256i total = _mm256_add_epi8(popcnt1, popcnt2);
+	v = _mm256_sad_epu8(total, _mm256_setzero_si256());
+	return _mm256_cvtsi256_si32(v) + _mm256_extract_epi64(v, 1) + _mm256_extract_epi64(v, 2) + _mm256_extract_epi64(v, 3);
+}
+
+FINLINE __m256i VECTORCALL popcnt256si(__m256i v) // returns 4 64 bit integer that contains pop counts
+{
+	const __m256i lookup = _mm256_setr_epi8(0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4);
+	const __m256i low_mask = _mm256_set1_epi8(0x0f);
+	__m256i lo = _mm256_and_si256(v, low_mask);
+	__m256i hi = _mm256_and_si256(_mm256_srli_epi32(v, 4), low_mask);
+	__m256i popcnt1 = _mm256_shuffle_epi8(lookup, lo);
+	__m256i popcnt2 = _mm256_shuffle_epi8(lookup, hi);
+	return _mm256_sad_epu8(_mm256_add_epi8(popcnt1, popcnt2), _mm256_setzero_si256());
 }
 
 FINLINE float VECTORCALL hsum256_ps_avx(__m256 v) {
@@ -168,82 +237,7 @@ FINLINE float VECTORCALL hsum256_ps_avx(__m256 v) {
 	return hsum_ps_sse3(vlow);         // and inline the sse3 version, which is optimal for AVX
 }
 
-FINLINE float VECTORCALL SSEVec3Length(const __m128 v)
+FINLINE float VECTORCALL SSEVectorLengthf(const __m128 v)
 {
 	return _mm_cvtss_f32(_mm_sqrt_ss(_mm_dp_ps(v, v, 0x71)));
-}
-
-// if compiler doesn't convert our code to vectorized code we can use our avx or sse instructions
-// otherwise compiler generates better code for us
-
-inline int Accumulate(const int* ptr, int size)
-{
-	int sum = 0;
-#ifdef __AVX__
-	// sum until size divisible by 8
-	while (size & 7) sum += ptr[--size];
-	if (size < 1) return sum;
-
-	size >>= 3;
-	const __m256i* vptr = (const __m256i*)ptr;
-	const __m256i* vend = vptr + size;
-	__m256i vsum = _mm256_setzero_si256();
-
-	while (vptr < vend) {
-		vsum = _mm256_add_epi32(vsum, *vptr++);
-	}
-	sum += hsum_256_epi32(vsum);
-#elif __SSE2__
-	while (size & 3) sum += ptr[--size];
-	if (size == 0) return sum;
-	size >>= 2;
-	const __m128i* vptr = (const __m128i*)ptr;
-	const __m128i* end  = vptr  + size;
-	__m128i vsum = _mm_setzero_si128();
-
-	while (vptr < end) {
-		vsum = _mm_add_epi32(begin, *vptr++);
-	}
-	sum += hsum_128_epi32avx(vsum);
-#else
-#pragma omp parallel for reduction(+ : sum)
-	for (int i = 0; i < len; ++i) sum += ptr[i];
-#endif
-	return sum;
-}
-
-inline float Accumulate(const float* ptr, int size)
-{
-	float sum = 0.0f;
-#ifdef __AVX__
-	while (size & 7) sum += ptr[--size];
-	if (size < 1) return sum;
-	size >>= 3;
-	const __m256* vptr = (const __m256*)ptr;
-	const __m256* vend = vptr + size;
-	__m256 vsum = _mm256_setzero_ps();
-
-	while (vptr < vend) {
-		vsum = _mm256_add_ps(vsum, *vptr++);
-	}
-	sum += hsum256_ps_avx(vsum);
-	
-#elif __SSE2__
-	while (size & 3) sum += ptr[--size];
-	if (size == 0) return sum;
-	size >>= 2;
-
-	const __m128* vptr = (const __m128*)ptr;
-	const __m128* end = vptr + size;
-	__m128 begin = _mm_setzero_ps();
-
-	while (vptr < end) {
-		begin = _mm_add_ps(begin, *vptr++);
-	}
-	sum += hsum_ps_sse3(vptr);
-#else
-#pragma omp parallel for reduction(+ : sum)
-	for (int i = 0; i < len; ++i) sum += ptr[i];
-#endif
-	return sum;
 }
