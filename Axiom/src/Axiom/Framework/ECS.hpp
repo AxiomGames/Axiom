@@ -306,7 +306,7 @@ private:
 
 		auto it = m_ComponentMemory.find(componentID);
 		BlockAllocator* allocator = it->second;
-		allocator->Free<T>(component);
+		allocator->FreeDestruct<T>(component);
 		m_ComponentPointers[componentID].Remove((uintptr_t)component);
 	}
 };
