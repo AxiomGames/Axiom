@@ -13,6 +13,8 @@ public:
 	void Shutdown();
 	void Restart();
 
+	virtual void OnUpdate(float delta) {};
+
 	virtual void OnInit() = 0;
 	virtual void OnShutdown() {}
 };

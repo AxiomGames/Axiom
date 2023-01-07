@@ -53,7 +53,15 @@ void WindowManager::MakeWindow(const SharedPtr<UIWindow>& window, const SharedPt
 
 void WindowManager::UpdateWindows()
 {
+	for (const SharedPtr<UIWindow>& window : m_Windows)
+	{
+		const SharedPtr<INativeWindow>& nativeWindow = window->GetNativeWindow();
 
+		if (nativeWindow->IsShouldClose())
+		{
+
+		}
+	}
 }
 
 

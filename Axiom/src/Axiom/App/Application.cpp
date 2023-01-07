@@ -20,10 +20,14 @@ void Application::Run()
 
 	DeltaTimer deltaTimer;
 
+
+
 	while (m_IsRunning)
 	{
 		float delta = deltaTimer.Update();
 		Platform::Update();
+
+		OnUpdate(delta);
 	}
 
 	OnShutdown();

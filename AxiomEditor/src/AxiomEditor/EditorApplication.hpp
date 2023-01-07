@@ -6,4 +6,6 @@ class EditorApplication : public Application
 public:
 	void OnInit() override;
 	void OnShutdown() override;
+
+	void OnUpdate(float delta) override;
 };

@@ -2,7 +2,8 @@
 
 #include <cstdint>
 #include <memory>
-    
+#include <filesystem>
+
 #if AX_SHARED
 #ifdef AX_EXPORT
 		#define AX_API __declspec(dllexport)
@@ -53,6 +54,9 @@ inline constexpr ENUMNAME operator ^ (ENUMNAME a, ENUMNAME b)	noexcept { return 
 
 #define ax_assert(...)
 
+using Path = std::filesystem::path;
+using FileStream = std::fstream;
+
 typedef uint8_t uint8;
 typedef uint16_t uint16;
 typedef uint32_t uint32;
@@ -68,6 +72,18 @@ using SharedPtr = std::shared_ptr<T>;
 
 template<typename T>
 using WeakPtr = std::weak_ptr<T>;
+
+template<typename T, typename Deleter = std::default_delete<T>>
+using UniquePtr = std::unique_ptr<T, Deleter>;
+
+#define DEFINE_PTR_NAMED(ClassName, TypeName) \
+typedef SharedPtr<ClassName> TypeName##Ptr; \
+typedef WeakPtr<ClassName> TypeName##WeakPtr;
+
+#define FORWARD_DECL_PTR(ClassName, TypeName) \
+class ClassName;                               \
+typedef SharedPtr<ClassName> TypeName##Ptr; \
+typedef WeakPtr<ClassName> TypeName##WeakPtr;
 
 template<typename T, typename... Types>
 static SharedPtr<T> MakeShared(Types&&... args)
@@ -137,3 +153,8 @@ namespace Compare
 	/*for qsort*/ template<typename T>
 	inline int QGreater(const void* a, const void* b) { return *(T*)a > *(T*)b; }
 }
+
+enum EForceInit
+{
+	ForceInit
+};
