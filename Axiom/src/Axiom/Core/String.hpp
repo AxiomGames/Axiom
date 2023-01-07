@@ -51,7 +51,7 @@ constexpr StrHashID HashDjb2(const std::string_view& view)
 {
 	uint64 hash = 5381;
 
-	for (const char c : view)
+	for (const char c: view)
 	{
 		hash = ((hash << 5) + hash) + c;
 	}
@@ -69,508 +69,577 @@ template<typename T, typename Alloc = DEFAULT_ALLOCATOR>
 class BasicString
 {
 public:
+	using Type = T;
+	using Pointer = T*;
+	using ConstPointer = const T*;
+
+	using Iterator = T*;
+	using ConstIterator = const T*;
+
 	BasicString();
 
 	BasicString(const BasicString& other);
 
-	BasicString(const char* sz);
+	BasicString(ConstPointer sz);
 
-	BasicString(const char* first, const char* last);
+	BasicString(ConstPointer first, ConstPointer last);
 
-	BasicString(const char* sz, size_t len);
+	BasicString(ConstPointer sz, size_t len);
 
 	~BasicString();
 
 	BasicString& operator=(const BasicString& other);
 
-	BasicString& operator=(char ch);
+	BasicString& operator=(Type ch);
 
-	BasicString& operator=(const char* sz);
+	BasicString& operator=(ConstPointer sz);
 
 	BasicString& operator+=(const BasicString& other);
 
-	BasicString& operator+=(char ch);
+	BasicString& operator+=(Type ch);
 
-	BasicString& operator+=(const char* sz);
+	BasicString& operator+=(ConstPointer sz);
 
-	const char* c_str() const;
+	ConstPointer CStr() const;
 
-	bool empty() const;
+	bool Empty() const;
 
-	size_t size() const;
+	size_t Size() const;
 
-	size_t capacity() const;
+	size_t Capacity() const;
 
-	typedef char* iterator;
+	Iterator begin();
 
-	iterator begin();
+	Iterator end();
 
-	iterator end();
+	ConstIterator begin() const;
 
-	typedef const char* const_iterator;
+	ConstIterator end() const;
 
-	const_iterator begin() const;
+	Type operator[](size_t pos) const;
 
-	const_iterator end() const;
+	Type& operator[](size_t pos);
 
-	char operator[](size_t pos) const;
+	int Compare(const BasicString& other) const;
 
-	char& operator[](size_t pos);
+	int Compare(ConstPointer sz) const;
 
-	int compare(const BasicString& other) const;
+	void Reserve(size_t Capacity);
 
-	int compare(const char* sz) const;
+	void Resize(size_t n);
 
-	void reserve(size_t capacity);
+	void Resize(size_t n, Type ch);
 
-	void resize(size_t n);
+	void Clear();
 
-	void resize(size_t n, char ch);
+	void Assign(Type ch);
 
-	void clear();
+	void Assign(ConstPointer sz);
 
-	void assign(char ch);
+	void Assign(ConstPointer first, ConstPointer last);
 
-	void assign(const char* sz);
+	void Assign(const BasicString& other);
 
-	void assign(const char* first, const char* last);
+	void PushBack(Type ch);
 
-	void assign(const BasicString& other);
+	void Append(ConstPointer sz);
 
-	void push_back(char ch);
+	void Append(ConstPointer first, ConstPointer last);
 
-	void append(const char* sz);
+	void Append(const BasicString& other);
 
-	void append(const char* first, const char* last);
+	void Insert(Iterator where, Type ch);
 
-	void append(const BasicString& other);
+	void Insert(Iterator where, ConstPointer sz);
 
-	void insert(iterator where, char ch);
+	void Insert(Iterator where, ConstPointer first, ConstPointer last);
 
-	void insert(iterator where, const char* sz);
+	void Insert(Iterator where, const BasicString& other);
 
-	void insert(iterator where, const char* first, const char* last);
+	void Erase(Iterator first, Iterator last);
 
-	void insert(iterator where, const BasicString& other);
-
-	void erase(iterator first, iterator last);
-
-	void swap(BasicString& other);
+	void Swap(BasicString& other);
 
 private:
-	typedef char* pointer;
-	static const size_t c_nbuffer = 16;
-	static const size_t c_longflag = ((size_t) 1) << (sizeof(size_t) * 8 - 1);
-	size_t m_size;
+	static const size_t c_NBuffer = 16;
+	static const size_t c_LongFlag = ((size_t) 1) << (sizeof(size_t) * 8 - 1);
+	size_t m_Size;
 	union
 	{
 		struct
 		{
-			pointer m_first;
-			pointer m_capacity;
+			Pointer m_First;
+			Pointer m_capacity;
 		};
-		char m_buffer[c_nbuffer];
+		Type m_Buffer[c_NBuffer];
 	};
 };
 
 template<typename T, typename Alloc>
 FINLINE BasicString<T, Alloc>::BasicString()
-	: m_size(0)
+	: m_Size(0)
 {
-	m_buffer[0] = 0;
+	m_Buffer[0] = 0;
 }
 
 template<typename T, typename Alloc>
 FINLINE BasicString<T, Alloc>::BasicString(const BasicString& other)
-	: m_size(0)
+	: m_Size(0)
 {
-	assign(other);
+	Assign(other);
 }
 
 template<typename T, typename Alloc>
-FINLINE BasicString<T, Alloc>::BasicString(const char* sz)
-	: m_size(0)
+FINLINE BasicString<T, Alloc>::BasicString(ConstPointer sz)
+	: m_Size(0)
 {
-	assign(sz);
+	Assign(sz);
 }
 
 template<typename T, typename Alloc>
-FINLINE BasicString<T, Alloc>::BasicString(const char* first, const char* last)
-	: m_size(0)
+FINLINE BasicString<T, Alloc>::BasicString(ConstPointer first, ConstPointer last)
+	: m_Size(0)
 {
-	assign(first, last);
+	Assign(first, last);
 }
 
 template<typename T, typename Alloc>
-FINLINE BasicString<T, Alloc>::BasicString(const char* sz, size_t len)
-	: m_size(0)
+FINLINE BasicString<T, Alloc>::BasicString(ConstPointer sz, size_t len)
+	: m_Size(0)
 {
-	append(sz, sz + len);
+	Append(sz, sz + len);
 }
 
 template<typename T, typename Alloc>
 FINLINE BasicString<T, Alloc>::~BasicString()
 {
-	if (m_size & c_longflag)
-		DEFAULT_ALLOCATOR::Free(m_first);
+	if (m_Size & c_LongFlag)
+	{
+		Alloc::Free(m_First);
+	}
 }
 
 template<typename T, typename Alloc>
 FINLINE BasicString<T, Alloc>& BasicString<T, Alloc>::operator=(const BasicString& other)
 {
 	if (this != &other)
-		assign(other);
+	{
+		Assign(other);
+	}
 	return *this;
 }
 
 template<typename T, typename Alloc>
-FINLINE BasicString<T, Alloc>& BasicString<T, Alloc>::operator=(char ch)
+FINLINE BasicString<T, Alloc>& BasicString<T, Alloc>::operator=(Type ch)
 {
-	assign(ch);
+	Assign(ch);
 	return *this;
 }
 
 template<typename T, typename Alloc>
-FINLINE BasicString<T, Alloc>& BasicString<T, Alloc>::operator=(const char* sz)
+FINLINE BasicString<T, Alloc>& BasicString<T, Alloc>::operator=(ConstPointer sz)
 {
-	assign(sz);
+	Assign(sz);
 	return *this;
 }
 
 template<typename T, typename Alloc>
 FINLINE BasicString<T, Alloc>& BasicString<T, Alloc>::operator+=(const BasicString& other)
 {
-	append(other);
+	Append(other);
 	return *this;
 }
 
 template<typename T, typename Alloc>
-FINLINE BasicString<T, Alloc>& BasicString<T, Alloc>::operator+=(char ch)
+FINLINE BasicString<T, Alloc>& BasicString<T, Alloc>::operator+=(Type ch)
 {
-	push_back(ch);
+	PushBack(ch);
 	return *this;
 }
 
 template<typename T, typename Alloc>
-FINLINE BasicString<T, Alloc>& BasicString<T, Alloc>::operator+=(const char* sz)
+FINLINE BasicString<T, Alloc>& BasicString<T, Alloc>::operator+=(ConstPointer sz)
 {
-	append(sz);
+	Append(sz);
 	return *this;
 }
 
 template<typename T, typename Alloc>
-FINLINE const char* BasicString<T, Alloc>::c_str() const
+FINLINE typename BasicString<T, Alloc>::ConstPointer BasicString<T, Alloc>::CStr() const
 {
-	if (m_size & c_longflag)
-		return m_first;
+	if (m_Size & c_LongFlag)
+	{
+		return m_First;
+	}
 	else
-		return m_buffer;
+	{
+		return m_Buffer;
+	}
+
 }
 
 template<typename T, typename Alloc>
-FINLINE bool BasicString<T, Alloc>::empty() const
+FINLINE bool BasicString<T, Alloc>::Empty() const
 {
-	return size() == 0;
+	return Size() == 0;
 }
 
 template<typename T, typename Alloc>
-FINLINE size_t BasicString<T, Alloc>::size() const
+FINLINE size_t BasicString<T, Alloc>::Size() const
 {
-	return m_size & ~c_longflag;
+	return m_Size & ~c_LongFlag;
 }
 
 template<typename T, typename Alloc>
-FINLINE size_t BasicString<T, Alloc>::capacity() const
+FINLINE size_t BasicString<T, Alloc>::Capacity() const
 {
-	if (m_size & c_longflag)
-		return m_capacity - m_first - 1;
+	if (m_Size & c_LongFlag)
+	{
+		return m_capacity - m_First - 1;
+	}
 	else
-		return c_nbuffer - 1;
+	{
+		return c_NBuffer - 1;
+	}
 }
 
 template<typename T, typename Alloc>
-FINLINE typename BasicString<T, Alloc>::iterator BasicString<T, Alloc>::begin()
+FINLINE typename BasicString<T, Alloc>::Iterator BasicString<T, Alloc>::begin()
 {
-	if (m_size & c_longflag)
-		return m_first;
+	if (m_Size & c_LongFlag)
+	{
+		return m_First;
+	}
 	else
-		return m_buffer;
+	{
+		return m_Buffer;
+	}
 }
 
 template<typename T, typename Alloc>
-FINLINE typename BasicString<T, Alloc>::iterator BasicString<T, Alloc>::end()
+FINLINE typename BasicString<T, Alloc>::Iterator BasicString<T, Alloc>::end()
 {
-	if (m_size & c_longflag)
-		return m_first + (m_size & ~c_longflag);
+	if (m_Size & c_LongFlag)
+	{
+		return m_First + (m_Size & ~c_LongFlag);
+	}
 	else
-		return m_buffer + m_size;
+	{
+		return m_Buffer + m_Size;
+	}
 }
 
 template<typename T, typename Alloc>
-FINLINE typename BasicString<T, Alloc>::const_iterator BasicString<T, Alloc>::begin() const
+FINLINE typename BasicString<T, Alloc>::ConstIterator BasicString<T, Alloc>::begin() const
 {
-	if (m_size & c_longflag)
-		return m_first;
+	if (m_Size & c_LongFlag)
+	{
+		return m_First;
+	}
 	else
-		return m_buffer;
+	{
+		return m_Buffer;
+	}
 }
 
 template<typename T, typename Alloc>
-FINLINE typename BasicString<T, Alloc>::const_iterator BasicString<T, Alloc>::end() const
+FINLINE typename BasicString<T, Alloc>::ConstIterator BasicString<T, Alloc>::end() const
 {
-	if (m_size & c_longflag)
-		return m_first + (m_size & ~c_longflag);
+	if (m_Size & c_LongFlag)
+	{
+		return m_First + (m_Size & ~c_LongFlag);
+	}
 	else
-		return m_buffer + m_size;
+	{
+		return m_Buffer + m_Size;
+	}
 }
 
 template<typename T, typename Alloc>
-FINLINE char BasicString<T, Alloc>::operator[](size_t pos) const
+FINLINE typename BasicString<T, Alloc>::Type BasicString<T, Alloc>::operator[](size_t pos) const
 {
 	return begin()[pos];
 }
 
 template<typename T, typename Alloc>
-FINLINE char& BasicString<T, Alloc>::operator[](size_t pos)
+FINLINE typename BasicString<T, Alloc>::Type& BasicString<T, Alloc>::operator[](size_t pos)
 {
 	return begin()[pos];
 }
 
 template<typename T, typename Alloc>
-FINLINE int BasicString<T, Alloc>::compare(const BasicString& other) const
+FINLINE int BasicString<T, Alloc>::Compare(const BasicString& other) const
 {
-	return compare(other.c_str());
+	return Compare(other.CStr());
 }
 
 template<typename T, typename Alloc>
-FINLINE int BasicString<T, Alloc>::compare(const char* sz) const
+FINLINE int BasicString<T, Alloc>::Compare(ConstPointer sz) const
 {
-	const char* it = c_str();
+	ConstPointer it = CStr();
 	for (; *it && *sz && (*it == *sz); ++it, ++sz);
 	return *it - *sz;
 }
 
 template<typename T, typename Alloc>
-FINLINE void BasicString<T, Alloc>::reserve(size_t cap)
+FINLINE void BasicString<T, Alloc>::Reserve(size_t cap)
 {
-	if (cap <= capacity())
+	if (cap <= Capacity())
 		return;
 
-	pointer newfirst = (pointer) Alloc::Malloc(cap + 1);
-	for (pointer it = begin(), newit = newfirst, e = end() + 1; it != e; ++it, ++newit)
-		*newit = *it;
-	if (m_size & c_longflag)
-		Alloc::Free(m_first);
-	else
-		m_size |= c_longflag;
-	m_first = newfirst;
-	m_capacity = m_first + cap + 1;
-}
-
-template<typename T, typename Alloc>
-FINLINE void BasicString<T, Alloc>::resize(size_t n)
-{
-	resize(n, 0);
-}
-
-template<typename T, typename Alloc>
-FINLINE void BasicString<T, Alloc>::resize(size_t n, char ch)
-{
-	if (size() < n)
+	auto newfirst = (Pointer) Alloc::Malloc(cap + 1);
+	for (Pointer it = begin(), newit = newfirst, e = end() + 1; it != e; ++it, ++newit)
 	{
-		reserve(n);
-		for (pointer it = end(), e = begin() + n; it != e; ++it)
-			*it = ch;
+		*newit = *it;
 	}
-	pointer it = begin() + n;
+
+	if (m_Size & c_LongFlag)
+	{
+		Alloc::Free(m_First);
+	}
+	else
+	{
+		m_Size |= c_LongFlag;
+	}
+
+	m_First = newfirst;
+	m_capacity = m_First + cap + 1;
+}
+
+template<typename T, typename Alloc>
+FINLINE void BasicString<T, Alloc>::Resize(size_t n)
+{
+	Resize(n, 0);
+}
+
+template<typename T, typename Alloc>
+FINLINE void BasicString<T, Alloc>::Resize(size_t n, Type ch)
+{
+	if (Size() < n)
+	{
+		Reserve(n);
+		for (Pointer it = end(), e = begin() + n; it != e; ++it)
+		{
+			*it = ch;
+		}
+	}
+	Pointer it = begin() + n;
 	*it = 0;
-	m_size = n | (m_size & c_longflag);
+	m_Size = n | (m_Size & c_LongFlag);
 }
 
 template<typename T, typename Alloc>
-FINLINE void BasicString<T, Alloc>::clear()
+FINLINE void BasicString<T, Alloc>::Clear()
 {
-	resize(0);
+	Resize(0);
 }
 
 template<typename T, typename Alloc>
-FINLINE void BasicString<T, Alloc>::assign(char ch)
+FINLINE void BasicString<T, Alloc>::Assign(Type ch)
 {
-	pointer it = begin();
+	Pointer it = begin();
 	*it = ch;
 	*(it + 1) = 0;
-	m_size = 1 | (m_size & c_longflag);
+	m_Size = 1 | (m_Size & c_LongFlag);
 }
 
 template<typename T, typename Alloc>
-FINLINE void BasicString<T, Alloc>::assign(const char* sz)
+FINLINE void BasicString<T, Alloc>::Assign(ConstPointer sz)
 {
 	size_t len = 0;
-	for (const char* it = sz; *it; ++it)
+	for (ConstPointer it = sz; *it; ++it)
+	{
 		++len;
+	}
 
-	assign(sz, sz + len);
+	Assign(sz, sz + len);
 }
 
 template<typename T, typename Alloc>
-FINLINE void BasicString<T, Alloc>::assign(const char* first, const char* last)
+FINLINE void BasicString<T, Alloc>::Assign(ConstPointer first, ConstPointer last)
 {
 	size_t newsize = last - first;
-	reserve(newsize);
+	Reserve(newsize);
 
-	pointer newit = begin();
-	for (const char* it = first; it != last; ++it, ++newit)
-		*newit = *it;
-	*newit = 0;
-	m_size = newsize | (m_size & c_longflag);
-}
-
-template<typename T, typename Alloc>
-FINLINE void BasicString<T, Alloc>::assign(const BasicString& other)
-{
-	assign(other.begin(), other.end());
-}
-
-template<typename T, typename Alloc>
-FINLINE void BasicString<T, Alloc>::push_back(char ch)
-{
-	if (size() != capacity())
+	Pointer newit = begin();
+	for (ConstPointer it = first; it != last; ++it, ++newit)
 	{
-		pointer it = end();
+		*newit = *it;
+	}
+	*newit = 0;
+	m_Size = newsize | (m_Size & c_LongFlag);
+}
+
+template<typename T, typename Alloc>
+FINLINE void BasicString<T, Alloc>::Assign(const BasicString& other)
+{
+	Assign(other.begin(), other.end());
+}
+
+template<typename T, typename Alloc>
+FINLINE void BasicString<T, Alloc>::PushBack(Type ch)
+{
+	if (Size() != Capacity())
+	{
+		Pointer it = end();
 		*it = ch;
 		*(it + 1) = 0;
-		++m_size;
+		++m_Size;
 	}
 	else
 	{
-		append(&ch, &ch + 1);
+		Append(&ch, &ch + 1);
 	}
 }
 
 template<typename T, typename Alloc>
-FINLINE void BasicString<T, Alloc>::append(const char* sz)
+FINLINE void BasicString<T, Alloc>::Append(ConstPointer sz)
 {
 	size_t len = 0;
-	for (const char* it = sz; *it; ++it)
+	for (ConstPointer it = sz; *it; ++it)
+	{
 		++len;
-	append(sz, sz + len);
+	}
+	Append(sz, sz + len);
 }
 
 template<typename T, typename Alloc>
-FINLINE void BasicString<T, Alloc>::append(const char* first, const char* last)
+FINLINE void BasicString<T, Alloc>::Append(ConstPointer first, ConstPointer last)
 {
-	const size_t newsize = (size_t) (size() + (last - first));
-	if (newsize > capacity())
-		reserve((newsize * 3) / 2);
+	const size_t newsize = (size_t) (Size() + (last - first));
+	if (newsize > Capacity())
+	{
+		Reserve((newsize * 3) / 2);
+	}
 
-	pointer newit = end();
-	for (const char* it = first; it != last; ++it, ++newit)
+	Pointer newit = end();
+	for (ConstPointer it = first; it != last; ++it, ++newit)
+	{
 		*newit = *it;
+	}
+
 	*newit = 0;
-	m_size = newsize | (m_size & c_longflag);
+	m_Size = newsize | (m_Size & c_LongFlag);
 }
 
 template<typename T, typename Alloc>
-FINLINE void BasicString<T, Alloc>::append(const BasicString& other)
+FINLINE void BasicString<T, Alloc>::Append(const BasicString& other)
 {
-	append(other.begin(), other.end());
+	Append(other.begin(), other.end());
 }
 
 template<typename T, typename Alloc>
-FINLINE void BasicString<T, Alloc>::insert(iterator where, char ch)
+FINLINE void BasicString<T, Alloc>::Insert(Iterator where, Type ch)
 {
-	insert(where, &ch, &ch + 1);
+	Insert(where, &ch, &ch + 1);
 }
 
 template<typename T, typename Alloc>
-FINLINE void BasicString<T, Alloc>::insert(iterator where, const char* sz)
+FINLINE void BasicString<T, Alloc>::Insert(Iterator where, ConstPointer sz)
 {
 	size_t len = 0;
-	for (const char* it = sz; *it; ++it)
+	for (ConstPointer it = sz; *it; ++it)
+	{
 		++len;
-	insert(where, sz, sz + len);
+	}
+	Insert(where, sz, sz + len);
 }
 
 template<typename T, typename Alloc>
-FINLINE void BasicString<T, Alloc>::insert(iterator where, const char* first, const char* last)
+FINLINE void BasicString<T, Alloc>::Insert(Iterator where, ConstPointer first, ConstPointer last)
 {
 	if (first == last)
+	{
 		return;
+	}
 
 	const size_t w = where - begin();
-	const size_t newsize = (size_t) (size() + (last - first));
-	if (newsize > capacity())
-		reserve((newsize * 3) / 2);
+	const size_t newsize = (size_t) (Size() + (last - first));
 
-	pointer newit = begin() + newsize;
-	for (pointer it = end(), e = begin() + w; it >= e; --it, --newit)
+	if (newsize > Capacity())
+	{
+		Reserve((newsize * 3) / 2);
+	}
+
+	Pointer newit = begin() + newsize;
+	for (Pointer it = end(), e = begin() + w; it >= e; --it, --newit)
+	{
 		*newit = *it;
+	}
 
 	newit = begin() + w;
-	for (const char* it = first; it != last; ++it, ++newit)
+	for (ConstPointer it = first; it != last; ++it, ++newit)
+	{
 		*newit = *it;
-	m_size = newsize | (m_size & c_longflag);
+	}
+
+	m_Size = newsize | (m_Size & c_LongFlag);
 }
 
 template<typename T, typename Alloc>
-FINLINE void BasicString<T, Alloc>::insert(iterator where, const BasicString& other)
+FINLINE void BasicString<T, Alloc>::Insert(Iterator where, const BasicString& other)
 {
-	insert(where, other.begin(), other.end());
+	Insert(where, other.begin(), other.end());
 }
 
 template<typename T, typename Alloc>
-FINLINE void BasicString<T, Alloc>::erase(iterator first, iterator last)
+FINLINE void BasicString<T, Alloc>::Erase(Iterator first, Iterator last)
 {
 	if (first == last)
+	{
 		return;
+	}
 
-	const size_t newsize = (size_t) (size() + (first - last));
-	pointer newit = first;
-	for (pointer it = last, e = end(); it != e; ++it, ++newit)
+	const size_t newsize = (size_t) (Size() + (first - last));
+	Pointer newit = first;
+	for (Pointer it = last, e = end(); it != e; ++it, ++newit)
+	{
 		*newit = *it;
+	}
+
 	*newit = 0;
-	m_size = newsize | (m_size & c_longflag);
+	m_Size = newsize | (m_Size & c_LongFlag);
 }
 
 template<typename T, typename Alloc>
-FINLINE void BasicString<T, Alloc>::swap(BasicString& other)
+FINLINE void BasicString<T, Alloc>::Swap(BasicString& other)
 {
-	const size_t tsize = m_size;
-	pointer tfirst, tcapacity;
-	char tbuffer[c_nbuffer];
+	const size_t tsize = m_Size;
+	Pointer tfirst, tcapacity;
+	Type tbuffer[c_NBuffer];
 
-	if (tsize & c_longflag)
+	if (tsize & c_LongFlag)
 	{
-		tfirst = m_first;
+		tfirst = m_First;
 		tcapacity = m_capacity;
 	}
 	else
 	{
-		for (pointer it = m_buffer, newit = tbuffer, e = m_buffer + tsize + 1; it != e; ++it, ++newit)
+		for (Pointer it = m_Buffer, newit = tbuffer, e = m_Buffer + tsize + 1; it != e; ++it, ++newit)
 			*newit = *it;
 	}
 
-	m_size = other.m_size;
-	if (other.m_size & c_longflag)
+	m_Size = other.m_Size;
+	if (other.m_Size & c_LongFlag)
 	{
-		m_first = other.m_first;
+		m_First = other.m_First;
 		m_capacity = other.m_capacity;
 	}
 	else
 	{
-		for (pointer it = other.m_buffer, newit = m_buffer, e = other.m_buffer + m_size + 1; it != e; ++it, ++newit)
+		for (Pointer it = other.m_Buffer, newit = m_Buffer, e = other.m_Buffer + m_Size + 1; it != e; ++it, ++newit)
 			*newit = *it;
 	}
 
-	other.m_size = tsize;
-	if (tsize & c_longflag)
+	other.m_Size = tsize;
+	if (tsize & c_LongFlag)
 	{
-		other.m_first = tfirst;
+		other.m_First = tfirst;
 		other.m_capacity = tcapacity;
 	}
 	else
 	{
-		for (pointer it = tbuffer, newit = other.m_buffer, e = tbuffer + tsize + 1; it != e; ++it, ++newit)
+		for (Pointer it = tbuffer, newit = other.m_Buffer, e = tbuffer + tsize + 1; it != e; ++it, ++newit)
 			*newit = *it;
 	}
 }
@@ -579,14 +648,14 @@ template<typename T, typename Alloc>
 FINLINE BasicString<T, Alloc> operator+(const BasicString<T, Alloc>& lhs, const BasicString<T, Alloc>& rhs)
 {
 	BasicString<T, Alloc> ret;
-	ret.reserve(lhs.size() + rhs.size());
+	ret.Reserve(lhs.Size() + rhs.Size());
 	ret += lhs;
 	ret += rhs;
 	return ret;
 }
 
 template<typename T, typename Alloc>
-FINLINE BasicString<T, Alloc> operator+(const BasicString<T, Alloc>& lhs, const char* rhs)
+FINLINE BasicString<T, Alloc> operator+(const BasicString<T, Alloc>& lhs, typename BasicString<T, Alloc>::ConstPointer rhs)
 {
 	BasicString ret = lhs;
 	ret += rhs;
@@ -594,7 +663,7 @@ FINLINE BasicString<T, Alloc> operator+(const BasicString<T, Alloc>& lhs, const 
 }
 
 template<typename T, typename Alloc>
-FINLINE BasicString<T, Alloc> operator+(const char* lhs, const BasicString<T, Alloc>& rhs)
+FINLINE BasicString<T, Alloc> operator+(typename BasicString<T, Alloc>::ConstPointer lhs, const BasicString<T, Alloc>& rhs)
 {
 	BasicString<T, Alloc> ret = lhs;
 	ret += rhs;
@@ -604,22 +673,24 @@ FINLINE BasicString<T, Alloc> operator+(const char* lhs, const BasicString<T, Al
 template<typename T, typename Alloc>
 FINLINE bool operator==(const BasicString<T, Alloc>& lhs, const BasicString<T, Alloc>& rhs)
 {
-	if (lhs.size() != rhs.size())
+	if (lhs.Size() != rhs.Size())
+	{
 		return false;
+	}
 
-	return lhs.compare(rhs) == 0;
+	return lhs.Compare(rhs) == 0;
 }
 
 template<typename T, typename Alloc>
-FINLINE bool operator==(const BasicString<T, Alloc>& lhs, const char* rhs)
+FINLINE bool operator==(const BasicString<T, Alloc>& lhs, typename BasicString<T, Alloc>::ConstPointer rhs)
 {
-	return lhs.compare(rhs) == 0;
+	return lhs.Compare(rhs) == 0;
 }
 
 template<typename T, typename Alloc>
-FINLINE bool operator==(const char* lhs, const BasicString<T, Alloc>& rhs)
+FINLINE bool operator==(typename BasicString<T, Alloc>::ConstPointer lhs, const BasicString<T, Alloc>& rhs)
 {
-	return rhs.compare(lhs) == 0;
+	return rhs.Compare(lhs) == 0;
 }
 
 template<typename T, typename Alloc>
@@ -629,13 +700,13 @@ FINLINE bool operator!=(const BasicString<T, Alloc>& lhs, const BasicString<T, A
 }
 
 template<typename T, typename Alloc>
-FINLINE bool operator!=(const BasicString<T, Alloc>& lhs, const char* rhs)
+FINLINE bool operator!=(const BasicString<T, Alloc>& lhs, typename BasicString<T, Alloc>::ConstPointer rhs)
 {
 	return !(lhs == rhs);
 }
 
 template<typename T, typename Alloc>
-FINLINE bool operator!=(const char* lhs, const BasicString<T, Alloc>& rhs)
+FINLINE bool operator!=(typename BasicString<T, Alloc>::ConstPointer lhs, const BasicString<T, Alloc>& rhs)
 {
 	return !(lhs == rhs);
 }
@@ -643,19 +714,19 @@ FINLINE bool operator!=(const char* lhs, const BasicString<T, Alloc>& rhs)
 template<typename T, typename Alloc>
 FINLINE bool operator<(const BasicString<T, Alloc>& lhs, const BasicString<T, Alloc>& rhs)
 {
-	return lhs.compare(rhs) < 0;
+	return lhs.Compare(rhs) < 0;
 }
 
 template<typename T, typename Alloc>
-FINLINE bool operator<(const BasicString<T, Alloc>& lhs, const char* rhs)
+FINLINE bool operator<(const BasicString<T, Alloc>& lhs, typename BasicString<T, Alloc>::ConstPointer rhs)
 {
-	return lhs.compare(rhs) < 0;
+	return lhs.Compare(rhs) < 0;
 }
 
 template<typename T, typename Alloc>
-FINLINE bool operator<(const char* lhs, const BasicString<T, Alloc>& rhs)
+FINLINE bool operator<(typename BasicString<T, Alloc>::ConstPointer lhs, const BasicString<T, Alloc>& rhs)
 {
-	return rhs.compare(lhs) > 0;
+	return rhs.Compare(lhs) > 0;
 }
 
 template<typename T, typename Alloc>
@@ -665,13 +736,13 @@ FINLINE bool operator>(const BasicString<T, Alloc>& lhs, const BasicString<T, Al
 }
 
 template<typename T, typename Alloc>
-FINLINE bool operator>(const BasicString<T, Alloc>& lhs, const char* rhs)
+FINLINE bool operator>(const BasicString<T, Alloc>& lhs, typename BasicString<T, Alloc>::ConstPointer rhs)
 {
 	return rhs < lhs;
 }
 
 template<typename T, typename Alloc>
-FINLINE bool operator>(const char* lhs, const BasicString<T, Alloc>& rhs)
+FINLINE bool operator>(typename BasicString<T, Alloc>::ConstPointer lhs, const BasicString<T, Alloc>& rhs)
 {
 	return rhs < lhs;
 }
@@ -683,13 +754,13 @@ FINLINE bool operator<=(const BasicString<T, Alloc>& lhs, const BasicString<T, A
 }
 
 template<typename T, typename Alloc>
-FINLINE bool operator<=(const BasicString<T, Alloc>& lhs, const char* rhs)
+FINLINE bool operator<=(const BasicString<T, Alloc>& lhs, typename BasicString<T, Alloc>::ConstPointer rhs)
 {
 	return !(rhs < lhs);
 }
 
 template<typename T, typename Alloc>
-FINLINE bool operator<=(const char* lhs, const BasicString<T, Alloc>& rhs)
+FINLINE bool operator<=(typename BasicString<T, Alloc>::ConstPointer lhs, const BasicString<T, Alloc>& rhs)
 {
 	return !(rhs < lhs);
 }
@@ -701,21 +772,16 @@ FINLINE bool operator>=(const BasicString<T, Alloc>& lhs, const BasicString<T, A
 }
 
 template<typename T, typename Alloc>
-FINLINE bool operator>=(const BasicString<T, Alloc>& lhs, const char* rhs)
+FINLINE bool operator>=(const BasicString<T, Alloc>& lhs, typename BasicString<T, Alloc>::ConstPointer rhs)
 {
 	return !(lhs < rhs);
 }
 
 template<typename T, typename Alloc>
-FINLINE bool operator>=(const char* lhs, const BasicString<T, Alloc>& rhs)
+FINLINE bool operator>=(typename BasicString<T, Alloc>::ConstPointer lhs, const BasicString<T, Alloc>& rhs)
 {
 	return !(lhs < rhs);
-}
-
-template<typename T, typename Alloc>
-static FINLINE size_t hash(const BasicString<T, Alloc>& value)
-{
-	return hash_String(value.c_str(), value.size());
 }
 
 using String = BasicString<char>;
+using WString = BasicString<wchar_t>;
