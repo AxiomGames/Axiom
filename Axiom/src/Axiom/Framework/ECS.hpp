@@ -6,7 +6,7 @@
 
 #include "../Core/Array.hpp"
 #include "../Core/robin_hood.h"
-#include "../Core/CMBAllocator.hpp"
+#include "../Core/BlockAllocator.hpp"
 #include "Object.hpp"
 
 typedef uint32_t EntityID;
@@ -97,7 +97,7 @@ private:
 		//robin_hood::unordered_map<TTypeID, std::uintptr_t> ComponentOffsets; // TODO: This will be for serialization
 	};
 
-	robin_hood::unordered_map<TTypeID, CMBAllocator*> m_ComponentMemory;
+	robin_hood::unordered_map<TTypeID, BlockAllocator*> m_ComponentMemory;
 	robin_hood::unordered_map<TTypeID, Array<std::uintptr_t>> m_ComponentPointers;
 	robin_hood::unordered_map<EntityID, EntityData> m_Entities;
 
@@ -279,7 +279,7 @@ private:
 	{
 		TTypeID componentID = T::TypeID();
 
-		CMBAllocator* allocator = nullptr;
+		BlockAllocator* allocator = nullptr;
 		auto it = m_ComponentMemory.find(componentID);
 
 		if(it != m_ComponentMemory.end())
@@ -288,7 +288,7 @@ private:
 		}
 		else
 		{
-			allocator = new CMBAllocator(8388608);
+			allocator = new BlockAllocator(8388608);
 			//allocator->SetName(std::string("ComponentMemory:") + T::TypeName());
 			m_ComponentMemory.emplace(componentID, allocator);
 			//AU_LOG_INFO("New allocator for component ", T::TypeName(), " with size of ", FormatBytes(componentSize), " aligned ", FormatBytes(componentSizeAligned));
@@ -305,7 +305,7 @@ private:
 		TTypeID componentID = component->GetTypeID();
 
 		auto it = m_ComponentMemory.find(componentID);
-		CMBAllocator* allocator = it->second;
+		BlockAllocator* allocator = it->second;
 		allocator->Free<T>(component);
 		m_ComponentPointers[componentID].Remove((uintptr_t)component);
 	}

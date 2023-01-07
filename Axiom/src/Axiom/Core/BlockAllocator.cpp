@@ -1,11 +1,11 @@
-#include "CMBAllocator.hpp"
+#include "BlockAllocator.hpp"
 
-CMBAllocator::CMBAllocator(MemSize blockSize) : m_BlockSize(blockSize)
+BlockAllocator::BlockAllocator(uint64 blockSize) : m_BlockSize(blockSize)
 {
 	AllocateMemoryBlock();
 }
 
-CMBAllocator::~CMBAllocator()
+BlockAllocator::~BlockAllocator()
 {
 	for (const auto &item : m_Memory)
 	{
@@ -13,22 +13,24 @@ CMBAllocator::~CMBAllocator()
 	}
 }
 
-MemPtr CMBAllocator::AllocRaw(MemSize size)
+MemPtr BlockAllocator::Malloc(uint64 size, uint64_t alignment)
 {
+	size = Align(size, alignment);
+
 	ax_assert(size);
 	ax_assert(size <= m_BlockSize);
 
 	for (MemoryBlock& memoryBlock : m_Memory)
 	{
-		if(memoryBlock.FreeMemory < size)
+		if (memoryBlock.FreeMemory < size)
 		{
 			continue;
 		}
 
 		// Check for memory fragments
-		for(auto fragmentIt = memoryBlock.Fragments.begin(); fragmentIt != memoryBlock.Fragments.end(); fragmentIt++)
+		for (auto fragmentIt = memoryBlock.Fragments.begin(); fragmentIt != memoryBlock.Fragments.end(); fragmentIt++)
 		{
-			if(fragmentIt->Size >= size)
+			if (fragmentIt->Size >= size)
 			{
 				return AllocFromFragment(memoryBlock, fragmentIt, size);
 			}
@@ -39,21 +41,37 @@ MemPtr CMBAllocator::AllocRaw(MemSize size)
 	return AllocFromFragment(newBlock, newBlock.Fragments.begin(), size);
 }
 
-void CMBAllocator::FreeRaw(void* ptr)
+MemPtr BlockAllocator::ReAlloc(MemPtr ptr, uint64 size, uint64_t alignment)
 {
-	if(!ptr) return;
+	if (ptr == nullptr)
+	{
+		return nullptr;
+	}
+
+	MemPtr newLocation = Malloc(size, alignment);
+	MemCopy(newLocation, ptr, size);
+	Free(ptr);
+	return newLocation;
+}
+
+void BlockAllocator::Free(VoidPtr ptr)
+{
+	if (ptr == nullptr)
+	{
+		return;
+	}
 
 	MemPtr memPtrBegin = reinterpret_cast<MemPtr>(ptr);
 	auto it = m_MemorySizes.find((uintptr_t)memPtrBegin);
 
-	if(it == m_MemorySizes.end())
+	if (it == m_MemorySizes.end())
 	{
 		ax_assert(0);
 		//AU_LOG_FATAL("Cound not find size for pointer ", PointerToString(ptr), " !");
 		return;
 	}
 
-	MemSize size = it->second;
+	uint64 size = it->second;
 	MemPtr memPtrEnd = memPtrBegin + size;
 
 	m_MemorySizes.erase(it);
@@ -63,7 +81,7 @@ void CMBAllocator::FreeRaw(void* ptr)
 
 	for (MemoryBlock& memoryBlock : m_Memory)
 	{
-		if(memPtrBegin >= memoryBlock.Memory && memPtrEnd <= (memoryBlock.Memory + m_BlockSize))
+		if (memPtrBegin >= memoryBlock.Memory && memPtrEnd <= (memoryBlock.Memory + m_BlockSize))
 		{
 			// Insert free fragment at the beginning
 			memoryBlock.Fragments.EmplaceAt(0, MemoryFragment{memPtrBegin, memPtrEnd, size});
@@ -78,16 +96,18 @@ void CMBAllocator::FreeRaw(void* ptr)
 	//AU_LOG_FATAL("Memory ", PointerToString(ptr), " is not part of this allocator !");
 }
 
-bool CMBAllocator::CheckMemory(void* ptr) const
+bool BlockAllocator::CheckMemory(void* ptr) const
 {
-	if(!ptr)
+	if (ptr == nullptr)
+	{
 		return false;
+	}
 
 	MemPtr memPtrBegin = reinterpret_cast<MemPtr>(ptr);
 
 	auto it = m_MemorySizes.find((uintptr_t)memPtrBegin);
 
-	if(it == m_MemorySizes.end())
+	if (it == m_MemorySizes.end())
 	{
 		return false;
 	}
@@ -95,14 +115,7 @@ bool CMBAllocator::CheckMemory(void* ptr) const
 	return true;
 }
 
-CMBMemoryLocation CMBAllocator::GetMemoryLocation(void* ptr) const
-{
-	// TODO: Complete memory location
-	ax_assert(0);
-	return {};
-}
-
-CMBAllocator::MemoryBlock& CMBAllocator::AllocateMemoryBlock()
+BlockAllocator::MemoryBlock& BlockAllocator::AllocateMemoryBlock()
 {
 	MemoryBlock memoryBlock;
 	memoryBlock.Memory = new uint8_t[m_BlockSize];
@@ -114,7 +127,7 @@ CMBAllocator::MemoryBlock& CMBAllocator::AllocateMemoryBlock()
 	return m_Memory.Add(memoryBlock);
 }
 
-FINLINE MemPtr CMBAllocator::AllocFromFragment(MemoryBlock& memoryBlock, const Array<MemoryFragment>::iterator& fragmentIt, MemSize size)
+FINLINE MemPtr BlockAllocator::AllocFromFragment(MemoryBlock& memoryBlock, const Array<MemoryFragment>::iterator& fragmentIt, uint64 size)
 {
 	MemoryFragment& fragment = *fragmentIt;
 
@@ -129,7 +142,7 @@ FINLINE MemPtr CMBAllocator::AllocFromFragment(MemoryBlock& memoryBlock, const A
 	fragment.Begin = newMemoryStart + size;
 	fragment.Size -= size;
 	ax_assert(fragment.Size >= 0);
-	if(fragment.Size == 0)
+	if (fragment.Size == 0)
 	{
 		memoryBlock.Fragments.Remove(fragmentIt);
 	}
