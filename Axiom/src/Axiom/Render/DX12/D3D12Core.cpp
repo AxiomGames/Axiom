@@ -1,6 +1,8 @@
 #include "D3D12Core.hpp"
 #include "D3D12CommonHeaders.hpp"
 
+#ifdef AX_WIN
+
 namespace DX12
 {
 	bool InitializeDXFactory(IDXGIFactory7** factory)
@@ -289,3 +291,5 @@ namespace DX12
 		RenderCmd->EndFrame();
 	}
 }
+
+#endif

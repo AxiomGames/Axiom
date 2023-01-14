@@ -31,15 +31,15 @@
 
 namespace AxSTL
 {
-    struct PlaceHolder
-    {
-    };
+	struct PlaceHolder
+	{
+	};
 }
 
 
-inline void *operator new(size_t, AxSTL::PlaceHolder, VoidPtr ptr)
+inline void* operator new(std::size_t, AxSTL::PlaceHolder, VoidPtr ptr)
 {
-    return ptr;
+	return ptr;
 }
 
 inline void operator delete(VoidPtr, AxSTL::PlaceHolder, VoidPtr) throw()

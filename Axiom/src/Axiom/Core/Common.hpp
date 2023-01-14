@@ -18,7 +18,7 @@
 #   elif __CLANG__
 #       define FINLINE [[clang::always_inline]] 
 #	elif __GNUC__
-#       define FINLINE  __attribute__((always_inline))
+#       define FINLINE  inline __attribute__((always_inline))
 #   endif
 #endif
 
@@ -52,6 +52,7 @@
 #endif
 
 #ifdef _MSC_VER
+#define AX_WIN
 #include <intrin.h>
 #	ifndef AXPopCount
 #		define AXPopCount(x) __popcnt(x)
@@ -60,11 +61,10 @@
 #		define AXPopCount64(x) __popcnt64(x)
 #   endif
 #elif defined(__GNUC__) && !defined(__MINGW32__)
-#include <builtins.h>
 #	ifndef AXPopCount
 #		define AXPopCount(x) __builtin_popcount(x)
 #   endif
-#	ifndef AXPopCount64()
+#	ifndef AXPopCount64
 #		define AXPopCount64() __builtin_popcountl(x)
 #   endif
 #else

@@ -26,14 +26,16 @@
 
 #pragma once
 
-//#include <TINYSTL/allocator.h>
+#include "Memory.hpp"
 #include "New.hpp"
 #include "Traits.hpp"
+
+#include <algorithm>
 
 namespace AxSTL
 {
 
-	template<typename T, typename Alloc = TINYSTL_ALLOCATOR>
+	template<typename T, typename Alloc = DEFAULT_ALLOCATOR>
 	struct Buffer
 	{
 		T* first;
