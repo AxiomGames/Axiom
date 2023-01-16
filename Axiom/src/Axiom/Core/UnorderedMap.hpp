@@ -48,18 +48,18 @@ public:
 
 	UnorderedMap& operator=(UnorderedMap&& other);
 
-	typedef Pair<Key, Value> value_type;
+	typedef Pair<Key, Value> ValueType;
 
-	typedef AxSTL::unordered_hash_iterator<const AxSTL::unordered_hash_node<Key, Value> > const_iterator;
-	typedef AxSTL::unordered_hash_iterator<AxSTL::unordered_hash_node<Key, Value>> iterator;
+	typedef AxSTL::unordered_hash_iterator<const AxSTL::unordered_hash_node<Key, Value> > ConstIterator;
+	typedef AxSTL::unordered_hash_iterator<AxSTL::unordered_hash_node<Key, Value>> Iterator;
 
-	iterator begin();
+	Iterator begin();
 
-	iterator end();
+	Iterator end();
 
-	const_iterator begin() const;
+	ConstIterator begin() const;
 
-	const_iterator end() const;
+	ConstIterator end() const;
 
 	void Clear();
 
@@ -67,15 +67,15 @@ public:
 
 	size_t Size() const;
 
-	const_iterator Find(const Key& key) const;
+	ConstIterator Find(const Key& key) const;
 
-	iterator Find(const Key& key);
+	Iterator Find(const Key& key);
 
-	Pair<iterator, bool> Insert(const Pair<Key, Value>& p);
+	Pair<Iterator, bool> Insert(const Pair<Key, Value>& p);
 
-	Pair<iterator, bool> Emplace(Pair<Key, Value>&& p);
+	Pair<Iterator, bool> Emplace(Pair<Key, Value>&& p);
 
-	void Erase(const_iterator where);
+	void Erase(ConstIterator where);
 
 	Value& operator[](const Key& key);
 
@@ -149,33 +149,33 @@ inline UnorderedMap<Key, Value, Alloc>& UnorderedMap<Key, Value, Alloc>::operato
 }
 
 template<typename Key, typename Value, typename Alloc>
-inline typename UnorderedMap<Key, Value, Alloc>::iterator UnorderedMap<Key, Value, Alloc>::begin()
+inline typename UnorderedMap<Key, Value, Alloc>::Iterator UnorderedMap<Key, Value, Alloc>::begin()
 {
-	iterator it;
+	Iterator it;
 	it.node = *m_buckets.first;
 	return it;
 }
 
 template<typename Key, typename Value, typename Alloc>
-inline typename UnorderedMap<Key, Value, Alloc>::iterator UnorderedMap<Key, Value, Alloc>::end()
+inline typename UnorderedMap<Key, Value, Alloc>::Iterator UnorderedMap<Key, Value, Alloc>::end()
 {
-	iterator it;
+	Iterator it;
 	it.node = 0;
 	return it;
 }
 
 template<typename Key, typename Value, typename Alloc>
-inline typename UnorderedMap<Key, Value, Alloc>::const_iterator UnorderedMap<Key, Value, Alloc>::begin() const
+inline typename UnorderedMap<Key, Value, Alloc>::ConstIterator UnorderedMap<Key, Value, Alloc>::begin() const
 {
-	const_iterator cit;
+	ConstIterator cit;
 	cit.node = *m_buckets.first;
 	return cit;
 }
 
 template<typename Key, typename Value, typename Alloc>
-inline typename UnorderedMap<Key, Value, Alloc>::const_iterator UnorderedMap<Key, Value, Alloc>::end() const
+inline typename UnorderedMap<Key, Value, Alloc>::ConstIterator UnorderedMap<Key, Value, Alloc>::end() const
 {
-	const_iterator cit;
+	ConstIterator cit;
 	cit.node = 0;
 	return cit;
 }
@@ -213,17 +213,17 @@ inline void UnorderedMap<Key, Value, Alloc>::Clear()
 }
 
 template<typename Key, typename Value, typename Alloc>
-inline typename UnorderedMap<Key, Value, Alloc>::iterator UnorderedMap<Key, Value, Alloc>::Find(const Key& key)
+inline typename UnorderedMap<Key, Value, Alloc>::Iterator UnorderedMap<Key, Value, Alloc>::Find(const Key& key)
 {
-	iterator result;
+	Iterator result;
 	result.node = unordered_hash_find(key, m_buckets.first, (size_t) (m_buckets.last - m_buckets.first));
 	return result;
 }
 
 template<typename Key, typename Value, typename Alloc>
-inline typename UnorderedMap<Key, Value, Alloc>::const_iterator UnorderedMap<Key, Value, Alloc>::Find(const Key& key) const
+inline typename UnorderedMap<Key, Value, Alloc>::ConstIterator UnorderedMap<Key, Value, Alloc>::Find(const Key& key) const
 {
-	iterator result;
+	Iterator result;
 	result.node = unordered_hash_find(key, m_buckets.first, (size_t) (m_buckets.last - m_buckets.first));
 	return result;
 }
@@ -237,7 +237,7 @@ inline void UnorderedMap<Key, Value, Alloc>::Rehash(size_t nbuckets)
 
 		const size_t newnbuckets = ((size_t) (m_buckets.last - m_buckets.first) - 1) * 8;
 		m_buckets.last = m_buckets.first;
-		buffer_resize<pointer, Alloc>(&m_buckets, newnbuckets + 1, 0);
+		AxSTL::buffer_resize<pointer, Alloc>(&m_buckets, newnbuckets + 1, 0);
 		AxSTL::unordered_hash_node<Key, Value>** buckets = m_buckets.first;
 
 		while (root)
@@ -251,9 +251,9 @@ inline void UnorderedMap<Key, Value, Alloc>::Rehash(size_t nbuckets)
 }
 
 template<typename Key, typename Value, typename Alloc>
-inline Pair<typename UnorderedMap<Key, Value, Alloc>::iterator, bool> UnorderedMap<Key, Value, Alloc>::Insert(const Pair<Key, Value>& p)
+inline Pair<typename UnorderedMap<Key, Value, Alloc>::Iterator, bool> UnorderedMap<Key, Value, Alloc>::Insert(const Pair<Key, Value>& p)
 {
-	Pair<iterator, bool> result;
+	Pair<Iterator, bool> result;
 	result.second = false;
 
 	result.first = Find(p.first);
@@ -276,9 +276,9 @@ inline Pair<typename UnorderedMap<Key, Value, Alloc>::iterator, bool> UnorderedM
 }
 
 template<typename Key, typename Value, typename Alloc>
-inline Pair<typename UnorderedMap<Key, Value, Alloc>::iterator, bool> UnorderedMap<Key, Value, Alloc>::Emplace(Pair<Key, Value>&& p)
+inline Pair<typename UnorderedMap<Key, Value, Alloc>::Iterator, bool> UnorderedMap<Key, Value, Alloc>::Emplace(Pair<Key, Value>&& p)
 {
-	Pair<iterator, bool> result;
+	Pair<Iterator, bool> result;
 	result.second = false;
 
 	result.first = Find(p.first);
@@ -303,7 +303,7 @@ inline Pair<typename UnorderedMap<Key, Value, Alloc>::iterator, bool> UnorderedM
 }
 
 template<typename Key, typename Value, typename Alloc>
-inline void UnorderedMap<Key, Value, Alloc>::Erase(const_iterator where)
+inline void UnorderedMap<Key, Value, Alloc>::Erase(ConstIterator where)
 {
 	unordered_hash_node_erase(where.node, hash(where->first), m_buckets.first, (size_t) (m_buckets.last - m_buckets.first) - 1);
 

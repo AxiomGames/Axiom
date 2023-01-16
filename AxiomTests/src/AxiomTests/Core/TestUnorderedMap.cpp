@@ -9,7 +9,7 @@ static void CompareMaps(const UnorderedMap<K, V>& m, const UnorderedMap<K, V>& e
 {
 	CHECK(m.Size() == expected.Size());
 
-	typedef typename UnorderedMap<K, V>::const_iterator iterator;
+	typedef typename UnorderedMap<K, V>::ConstIterator iterator;
 	for (iterator it = expected.begin(), end = expected.end(); it != end; ++it)
 	{
 		iterator found = m.Find((*it).first);
@@ -114,7 +114,7 @@ TEST_CASE("TestUnorderedMap_Assign")
 TEST_CASE("TestUnorderedMap_Insert")
 {
 	using BaseMap = UnorderedMap<String, String>;
-	using InsPair = Pair<BaseMap::iterator, bool>;
+	using InsPair = Pair<BaseMap::Iterator, bool>;
 
 	{
 		BaseMap m;
