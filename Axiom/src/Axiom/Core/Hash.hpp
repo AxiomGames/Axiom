@@ -31,22 +31,31 @@
 #include "Common.hpp"
 
 template<typename T>
-struct Hash {
-	constexpr static bool IsHasheable = true;
+struct Hash
+{
+	constexpr static bool c_HasHashImpl = true;
 
-	constexpr static std::size_t hash(const T& value)
+	static std::size_t hash(const T& value)
 	{
 		const std::size_t asint = (std::size_t) value;
 		const auto str = (const char*) &asint;
 		const auto len = sizeof(asint);
 
-
 		std::size_t hash = 0;
 		typedef const char* pointer;
 		for (pointer it = str, end = str + len; it != end; ++it)
+		{
 			hash = *it + (hash << 6) + (hash << 16) - hash;
+		}
 
 		return hash;
 	}
 };
+
+template<typename TValue>
+inline std::size_t HashValue(const TValue& value)
+{
+	static_assert(Hash<TValue>::c_HasHashImpl, "type has no hash implementation");
+	return Hash<TValue>::hash(value);
+}
 

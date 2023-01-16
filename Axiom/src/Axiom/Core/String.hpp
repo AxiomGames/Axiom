@@ -27,6 +27,7 @@
 
 #include <string_view>
 #include "Memory.hpp"
+#include "Hash.hpp"
 
 #pragma once
 
@@ -92,7 +93,7 @@ public:
 
 	BasicString& operator=(const BasicString& other);
 
-	BasicString& operator=(BasicString&& other);
+	BasicString& operator=(BasicString&& other) noexcept ;
 
 	BasicString& operator=(Type ch);
 
@@ -251,7 +252,7 @@ FINLINE BasicString<T, Alloc>& BasicString<T, Alloc>::operator=(const BasicStrin
 }
 
 template<typename T, typename Alloc>
-FINLINE BasicString<T, Alloc>& BasicString<T, Alloc>::operator=(BasicString&& other)
+FINLINE BasicString<T, Alloc>& BasicString<T, Alloc>::operator=(BasicString&& other) noexcept
 {
 	if (m_Size & c_LongFlag)
 	{
@@ -825,3 +826,20 @@ FINLINE bool operator>=(typename BasicString<T, Alloc>::ConstPointer lhs, const 
 
 using String = BasicString<char>;
 using WString = BasicString<wchar_t>;
+
+
+template<>
+struct Hash<String>
+{
+	constexpr static bool c_HasHashImpl = true;
+
+	static std::size_t hash(const String& string)
+	{
+		std::size_t hash = 0;
+		for (auto it = string.begin(); it != string.end(); ++it)
+		{
+			hash = *it + (hash << 6) + (hash << 16) - hash;
+		}
+		return hash;
+	}
+};
