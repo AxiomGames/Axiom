@@ -17,6 +17,10 @@ struct Matrix3
 		m[2][2] = 1.0f;
 	}
 
+	const Vector3f& GetForward() const { return z; }
+	const Vector3f& GetUp()      const { return y; }
+	const Vector3f& GetRight()   const { return x; }
+
 	inline static Matrix3 LookAt(Vector3f direction, Vector3f up)
 	{
 		Matrix3 result{};
@@ -234,20 +238,6 @@ AX_ALIGNAS(16) struct Matrix4
 		return M;
 	}
 
-	FINLINE static Matrix4 VECTORCALL Transpose(const Matrix4 M)
-	{
-		const __m128 vTemp1 = _mm_shuffle_ps(M.r[0], M.r[1], _MM_SHUFFLE(1, 0, 1, 0));
-		const __m128 vTemp3 = _mm_shuffle_ps(M.r[0], M.r[1], _MM_SHUFFLE(3, 2, 3, 2));
-		const __m128 vTemp2 = _mm_shuffle_ps(M.r[2], M.r[3], _MM_SHUFFLE(1, 0, 1, 0));
-		const __m128 vTemp4 = _mm_shuffle_ps(M.r[2], M.r[3], _MM_SHUFFLE(3, 2, 3, 2));
-		Matrix4 mResult;
-		mResult.r[0] = _mm_shuffle_ps(vTemp1, vTemp2, _MM_SHUFFLE(2, 0, 2, 0));
-		mResult.r[1] = _mm_shuffle_ps(vTemp1, vTemp2, _MM_SHUFFLE(3, 1, 3, 1));
-		mResult.r[2] = _mm_shuffle_ps(vTemp3, vTemp4, _MM_SHUFFLE(2, 0, 2, 0));
-		mResult.r[3] = _mm_shuffle_ps(vTemp3, vTemp4, _MM_SHUFFLE(3, 1, 3, 1));
-		return mResult;
-	}
-
 	// https://lxjk.github.io/2017/09/03/Fast-4x4-Matrix-Inverse-with-SSE-SIMD-Explained.html
 	#define MakeShuffleMask(x,y,z,w)           (x | (y<<2) | (z<<4) | (w<<6))
 	// vec(0, 1, 2, 3) -> (vec[x], vec[y], vec[z], vec[w])
@@ -298,7 +288,6 @@ AX_ALIGNAS(16) struct Matrix4
 		out.r[1] = VecShuffle(t0, inM.r[2], 1,3,1,3); // 01, 11, 21, 23(=0)
 		out.r[2] = VecShuffle(t1, inM.r[2], 0,2,2,3); // 02, 12, 22, 23(=0)
 
-		// (SizeSqr(mVec[0]), SizeSqr(mVec[1]), SizeSqr(mVec[2]), 0)
 		__m128 sizeSqr;
 		sizeSqr =                     _mm_mul_ps(out.r[0], out.r[0]);
 		sizeSqr = _mm_add_ps(sizeSqr, _mm_mul_ps(out.r[1], out.r[1]));
@@ -325,15 +314,11 @@ AX_ALIGNAS(16) struct Matrix4
 
 	inline Matrix4 static VECTORCALL Inverse(const Matrix4 inM) noexcept
 	{
-		// use block matrix method
-	    // A is a matrix, then i(A) or iA means inverse of A, A# (or A_ in code) means adjugate of A, |A| (or detA in code) is determinant, tr(A) is trace
-	    // sub matrices
 		__m128 A = VecShuffle_0101(inM.r[0], inM.r[1]);
 		__m128 B = VecShuffle_2323(inM.r[0], inM.r[1]);
 		__m128 C = VecShuffle_0101(inM.r[2], inM.r[3]);
 		__m128 D = VecShuffle_2323(inM.r[2], inM.r[3]);
 
-		// determinant as (|A| |B| |C| |D|)
 		__m128 detSub = _mm_sub_ps(
 			_mm_mul_ps(VecShuffle(inM.r[0], inM.r[2], 0, 2, 0, 2), VecShuffle(inM.r[1], inM.r[3], 1, 3, 1, 3)),
 			_mm_mul_ps(VecShuffle(inM.r[0], inM.r[2], 1, 3, 1, 3), VecShuffle(inM.r[1], inM.r[3], 0, 2, 0, 2))
@@ -343,37 +328,24 @@ AX_ALIGNAS(16) struct Matrix4
 		__m128 detC = VecSwizzle1(detSub, 2);
 		__m128 detD = VecSwizzle1(detSub, 3);
 
-		// let iM = 1/|M| * | X  Y |
-		//                  | Z  W |
-		// D#C
 		__m128 D_C = Mat2AdjMul(D, C);
-		// A#B
 		__m128 A_B = Mat2AdjMul(A, B);
-		// X# = |D|A - B(D#C)
 		__m128 X_ = _mm_sub_ps(_mm_mul_ps(detD, A), Mat2Mul(B, D_C));
-		// W# = |A|D - C(A#B)
 		__m128 W_ = _mm_sub_ps(_mm_mul_ps(detA, D), Mat2Mul(C, A_B));
 
-		// |M| = |A|*|D| + ... (continue later)
 		__m128 detM = _mm_mul_ps(detA, detD);
 
-		// Y# = |B|C - D(A#B)#
 		__m128 Y_ = _mm_sub_ps(_mm_mul_ps(detB, C), Mat2MulAdj(D, A_B));
-		// Z# = |C|B - A(D#C)#
 		__m128 Z_ = _mm_sub_ps(_mm_mul_ps(detC, B), Mat2MulAdj(A, D_C));
 
-		// |M| = |A|*|D| + |B|*|C| ... (continue later)
 		detM = _mm_add_ps(detM, _mm_mul_ps(detB, detC));
 
-		// tr((A#B)(D#C))
 		__m128 tr = _mm_mul_ps(A_B, VecSwizzle(D_C, 0, 2, 1, 3));
 		tr = _mm_hadd_ps(tr, tr);
 		tr = _mm_hadd_ps(tr, tr);
-		// |M| = |A|*|D| + |B|*|C| - tr((A#B)(D#C)
 		detM = _mm_sub_ps(detM, tr);
 
 		const __m128 adjSignMask = _mm_setr_ps(1.f, -1.f, -1.f, 1.f);
-		// (1/|M|, -1/|M|, -1/|M|, 1/|M|)
 		__m128 rDetM = _mm_div_ps(adjSignMask, detM);
 
 		X_ = _mm_mul_ps(X_, rDetM);
@@ -430,7 +402,7 @@ AX_ALIGNAS(16) struct Matrix4
 		a0 = _mm_add_ps(m0, m1);
 		a1 = _mm_add_ps(m2, m3);
 		a2 = _mm_add_ps(a0, a1);
-		out[2] = a2;
+		out[2] = a2;	
 		
 		e0 = _mm_shuffle_ps(in2[3], in2[3], _MM_SHUFFLE(0, 0, 0, 0));
 		e1 = _mm_shuffle_ps(in2[3], in2[3], _MM_SHUFFLE(1, 1, 1, 1));
@@ -445,6 +417,46 @@ AX_ALIGNAS(16) struct Matrix4
 		a2 = _mm_add_ps(a0, a1);
 		out[3] = a2;
 		return out;
+	}
+
+	FINLINE static Matrix4 RotationX(float angleRadians) {
+		Matrix4  out_matrix{};
+		float c = cosf(angleRadians);
+		float s = sinf(angleRadians);
+
+		out_matrix.m[1][1] = c;
+		out_matrix.m[1][2] = s;
+		out_matrix.m[2][1] = -s;
+		out_matrix.m[2][2] = c;
+		return out_matrix;
+	}
+
+	FINLINE static Matrix4 RotationY(float angleRadians) {
+		Matrix4 out_matrix{};
+		float c = cosf(angleRadians);
+		float s = sinf(angleRadians);
+
+		out_matrix.m[0][0] = c;
+		out_matrix.m[0][2] = -s;
+		out_matrix.m[2][0] = s;
+		out_matrix.m[2][2] = c;
+		return out_matrix;
+	}
+	
+	FINLINE static Matrix4 RotationZ(float angleRadians) {
+		Matrix4 out_matrix{};
+		float c = cosf(angleRadians);
+		float s = sinf(angleRadians);
+
+		out_matrix.m[0][0] = c;
+		out_matrix.m[0][1] = s;
+		out_matrix.m[1][0] = -s;
+		out_matrix.m[1][1] = c;
+		return out_matrix;
+	}
+
+	FINLINE static Matrix4 RotationFromEuler(Vector3f eulerRadians) {
+		return RotationX(eulerRadians.x) * RotationY(eulerRadians.y) * RotationZ(eulerRadians.z);
 	}
 
 	FINLINE static Vector3f VECTORCALL ExtractPosition(const Matrix4 matrix) noexcept
@@ -538,6 +550,41 @@ AX_ALIGNAS(16) struct Matrix4
 		return M;
 	}
 
+	FINLINE Matrix4 static VECTORCALL LookAt(Vector3f eyePosition, Vector3f focusPosition, Vector3f upDirection) noexcept
+	{
+		__m128 EyePosition = _mm_loadu_ps(&eyePosition.x);
+		__m128 FocusPosition = _mm_loadu_ps(&focusPosition.x);
+		__m128 UpDirection = _mm_loadu_ps(&upDirection.x);
+
+		// negate because right handed, for left handed no need to negate
+		__m128 EyeDirection = _mm_sub_ps(EyePosition, FocusPosition);
+		
+		__m128  R2 = SSEVectorNormalize(EyeDirection);
+		__m128  R0 = SSEVector3Cross(UpDirection, R2);
+		R0 = SSEVectorNormalize(R0);
+		__m128  R1 = SSEVector3Cross(R2, R0);
+		__m128  NegEyePosition = _mm_mul_ps(EyePosition, g_XMNegativeOne);
+		__m128 D0 = SSEVector3Dot(R0, NegEyePosition);
+		__m128 D1 = SSEVector3Dot(R1, NegEyePosition);
+		__m128 D2 = SSEVector3Dot(R2, NegEyePosition);
+		R0 = _mm_and_ps(R0, g_XMMask3);
+		R1 = _mm_and_ps(R1, g_XMMask3);
+		R2 = _mm_and_ps(R2, g_XMMask3);
+		D0 = _mm_and_ps(D0, g_XMMaskW);
+		D1 = _mm_and_ps(D1, g_XMMaskW);
+		D2 = _mm_and_ps(D2, g_XMMaskW);
+		D0 = _mm_or_ps(D0, R0);
+		D1 = _mm_or_ps(D1, R1);
+		D2 = _mm_or_ps(D2, R2);
+		Matrix4 M;
+		M.r[0] = D0;
+		M.r[1] = D1;
+		M.r[2] = D2;
+		M.r[3] = g_XMIdentityR3;
+		M = Matrix4::Transpose(M);
+		return M;
+	}
+
 	FINLINE static Vector4 VECTORCALL Vector3Transform(const Vector3f V, const Matrix4& M) noexcept
 	{
 		__m128 vec = _mm_loadu_ps(&V.x);
@@ -563,6 +610,20 @@ AX_ALIGNAS(16) struct Matrix4
 		__m128 a1 = _mm_add_ps(v2, v3);
 		__m128 a2 = _mm_add_ps(a0, a1);
 		return a2;
+	}
+
+	FINLINE static Matrix4 VECTORCALL Transpose(const Matrix4 M)
+	{
+		const __m128 vTemp1 = _mm_shuffle_ps(M.r[0], M.r[1], _MM_SHUFFLE(1, 0, 1, 0));
+		const __m128 vTemp3 = _mm_shuffle_ps(M.r[0], M.r[1], _MM_SHUFFLE(3, 2, 3, 2));
+		const __m128 vTemp2 = _mm_shuffle_ps(M.r[2], M.r[3], _MM_SHUFFLE(1, 0, 1, 0));
+		const __m128 vTemp4 = _mm_shuffle_ps(M.r[2], M.r[3], _MM_SHUFFLE(3, 2, 3, 2));
+		Matrix4 mResult;
+		mResult.r[0] = _mm_shuffle_ps(vTemp1, vTemp2, _MM_SHUFFLE(2, 0, 2, 0));
+		mResult.r[1] = _mm_shuffle_ps(vTemp1, vTemp2, _MM_SHUFFLE(3, 1, 3, 1));
+		mResult.r[2] = _mm_shuffle_ps(vTemp3, vTemp4, _MM_SHUFFLE(2, 0, 2, 0));
+		mResult.r[3] = _mm_shuffle_ps(vTemp3, vTemp4, _MM_SHUFFLE(3, 1, 3, 1));
+		return mResult;
 	}
 };
  
