@@ -47,6 +47,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	return ax::Main(__argc, __argv);
 }
 #else
+#include <Axiom/Math/Vector.hpp>
+
 int main(int argc, char* argv[])
 {
 	return Main(argc, argv);

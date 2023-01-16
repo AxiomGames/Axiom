@@ -202,13 +202,13 @@ AX_ALIGNAS(16) struct Matrix4
 	// please assign normalized vectors
 	FINLINE static Matrix4 VECTORCALL LookAtRH(Vector3f eye, Vector3f center, const Vector3f& up)
 	{
-		Vector4 NegEyePosition;
-		Vector4 D0, D1, D2;
-		Vector4 R0, R1;
+		__m128 NegEyePosition;
+		__m128 D0, D1, D2;
+		__m128 R0, R1;
 
-		Vector4 EyePosition  = _mm_loadu_ps(&eye.x);
-		Vector4 EyeDirection = _mm_sub_ps(_mm_setzero_ps(), _mm_loadu_ps(&center.x));
-		Vector4 UpDirection  = _mm_loadu_ps(&up.x);
+		__m128 EyePosition  = _mm_loadu_ps(&eye.x);
+		__m128 EyeDirection = _mm_sub_ps(_mm_setzero_ps(), _mm_loadu_ps(&center.x));
+		__m128 UpDirection  = _mm_loadu_ps(&up.x);
 
 		R0 = SSEVectorNormalize(SSEVector3Cross(UpDirection, EyeDirection));
 		R1 = SSEVectorNormalize(SSEVector3Cross(EyeDirection, R0));
@@ -604,10 +604,10 @@ AX_ALIGNAS(16) struct Matrix4
 
 	FINLINE static Vector4 VECTORCALL Vector4Transform(Vector4 v, const Matrix4& m)
 	{
-		__m128 v0 = _mm_mul_ps(m.r[0], _mm_shuffle_ps(v, v, _MM_SHUFFLE(0, 0, 0, 0)));
-		__m128 v1 = _mm_mul_ps(m.r[1], _mm_shuffle_ps(v, v, _MM_SHUFFLE(1, 1, 1, 1)));
-		__m128 v2 = _mm_mul_ps(m.r[2], _mm_shuffle_ps(v, v, _MM_SHUFFLE(2, 2, 2, 2)));
-		__m128 v3 = _mm_mul_ps(m.r[3], _mm_shuffle_ps(v, v, _MM_SHUFFLE(3, 3, 3, 3)));
+		__m128 v0 = _mm_mul_ps(m.r[0], _mm_shuffle_ps(v.vec, v.vec, _MM_SHUFFLE(0, 0, 0, 0)));
+		__m128 v1 = _mm_mul_ps(m.r[1], _mm_shuffle_ps(v.vec, v.vec, _MM_SHUFFLE(1, 1, 1, 1)));
+		__m128 v2 = _mm_mul_ps(m.r[2], _mm_shuffle_ps(v.vec, v.vec, _MM_SHUFFLE(2, 2, 2, 2)));
+		__m128 v3 = _mm_mul_ps(m.r[3], _mm_shuffle_ps(v.vec, v.vec, _MM_SHUFFLE(3, 3, 3, 3)));
 		__m128 a0 = _mm_add_ps(v0, v1);
 		__m128 a1 = _mm_add_ps(v2, v3);
 		__m128 a2 = _mm_add_ps(a0, a1);
