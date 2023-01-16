@@ -80,6 +80,8 @@ public:
 
 	BasicString(const BasicString& other);
 
+	BasicString(BasicString&& other) noexcept;
+
 	BasicString(ConstPointer sz);
 
 	BasicString(ConstPointer first, ConstPointer last);
@@ -89,6 +91,8 @@ public:
 	~BasicString();
 
 	BasicString& operator=(const BasicString& other);
+
+	BasicString& operator=(BasicString&& other);
 
 	BasicString& operator=(Type ch);
 
@@ -169,7 +173,7 @@ private:
 		struct
 		{
 			Pointer m_First;
-			Pointer m_capacity;
+			Pointer m_Capacity;
 		};
 		Type m_Buffer[c_NBuffer];
 	};
@@ -187,6 +191,23 @@ FINLINE BasicString<T, Alloc>::BasicString(const BasicString& other)
 	: m_Size(0)
 {
 	Assign(other);
+}
+
+template<typename T, typename Alloc>
+BasicString<T, Alloc>::BasicString(BasicString&& other) noexcept
+{
+	if (m_Size & c_LongFlag)
+	{
+		Reserve(other.Size());
+		Append(other.begin(), other.end());
+	}
+	else
+	{
+		m_Capacity = other.m_Capacity;
+		m_First = other.m_First;
+		m_Size = other.m_Size;
+	}
+	other.m_Size = 0;
 }
 
 template<typename T, typename Alloc>
@@ -226,6 +247,25 @@ FINLINE BasicString<T, Alloc>& BasicString<T, Alloc>::operator=(const BasicStrin
 	{
 		Assign(other);
 	}
+	return *this;
+}
+
+template<typename T, typename Alloc>
+FINLINE BasicString<T, Alloc>& BasicString<T, Alloc>::operator=(BasicString&& other)
+{
+	if (m_Size & c_LongFlag)
+	{
+		Reserve(other.Size());
+		Append(other.begin(), other.end());
+	}
+	else
+	{
+		m_Capacity = other.m_Capacity;
+		m_First = other.m_First;
+		m_Size = other.m_Size;
+	}
+	other.m_Size = 0;
+
 	return *this;
 }
 
@@ -295,7 +335,7 @@ FINLINE size_t BasicString<T, Alloc>::Capacity() const
 {
 	if (m_Size & c_LongFlag)
 	{
-		return m_capacity - m_First - 1;
+		return m_Capacity - m_First - 1;
 	}
 	else
 	{
@@ -403,7 +443,7 @@ FINLINE void BasicString<T, Alloc>::Reserve(size_t cap)
 	}
 
 	m_First = newfirst;
-	m_capacity = m_First + cap + 1;
+	m_Capacity = m_First + cap + 1;
 }
 
 template<typename T, typename Alloc>
@@ -611,7 +651,7 @@ FINLINE void BasicString<T, Alloc>::Swap(BasicString& other)
 	if (tsize & c_LongFlag)
 	{
 		tfirst = m_First;
-		tcapacity = m_capacity;
+		tcapacity = m_Capacity;
 	}
 	else
 	{
@@ -623,7 +663,7 @@ FINLINE void BasicString<T, Alloc>::Swap(BasicString& other)
 	if (other.m_Size & c_LongFlag)
 	{
 		m_First = other.m_First;
-		m_capacity = other.m_capacity;
+		m_Capacity = other.m_Capacity;
 	}
 	else
 	{
@@ -635,7 +675,7 @@ FINLINE void BasicString<T, Alloc>::Swap(BasicString& other)
 	if (tsize & c_LongFlag)
 	{
 		other.m_First = tfirst;
-		other.m_capacity = tcapacity;
+		other.m_Capacity = tcapacity;
 	}
 	else
 	{
