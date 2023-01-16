@@ -46,9 +46,9 @@ public:
 
 	UnorderedSet& operator=(const UnorderedSet& other);
 
-	UnorderedSet& operator=(UnorderedSet&& other);
+	UnorderedSet& operator=(UnorderedSet&& other) noexcept ;
 
-	typedef AxSTL::unordered_hash_iterator<const AxSTL::unordered_hash_node<Key, void> > ConstIterator;
+	typedef AxSTL::UnorderedHashIterator<const AxSTL::UnorderedHashNode<Key, void> > ConstIterator;
 	typedef ConstIterator Iterator;
 
 	Iterator begin() const;
@@ -77,7 +77,7 @@ private:
 
 	void Rehash(size_t nbuckets);
 
-	typedef AxSTL::unordered_hash_node<Key, void>* Pointer;
+	typedef AxSTL::UnorderedHashNode<Key, void>* Pointer;
 
 	size_t m_Size;
 	AxSTL::Buffer<Pointer, Alloc> m_Buckets;
@@ -101,7 +101,7 @@ inline UnorderedSet<Key, Alloc>::UnorderedSet(const UnorderedSet& other)
 
 	for (Pointer it = *other.m_Buckets.first; it; it = it->next)
 	{
-		auto newnode = new(AxSTL::PlaceHolder(), Alloc::Malloc(sizeof(AxSTL::unordered_hash_node<Key, void>))) AxSTL::unordered_hash_node<Key, void>(*it);
+		auto newnode = new(AxSTL::PlaceHolder(), Alloc::Malloc(sizeof(AxSTL::UnorderedHashNode<Key, void>))) AxSTL::UnorderedHashNode<Key, void>(*it);
 		newnode->next = newnode->prev = 0;
 		unordered_hash_node_insert(newnode, HashValue(it->first), m_Buckets.first, nbuckets - 1);
 	}
@@ -133,7 +133,7 @@ inline UnorderedSet<Key, Alloc>& UnorderedSet<Key, Alloc>::operator=(const Unord
 }
 
 template<typename Key, typename Alloc>
-inline UnorderedSet<Key, Alloc>& UnorderedSet<Key, Alloc>::operator=(UnorderedSet&& other)
+inline UnorderedSet<Key, Alloc>& UnorderedSet<Key, Alloc>::operator=(UnorderedSet&& other) noexcept
 {
 	UnorderedSet(static_cast<UnorderedSet&&>(other)).Swap(*this);
 	return *this;
@@ -174,8 +174,8 @@ inline void UnorderedSet<Key, Alloc>::Clear()
 	while (it)
 	{
 		const Pointer next = it->next;
-		using AxSTL::unordered_hash_node;
-		it->~unordered_hash_node<Key, void>();
+		using AxSTL::UnorderedHashNode;
+		it->~UnorderedHashNode<Key, void>();
 		Alloc::Free(it);
 
 		it = next;
@@ -204,7 +204,7 @@ inline void UnorderedSet<Key, Alloc>::Rehash(size_t nbuckets)
 		const size_t newnbuckets = ((size_t) (m_Buckets.last - m_Buckets.first) - 1) * 8;
 		m_Buckets.last = m_Buckets.first;
 		buffer_resize<Pointer, Alloc>(&m_Buckets, newnbuckets + 1, 0);
-		AxSTL::unordered_hash_node<Key, void>** buckets = m_Buckets.first;
+		AxSTL::UnorderedHashNode<Key, void>** buckets = m_Buckets.first;
 
 		while (root)
 		{
@@ -226,7 +226,7 @@ inline Pair<typename UnorderedSet<Key, Alloc>::Iterator, bool> UnorderedSet<Key,
 	if (result.first.node != 0)
 		return result;
 
-	auto newnode = new(AxSTL::PlaceHolder(), Alloc::Malloc(sizeof(AxSTL::unordered_hash_node<Key, void>))) AxSTL::unordered_hash_node<Key, void>(key);
+	auto newnode = new(AxSTL::PlaceHolder(), Alloc::Malloc(sizeof(AxSTL::UnorderedHashNode<Key, void>))) AxSTL::UnorderedHashNode<Key, void>(key);
 	newnode->next = newnode->prev = 0;
 
 	const size_t nbuckets = (size_t) (m_Buckets.last - m_Buckets.first);
@@ -251,7 +251,7 @@ inline Pair<typename UnorderedSet<Key, Alloc>::Iterator, bool> UnorderedSet<Key,
 		return result;
 
 	const size_t keyhash = HashValue(key);
-	auto newnode = new(AxSTL::PlaceHolder(), Alloc::Malloc(sizeof(AxSTL::unordered_hash_node<Key, void>))) AxSTL::unordered_hash_node<Key, void>(static_cast<Key&&>(key));
+	auto newnode = new(AxSTL::PlaceHolder(), Alloc::Malloc(sizeof(AxSTL::UnorderedHashNode<Key, void>))) AxSTL::UnorderedHashNode<Key, void>(static_cast<Key&&>(key));
 	newnode->next = newnode->prev = 0;
 
 	const size_t nbuckets = (size_t) (m_Buckets.last - m_Buckets.first);
@@ -270,9 +270,9 @@ inline void UnorderedSet<Key, Alloc>::Erase(Iterator where)
 {
 	unordered_hash_node_erase(where.node, hash(where.node->first), m_Buckets.first, (size_t) (m_Buckets.last - m_Buckets.first) - 1);
 
-	using AxSTL::unordered_hash_node;
-	where.node->~unordered_hash_node<Key, void>();
-	Alloc::static_deallocate((void*) where.node, sizeof(unordered_hash_node<Key, void>));
+	using AxSTL::UnorderedHashNode;
+	where.node->~UnorderedHashNode<Key, void>();
+	Alloc::Free((void*) where.node);
 	--m_Size;
 }
 

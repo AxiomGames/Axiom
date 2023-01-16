@@ -50,8 +50,8 @@ public:
 
 	typedef Pair<Key, Value> ValueType;
 
-	typedef AxSTL::unordered_hash_iterator<const AxSTL::unordered_hash_node<Key, Value> > ConstIterator;
-	typedef AxSTL::unordered_hash_iterator<AxSTL::unordered_hash_node<Key, Value>> Iterator;
+	typedef AxSTL::UnorderedHashIterator<const AxSTL::UnorderedHashNode<Key, Value> > ConstIterator;
+	typedef AxSTL::UnorderedHashIterator<AxSTL::UnorderedHashNode<Key, Value>> Iterator;
 
 	Iterator begin();
 
@@ -85,7 +85,7 @@ private:
 
 	void Rehash(size_t nbuckets);
 
-	typedef AxSTL::unordered_hash_node<Key, Value>* pointer;
+	typedef AxSTL::UnorderedHashNode<Key, Value>* pointer;
 
 	size_t m_size;
 	AxSTL::Buffer<pointer, Alloc> m_buckets;
@@ -108,7 +108,7 @@ inline UnorderedMap<Key, Value, Alloc>::UnorderedMap(const UnorderedMap& other)
 
 	for (pointer it = *other.m_buckets.first; it; it = it->next)
 	{
-		auto newnode = new(AxSTL::PlaceHolder(), Alloc::Malloc(sizeof(AxSTL::unordered_hash_node<Key, Value>))) AxSTL::unordered_hash_node<Key, Value>(
+		auto newnode = new(AxSTL::PlaceHolder(), Alloc::Malloc(sizeof(AxSTL::UnorderedHashNode<Key, Value>))) AxSTL::UnorderedHashNode<Key, Value>(
 			it->first, it->second);
 		newnode->next = newnode->prev = 0;
 
@@ -200,8 +200,8 @@ inline void UnorderedMap<Key, Value, Alloc>::Clear()
 	{
 		const pointer next = it->next;
 
-		using AxSTL::unordered_hash_node;
-		it->~unordered_hash_node<Key, Value>();
+		using AxSTL::UnorderedHashNode;
+		it->~UnorderedHashNode<Key, Value>();
 		Alloc::Free(it);
 
 		it = next;
@@ -238,7 +238,7 @@ inline void UnorderedMap<Key, Value, Alloc>::Rehash(size_t nbuckets)
 		const size_t newnbuckets = ((size_t) (m_buckets.last - m_buckets.first) - 1) * 8;
 		m_buckets.last = m_buckets.first;
 		AxSTL::buffer_resize<pointer, Alloc>(&m_buckets, newnbuckets + 1, 0);
-		AxSTL::unordered_hash_node<Key, Value>** buckets = m_buckets.first;
+		AxSTL::UnorderedHashNode<Key, Value>** buckets = m_buckets.first;
 
 		while (root)
 		{
@@ -260,7 +260,7 @@ inline Pair<typename UnorderedMap<Key, Value, Alloc>::Iterator, bool> UnorderedM
 	if (result.first.node != 0)
 		return result;
 
-	auto newnode = new(AxSTL::PlaceHolder(), Alloc::Malloc(sizeof(AxSTL::unordered_hash_node<Key, Value>))) AxSTL::unordered_hash_node<Key, Value>(p.first, p.second);
+	auto newnode = new(AxSTL::PlaceHolder(), Alloc::Malloc(sizeof(AxSTL::UnorderedHashNode<Key, Value>))) AxSTL::UnorderedHashNode<Key, Value>(p.first, p.second);
 	newnode->next = newnode->prev = 0;
 
 	if (!m_buckets.first) buffer_resize<pointer, Alloc>(&m_buckets, 9, 0);
@@ -286,7 +286,7 @@ inline Pair<typename UnorderedMap<Key, Value, Alloc>::Iterator, bool> UnorderedM
 		return result;
 
 	const size_t keyhash = HashValue(p.first);
-	auto newnode = new(AxSTL::PlaceHolder(), Alloc::Malloc(sizeof(AxSTL::unordered_hash_node<Key, Value>))) AxSTL::unordered_hash_node<Key, Value>(static_cast<Key&&>(p.first),
+	auto newnode = new(AxSTL::PlaceHolder(), Alloc::Malloc(sizeof(AxSTL::UnorderedHashNode<Key, Value>))) AxSTL::UnorderedHashNode<Key, Value>(static_cast<Key&&>(p.first),
 		static_cast<Value&&>(p.second));
 	newnode->next = newnode->prev = 0;
 
@@ -307,9 +307,9 @@ inline void UnorderedMap<Key, Value, Alloc>::Erase(ConstIterator where)
 {
 	unordered_hash_node_erase(where.node, hash(where->first), m_buckets.first, (size_t) (m_buckets.last - m_buckets.first) - 1);
 
-	using AxSTL::unordered_hash_node;
-	where->~unordered_hash_node<Key, Value>();
-	Alloc::static_deallocate((void*) where.node, sizeof(AxSTL::unordered_hash_node<Key, Value>));
+	using AxSTL::UnorderedHashNode;
+	where->~UnorderedHashNode<Key, Value>();
+	Alloc::Free((void*) where.node);
 	--m_size;
 }
 
