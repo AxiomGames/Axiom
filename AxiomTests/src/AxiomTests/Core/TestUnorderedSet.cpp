@@ -9,7 +9,7 @@ static void CompareSets(const UnorderedSet<T>& s, const UnorderedSet<T>& expecte
 {
 	CHECK(s.Size() == expected.Size());
 
-	typedef typename UnorderedSet<T>::const_iterator iterator;
+	typedef typename UnorderedSet<T>::ConstIterator iterator;
 	for (iterator it = expected.begin(), end = expected.end(); it != end; ++it)
 	{
 		CHECK(s.Find(*it) != s.end());
@@ -107,7 +107,7 @@ TEST_CASE("UnorderedSet_Assign")
 TEST_CASE("UnorderedSet_Insert")
 {
 	using BaseSet = UnorderedSet<String>;
-	using BasePair = Pair<UnorderedSet<String>::iterator, bool>;
+	using BasePair = Pair<UnorderedSet<String>::Iterator, bool>;
 
 	{
 		BaseSet s;

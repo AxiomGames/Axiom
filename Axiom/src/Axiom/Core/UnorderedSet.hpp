@@ -48,12 +48,12 @@ public:
 
 	UnorderedSet& operator=(UnorderedSet&& other);
 
-	typedef AxSTL::unordered_hash_iterator<const AxSTL::unordered_hash_node<Key, void> > const_iterator;
-	typedef const_iterator iterator;
+	typedef AxSTL::unordered_hash_iterator<const AxSTL::unordered_hash_node<Key, void> > ConstIterator;
+	typedef ConstIterator Iterator;
 
-	iterator begin() const;
+	Iterator begin() const;
 
-	iterator end() const;
+	Iterator end() const;
 
 	void Clear();
 
@@ -61,13 +61,13 @@ public:
 
 	size_t Size() const;
 
-	iterator Find(const Key& key) const;
+	Iterator Find(const Key& key) const;
 
-	Pair<iterator, bool> Insert(const Key& key);
+	Pair<Iterator, bool> Insert(const Key& key);
 
-	Pair<iterator, bool> Emplace(Key&& key);
+	Pair<Iterator, bool> Emplace(Key&& key);
 
-	void Erase(iterator where);
+	void Erase(Iterator where);
 
 	size_t Erase(const Key& key);
 
@@ -77,52 +77,52 @@ private:
 
 	void Rehash(size_t nbuckets);
 
-	typedef AxSTL::unordered_hash_node<Key, void>* pointer;
+	typedef AxSTL::unordered_hash_node<Key, void>* Pointer;
 
-	size_t m_size;
-	AxSTL::Buffer<pointer, Alloc> m_buckets;
+	size_t m_Size;
+	AxSTL::Buffer<Pointer, Alloc> m_Buckets;
 };
 
 template<typename Key, typename Alloc>
 inline UnorderedSet<Key, Alloc>::UnorderedSet()
-	: m_size(0)
+	: m_Size(0)
 {
-	buffer_init<pointer, Alloc>(&m_buckets);
-	buffer_resize<pointer, Alloc>(&m_buckets, 9, 0);
+	buffer_init<Pointer, Alloc>(&m_Buckets);
+	buffer_resize<Pointer, Alloc>(&m_Buckets, 9, 0);
 }
 
 template<typename Key, typename Alloc>
 inline UnorderedSet<Key, Alloc>::UnorderedSet(const UnorderedSet& other)
-	: m_size(other.m_size)
+	: m_Size(other.m_Size)
 {
-	const size_t nbuckets = (size_t) (other.m_buckets.last - other.m_buckets.first);
-	buffer_init<pointer, Alloc>(&m_buckets);
-	buffer_resize<pointer, Alloc>(&m_buckets, nbuckets, 0);
+	const size_t nbuckets = (size_t) (other.m_Buckets.last - other.m_Buckets.first);
+	buffer_init<Pointer, Alloc>(&m_Buckets);
+	buffer_resize<Pointer, Alloc>(&m_Buckets, nbuckets, 0);
 
-	for (pointer it = *other.m_buckets.first; it; it = it->next)
+	for (Pointer it = *other.m_Buckets.first; it; it = it->next)
 	{
 		auto newnode = new(AxSTL::PlaceHolder(), Alloc::Malloc(sizeof(AxSTL::unordered_hash_node<Key, void>))) AxSTL::unordered_hash_node<Key, void>(*it);
 		newnode->next = newnode->prev = 0;
-		unordered_hash_node_insert(newnode, HashValue(it->first), m_buckets.first, nbuckets - 1);
+		unordered_hash_node_insert(newnode, HashValue(it->first), m_Buckets.first, nbuckets - 1);
 	}
 }
 
 template<typename Key, typename Alloc>
 inline UnorderedSet<Key, Alloc>::UnorderedSet(UnorderedSet&& other)
-	: m_size(other.m_size)
+	: m_Size(other.m_Size)
 {
-	buffer_move(&m_buckets, &other.m_buckets);
-	other.m_size = 0;
+	buffer_move(&m_Buckets, &other.m_Buckets);
+	other.m_Size = 0;
 }
 
 template<typename Key, typename Alloc>
 inline UnorderedSet<Key, Alloc>::~UnorderedSet()
 {
-	if (m_buckets.first != m_buckets.last)
+	if (m_Buckets.first != m_Buckets.last)
 	{
 		Clear();
 	}
-	buffer_destroy<pointer, Alloc>(&m_buckets);
+	buffer_destroy<Pointer, Alloc>(&m_Buckets);
 }
 
 template<typename Key, typename Alloc>
@@ -140,17 +140,17 @@ inline UnorderedSet<Key, Alloc>& UnorderedSet<Key, Alloc>::operator=(UnorderedSe
 }
 
 template<typename Key, typename Alloc>
-inline typename UnorderedSet<Key, Alloc>::iterator UnorderedSet<Key, Alloc>::begin() const
+inline typename UnorderedSet<Key, Alloc>::Iterator UnorderedSet<Key, Alloc>::begin() const
 {
-	iterator cit;
-	cit.node = *m_buckets.first;
+	Iterator cit;
+	cit.node = *m_Buckets.first;
 	return cit;
 }
 
 template<typename Key, typename Alloc>
-inline typename UnorderedSet<Key, Alloc>::iterator UnorderedSet<Key, Alloc>::end() const
+inline typename UnorderedSet<Key, Alloc>::Iterator UnorderedSet<Key, Alloc>::end() const
 {
-	iterator cit;
+	Iterator cit;
 	cit.node = 0;
 	return cit;
 }
@@ -158,22 +158,22 @@ inline typename UnorderedSet<Key, Alloc>::iterator UnorderedSet<Key, Alloc>::end
 template<typename Key, typename Alloc>
 inline bool UnorderedSet<Key, Alloc>::Empty() const
 {
-	return m_size == 0;
+	return m_Size == 0;
 }
 
 template<typename Key, typename Alloc>
 inline size_t UnorderedSet<Key, Alloc>::Size() const
 {
-	return m_size;
+	return m_Size;
 }
 
 template<typename Key, typename Alloc>
 inline void UnorderedSet<Key, Alloc>::Clear()
 {
-	pointer it = *m_buckets.first;
+	Pointer it = *m_Buckets.first;
 	while (it)
 	{
-		const pointer next = it->next;
+		const Pointer next = it->next;
 		using AxSTL::unordered_hash_node;
 		it->~unordered_hash_node<Key, void>();
 		Alloc::Free(it);
@@ -181,34 +181,34 @@ inline void UnorderedSet<Key, Alloc>::Clear()
 		it = next;
 	}
 
-	m_buckets.last = m_buckets.first;
-	buffer_resize<pointer, Alloc>(&m_buckets, 9, 0);
-	m_size = 0;
+	m_Buckets.last = m_Buckets.first;
+	buffer_resize<Pointer, Alloc>(&m_Buckets, 9, 0);
+	m_Size = 0;
 }
 
 template<typename Key, typename Alloc>
-inline typename UnorderedSet<Key, Alloc>::iterator UnorderedSet<Key, Alloc>::Find(const Key& key) const
+inline typename UnorderedSet<Key, Alloc>::Iterator UnorderedSet<Key, Alloc>::Find(const Key& key) const
 {
-	iterator result;
-	result.node = unordered_hash_find(key, m_buckets.first, (size_t) (m_buckets.last - m_buckets.first));
+	Iterator result;
+	result.node = unordered_hash_find(key, m_Buckets.first, (size_t) (m_Buckets.last - m_Buckets.first));
 	return result;
 }
 
 template<typename Key, typename Alloc>
 inline void UnorderedSet<Key, Alloc>::Rehash(size_t nbuckets)
 {
-	if (m_size + 1 > 4 * nbuckets)
+	if (m_Size + 1 > 4 * nbuckets)
 	{
-		pointer root = *m_buckets.first;
+		Pointer root = *m_Buckets.first;
 
-		const size_t newnbuckets = ((size_t) (m_buckets.last - m_buckets.first) - 1) * 8;
-		m_buckets.last = m_buckets.first;
-		buffer_resize<pointer, Alloc>(&m_buckets, newnbuckets + 1, 0);
-		AxSTL::unordered_hash_node<Key, void>** buckets = m_buckets.first;
+		const size_t newnbuckets = ((size_t) (m_Buckets.last - m_Buckets.first) - 1) * 8;
+		m_Buckets.last = m_Buckets.first;
+		buffer_resize<Pointer, Alloc>(&m_Buckets, newnbuckets + 1, 0);
+		AxSTL::unordered_hash_node<Key, void>** buckets = m_Buckets.first;
 
 		while (root)
 		{
-			const pointer next = root->next;
+			const Pointer next = root->next;
 			root->next = root->prev = 0;
 			unordered_hash_node_insert(root, HashValue(root->first), buckets, newnbuckets);
 			root = next;
@@ -217,9 +217,9 @@ inline void UnorderedSet<Key, Alloc>::Rehash(size_t nbuckets)
 }
 
 template<typename Key, typename Alloc>
-inline Pair<typename UnorderedSet<Key, Alloc>::iterator, bool> UnorderedSet<Key, Alloc>::Insert(const Key& key)
+inline Pair<typename UnorderedSet<Key, Alloc>::Iterator, bool> UnorderedSet<Key, Alloc>::Insert(const Key& key)
 {
-	Pair<iterator, bool> result;
+	Pair<Iterator, bool> result;
 	result.second = false;
 
 	result.first = Find(key);
@@ -229,10 +229,10 @@ inline Pair<typename UnorderedSet<Key, Alloc>::iterator, bool> UnorderedSet<Key,
 	auto newnode = new(AxSTL::PlaceHolder(), Alloc::Malloc(sizeof(AxSTL::unordered_hash_node<Key, void>))) AxSTL::unordered_hash_node<Key, void>(key);
 	newnode->next = newnode->prev = 0;
 
-	const size_t nbuckets = (size_t) (m_buckets.last - m_buckets.first);
-	unordered_hash_node_insert(newnode, HashValue(key), m_buckets.first, nbuckets - 1);
+	const size_t nbuckets = (size_t) (m_Buckets.last - m_Buckets.first);
+	unordered_hash_node_insert(newnode, HashValue(key), m_Buckets.first, nbuckets - 1);
 
-	++m_size;
+	++m_Size;
 	Rehash(nbuckets);
 
 	result.first.node = newnode;
@@ -241,9 +241,9 @@ inline Pair<typename UnorderedSet<Key, Alloc>::iterator, bool> UnorderedSet<Key,
 }
 
 template<typename Key, typename Alloc>
-inline Pair<typename UnorderedSet<Key, Alloc>::iterator, bool> UnorderedSet<Key, Alloc>::Emplace(Key&& key)
+inline Pair<typename UnorderedSet<Key, Alloc>::Iterator, bool> UnorderedSet<Key, Alloc>::Emplace(Key&& key)
 {
-	Pair<iterator, bool> result;
+	Pair<Iterator, bool> result;
 	result.second = false;
 
 	result.first = Find(key);
@@ -254,10 +254,10 @@ inline Pair<typename UnorderedSet<Key, Alloc>::iterator, bool> UnorderedSet<Key,
 	auto newnode = new(AxSTL::PlaceHolder(), Alloc::Malloc(sizeof(AxSTL::unordered_hash_node<Key, void>))) AxSTL::unordered_hash_node<Key, void>(static_cast<Key&&>(key));
 	newnode->next = newnode->prev = 0;
 
-	const size_t nbuckets = (size_t) (m_buckets.last - m_buckets.first);
-	unordered_hash_node_insert(newnode, keyhash, m_buckets.first, nbuckets - 1);
+	const size_t nbuckets = (size_t) (m_Buckets.last - m_Buckets.first);
+	unordered_hash_node_insert(newnode, keyhash, m_Buckets.first, nbuckets - 1);
 
-	++m_size;
+	++m_Size;
 	Rehash(nbuckets);
 
 	result.first.node = newnode;
@@ -266,20 +266,20 @@ inline Pair<typename UnorderedSet<Key, Alloc>::iterator, bool> UnorderedSet<Key,
 }
 
 template<typename Key, typename Alloc>
-inline void UnorderedSet<Key, Alloc>::Erase(iterator where)
+inline void UnorderedSet<Key, Alloc>::Erase(Iterator where)
 {
-	unordered_hash_node_erase(where.node, hash(where.node->first), m_buckets.first, (size_t) (m_buckets.last - m_buckets.first) - 1);
+	unordered_hash_node_erase(where.node, hash(where.node->first), m_Buckets.first, (size_t) (m_Buckets.last - m_Buckets.first) - 1);
 
 	using AxSTL::unordered_hash_node;
 	where.node->~unordered_hash_node<Key, void>();
 	Alloc::static_deallocate((void*) where.node, sizeof(unordered_hash_node<Key, void>));
-	--m_size;
+	--m_Size;
 }
 
 template<typename Key, typename Alloc>
 inline size_t UnorderedSet<Key, Alloc>::Erase(const Key& key)
 {
-	const iterator it = find(key);
+	const Iterator it = find(key);
 	if (it.node == 0)
 		return 0;
 
@@ -290,8 +290,8 @@ inline size_t UnorderedSet<Key, Alloc>::Erase(const Key& key)
 template<typename Key, typename Alloc>
 void UnorderedSet<Key, Alloc>::Swap(UnorderedSet& other)
 {
-	size_t tsize = other.m_size;
-	other.m_size = m_size, m_size = tsize;
-	buffer_swap(&m_buckets, &other.m_buckets);
+	size_t tsize = other.m_Size;
+	other.m_Size = m_Size, m_Size = tsize;
+	buffer_swap(&m_Buckets, &other.m_Buckets);
 }
 
