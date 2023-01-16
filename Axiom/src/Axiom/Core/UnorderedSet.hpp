@@ -55,27 +55,27 @@ public:
 
 	iterator end() const;
 
-	void clear();
+	void Clear();
 
-	bool empty() const;
+	bool Empty() const;
 
-	size_t size() const;
+	size_t Size() const;
 
-	iterator find(const Key& key) const;
+	iterator Find(const Key& key) const;
 
-	Pair<iterator, bool> insert(const Key& key);
+	Pair<iterator, bool> Insert(const Key& key);
 
-	Pair<iterator, bool> emplace(Key&& key);
+	Pair<iterator, bool> Emplace(Key&& key);
 
-	void erase(iterator where);
+	void Erase(iterator where);
 
-	size_t erase(const Key& key);
+	size_t Erase(const Key& key);
 
-	void swap(UnorderedSet& other);
+	void Swap(UnorderedSet& other);
 
 private:
 
-	void rehash(size_t nbuckets);
+	void Rehash(size_t nbuckets);
 
 	typedef AxSTL::unordered_hash_node<Key, void>* pointer;
 
@@ -119,21 +119,23 @@ template<typename Key, typename Alloc>
 inline UnorderedSet<Key, Alloc>::~UnorderedSet()
 {
 	if (m_buckets.first != m_buckets.last)
-		clear();
+	{
+		Clear();
+	}
 	buffer_destroy<pointer, Alloc>(&m_buckets);
 }
 
 template<typename Key, typename Alloc>
 inline UnorderedSet<Key, Alloc>& UnorderedSet<Key, Alloc>::operator=(const UnorderedSet<Key, Alloc>& other)
 {
-	UnorderedSet<Key, Alloc>(other).swap(*this);
+	UnorderedSet<Key, Alloc>(other).Swap(*this);
 	return *this;
 }
 
 template<typename Key, typename Alloc>
 inline UnorderedSet<Key, Alloc>& UnorderedSet<Key, Alloc>::operator=(UnorderedSet&& other)
 {
-	UnorderedSet(static_cast<UnorderedSet&&>(other)).swap(*this);
+	UnorderedSet(static_cast<UnorderedSet&&>(other)).Swap(*this);
 	return *this;
 }
 
@@ -154,19 +156,19 @@ inline typename UnorderedSet<Key, Alloc>::iterator UnorderedSet<Key, Alloc>::end
 }
 
 template<typename Key, typename Alloc>
-inline bool UnorderedSet<Key, Alloc>::empty() const
+inline bool UnorderedSet<Key, Alloc>::Empty() const
 {
 	return m_size == 0;
 }
 
 template<typename Key, typename Alloc>
-inline size_t UnorderedSet<Key, Alloc>::size() const
+inline size_t UnorderedSet<Key, Alloc>::Size() const
 {
 	return m_size;
 }
 
 template<typename Key, typename Alloc>
-inline void UnorderedSet<Key, Alloc>::clear()
+inline void UnorderedSet<Key, Alloc>::Clear()
 {
 	pointer it = *m_buckets.first;
 	while (it)
@@ -185,7 +187,7 @@ inline void UnorderedSet<Key, Alloc>::clear()
 }
 
 template<typename Key, typename Alloc>
-inline typename UnorderedSet<Key, Alloc>::iterator UnorderedSet<Key, Alloc>::find(const Key& key) const
+inline typename UnorderedSet<Key, Alloc>::iterator UnorderedSet<Key, Alloc>::Find(const Key& key) const
 {
 	iterator result;
 	result.node = unordered_hash_find(key, m_buckets.first, (size_t) (m_buckets.last - m_buckets.first));
@@ -193,7 +195,7 @@ inline typename UnorderedSet<Key, Alloc>::iterator UnorderedSet<Key, Alloc>::fin
 }
 
 template<typename Key, typename Alloc>
-inline void UnorderedSet<Key, Alloc>::rehash(size_t nbuckets)
+inline void UnorderedSet<Key, Alloc>::Rehash(size_t nbuckets)
 {
 	if (m_size + 1 > 4 * nbuckets)
 	{
@@ -215,12 +217,12 @@ inline void UnorderedSet<Key, Alloc>::rehash(size_t nbuckets)
 }
 
 template<typename Key, typename Alloc>
-inline Pair<typename UnorderedSet<Key, Alloc>::iterator, bool> UnorderedSet<Key, Alloc>::insert(const Key& key)
+inline Pair<typename UnorderedSet<Key, Alloc>::iterator, bool> UnorderedSet<Key, Alloc>::Insert(const Key& key)
 {
 	Pair<iterator, bool> result;
 	result.second = false;
 
-	result.first = find(key);
+	result.first = Find(key);
 	if (result.first.node != 0)
 		return result;
 
@@ -231,7 +233,7 @@ inline Pair<typename UnorderedSet<Key, Alloc>::iterator, bool> UnorderedSet<Key,
 	unordered_hash_node_insert(newnode, HashValue(key), m_buckets.first, nbuckets - 1);
 
 	++m_size;
-	rehash(nbuckets);
+	Rehash(nbuckets);
 
 	result.first.node = newnode;
 	result.second = true;
@@ -239,12 +241,12 @@ inline Pair<typename UnorderedSet<Key, Alloc>::iterator, bool> UnorderedSet<Key,
 }
 
 template<typename Key, typename Alloc>
-inline Pair<typename UnorderedSet<Key, Alloc>::iterator, bool> UnorderedSet<Key, Alloc>::emplace(Key&& key)
+inline Pair<typename UnorderedSet<Key, Alloc>::iterator, bool> UnorderedSet<Key, Alloc>::Emplace(Key&& key)
 {
 	Pair<iterator, bool> result;
 	result.second = false;
 
-	result.first = find(key);
+	result.first = Find(key);
 	if (result.first.node != 0)
 		return result;
 
@@ -256,7 +258,7 @@ inline Pair<typename UnorderedSet<Key, Alloc>::iterator, bool> UnorderedSet<Key,
 	unordered_hash_node_insert(newnode, keyhash, m_buckets.first, nbuckets - 1);
 
 	++m_size;
-	rehash(nbuckets);
+	Rehash(nbuckets);
 
 	result.first.node = newnode;
 	result.second = true;
@@ -264,7 +266,7 @@ inline Pair<typename UnorderedSet<Key, Alloc>::iterator, bool> UnorderedSet<Key,
 }
 
 template<typename Key, typename Alloc>
-inline void UnorderedSet<Key, Alloc>::erase(iterator where)
+inline void UnorderedSet<Key, Alloc>::Erase(iterator where)
 {
 	unordered_hash_node_erase(where.node, hash(where.node->first), m_buckets.first, (size_t) (m_buckets.last - m_buckets.first) - 1);
 
@@ -275,7 +277,7 @@ inline void UnorderedSet<Key, Alloc>::erase(iterator where)
 }
 
 template<typename Key, typename Alloc>
-inline size_t UnorderedSet<Key, Alloc>::erase(const Key& key)
+inline size_t UnorderedSet<Key, Alloc>::Erase(const Key& key)
 {
 	const iterator it = find(key);
 	if (it.node == 0)
@@ -286,7 +288,7 @@ inline size_t UnorderedSet<Key, Alloc>::erase(const Key& key)
 }
 
 template<typename Key, typename Alloc>
-void UnorderedSet<Key, Alloc>::swap(UnorderedSet& other)
+void UnorderedSet<Key, Alloc>::Swap(UnorderedSet& other)
 {
 	size_t tsize = other.m_size;
 	other.m_size = m_size, m_size = tsize;

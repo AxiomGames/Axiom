@@ -7,12 +7,12 @@
 template<typename T>
 static void CompareSets(const UnorderedSet<T>& s, const UnorderedSet<T>& expected)
 {
-	CHECK(s.size() == expected.size());
+	CHECK(s.Size() == expected.Size());
 
 	typedef typename UnorderedSet<T>::const_iterator iterator;
 	for (iterator it = expected.begin(), end = expected.end(); it != end; ++it)
 	{
-		CHECK(s.find(*it) != s.end());
+		CHECK(s.Find(*it) != s.end());
 	}
 }
 
@@ -22,18 +22,18 @@ TEST_CASE("UnorderedSet_Constructor")
 	using BaseSet = UnorderedSet<int>;
 
 	BaseSet baseline{};
-	baseline.insert(5);
-	baseline.insert(6);
-	CHECK(2 == baseline.size());
-	CHECK(baseline.find(5) != baseline.end());
-	CHECK(baseline.find(6) != baseline.end());
+	baseline.Insert(5);
+	baseline.Insert(6);
+	CHECK(2 == baseline.Size());
+	CHECK(baseline.Find(5) != baseline.end());
+	CHECK(baseline.Find(6) != baseline.end());
 	CompareSets(baseline, baseline);
 
 	{
 		BaseSet s;
 
-		CHECK(s.empty());
-		CHECK(s.size() == 0);
+		CHECK(s.Empty());
+		CHECK(s.Size() == 0);
 	}
 
 	{
@@ -47,7 +47,7 @@ TEST_CASE("UnorderedSet_Constructor")
 		BaseSet s = std::move(other);
 
 		CompareSets(s, baseline);
-		CHECK(other.empty());
+		CHECK(other.Empty());
 	}
 }
 
@@ -56,11 +56,11 @@ TEST_CASE("UnorderedSet_Assign")
 	using BaseSet = UnorderedSet<int>;
 
 	BaseSet baseline;
-	baseline.insert(5);
-	baseline.insert(6);
-	CHECK(2 == baseline.size());
-	CHECK(baseline.find(5) != baseline.end());
-	CHECK(baseline.find(6) != baseline.end());
+	baseline.Insert(5);
+	baseline.Insert(6);
+	CHECK(2 == baseline.Size());
+	CHECK(baseline.Find(5) != baseline.end());
+	CHECK(baseline.Find(6) != baseline.end());
 	CompareSets(baseline, baseline);
 
 	{
@@ -73,7 +73,7 @@ TEST_CASE("UnorderedSet_Assign")
 	{
 		BaseSet s;
 		for (int ii = 0; ii != 10; ++ii)
-			s.insert(ii);
+			s.Insert(ii);
 
 		s = baseline;
 
@@ -86,7 +86,7 @@ TEST_CASE("UnorderedSet_Assign")
 		s = std::move(other);
 
 		CompareSets(s, baseline);
-		CHECK(other.empty());
+		CHECK(other.Empty());
 	}
 
 	{
@@ -94,13 +94,13 @@ TEST_CASE("UnorderedSet_Assign")
 		BaseSet s;
 		for (int ii = 0; ii != 10; ++ii)
 		{
-			s.insert(ii);
+			s.Insert(ii);
 		}
 
 		s = std::move(other);
 
 		CompareSets(s, baseline);
-		CHECK(other.empty());
+		CHECK(other.Empty());
 	}
 }
 
@@ -111,35 +111,35 @@ TEST_CASE("UnorderedSet_Insert")
 
 	{
 		BaseSet s;
-		s.insert("hello");
-		CHECK(s.find("hello") != s.end());
+		s.Insert("hello");
+		CHECK(s.Find("hello") != s.end());
 	}
 
 	{
 		BaseSet s;
-		BasePair p1 = s.insert("hello");
+		BasePair p1 = s.Insert("hello");
 		CHECK(p1.second);
 		CHECK((*p1.first) == String("hello"));
 
-		BasePair p2 = s.insert("hello");
+		BasePair p2 = s.Insert("hello");
 		CHECK(!p2.second);
 		CHECK(p2.first == p1.first);
 	}
 
 	{
 		BaseSet s;
-		s.emplace("hello");
+		s.Emplace("hello");
 
-		CHECK(s.find("hello") != s.end());
+		CHECK(s.Find("hello") != s.end());
 	}
 
 	{
 		BaseSet s;
-		BasePair p1 = s.emplace("hello");
+		BasePair p1 = s.Emplace("hello");
 		CHECK(p1.second);
 		CHECK((*p1.first) == String("hello"));
 
-		BasePair p2 = s.emplace("hello");
+		BasePair p2 = s.Emplace("hello");
 		CHECK(!p2.second);
 		CHECK(p2.first == p1.first);
 	}
@@ -147,9 +147,9 @@ TEST_CASE("UnorderedSet_Insert")
 	{
 		BaseSet s;
 		String key("hello");
-		s.emplace(std::move(key));
+		s.Emplace(std::move(key));
 
-		CHECK(s.find("hello") != s.end());
+		CHECK(s.Find("hello") != s.end());
 		CHECK(key.Size() == 0);
 	}
 }
@@ -157,9 +157,9 @@ TEST_CASE("UnorderedSet_Insert")
 TEST_CASE("UnorderedSet_Copyctor")
 {
 	UnorderedSet<unsigned int> s{};
-	s.insert(32);
+	s.Insert(32);
 	UnorderedSet<unsigned int> other = s;
-	CHECK(other.find(32) != other.end());
-	other.clear();
-	CHECK(other.empty());
+	CHECK(other.Find(32) != other.end());
+	other.Clear();
+	CHECK(other.Empty());
 }
