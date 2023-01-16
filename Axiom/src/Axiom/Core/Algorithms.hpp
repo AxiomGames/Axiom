@@ -5,7 +5,7 @@
 template<typename T, typename size_type = uint64>
 inline size_type Distance(const T* begin, const T* end)
 {
-	size_type result;
+	size_type result = 0ull;
 	while (begin++ < end) result++;
 	return result;
 }

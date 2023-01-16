@@ -194,68 +194,90 @@ using Vector3c = Vector3<char>;
 typedef Vector3f float3;
 typedef Vector2f float2;
 
-FINLINE float3 fminf(const float3& a, const float3& b) { return float3(fminf(a.x, b.x), fminf(a.y, b.y), fminf(a.z, b.z)); }
-FINLINE float3 fmaxf(const float3& a, const float3& b) { return float3(fmaxf(a.x, b.x), fmaxf(a.y, b.y), fmaxf(a.z, b.z)); }
-
-template<typename T>
-FINLINE Vector2<T> MinT(const Vector2<T>& a, const Vector2<T>& b) { return Vector2<T>(Min(a.x, b.x), Min(a.y, b.y)); }
-template<typename T>
-FINLINE Vector2<T> MaxT(const Vector2<T>& a, const Vector2<T>& b) { return Vector2<T>(Max(a.x, b.x), Max(a.y, b.y)); }
-
-FINLINE float Max3(const float3& a) { return fmaxf(fmaxf(a.x, a.y), a.z); }
-FINLINE float Min3(const float3& a) { return fminf(fminf(a.x, a.y), a.z); }
-
-FINLINE Vector2f ToVector2f(const Vector2i& vec) { return Vector2f((float)vec.x, (float)vec.y); }
-FINLINE Vector2i ToVector2f(const Vector2f& vec) { return Vector2i((int)vec.x, (int)vec.y);  }
-
-constexpr FINLINE uint32 WangHash(uint32 s) {
-	s = (s ^ 61u) ^ (s >> 16u);
-	s *= 9, s = s ^ (s >> 4u);
-	s *= 0x27d4eb2du;
-	s = s ^ (s >> 15u);
-	return s;
-}
-
-constexpr FINLINE uint64 MurmurHash(uint64 h) {
-	h ^= h >> 33ul;
-	h *= 0xff51afd7ed558ccdUL;
-	h ^= h >> 33ul;
-	h *= 0xc4ceb9fe1a85ec53UL;
-	h ^= h >> 33ul;
-	return h;
-}
-
-FINLINE uint64 VecToHash(Vector2c vec) { return uint64(vec.x*3 ^vec.y) | (uint64(vec.y) << 8ull ); }
-FINLINE uint64 VecToHash(Vector2s vec) { return (uint64)WangHash(uint64(vec.x) | (uint64(vec.y) << 16ull)); }
-FINLINE uint64 VecToHash(Vector2i vec) { return MurmurHash(uint64(vec.x) | (uint64(vec.y) << 32ull)); }
-FINLINE uint64 VecToHash(Vector3c vec) { return (uint64)WangHash(uint64(vec.x) | (uint64(vec.y) << 8ull) | (uint64(vec.z) << 16ull)); }
-
-FINLINE uint64 VecToHash(Vector3s vec) 
+namespace Math
 {
-	uint64 hash = vec.x;
-	hash = (hash * 397ull) ^ vec.y;
-	hash = (hash * 397ull) ^ vec.z;
-	hash += hash << 3ull;
-	hash ^= hash >> 11ull;
-	hash += hash << 15ull;
-	return hash;
-}
+	template<typename T>
+	FINLINE Vector3<T> Min(const Vector3<T>& a, const Vector3<T>& b) { return Vector3<T>(Min(a.x, b.x), Min(a.y, b.y), Min(a.z, b.z)); }
+	template<typename T>
+	FINLINE Vector3<T> Max(const Vector3<T>& a, const Vector3<T>& b) { return Vector3<T>(Max(a.x, b.x), Max(a.y, b.y), Max(a.z, b.z)); }
 
-FINLINE uint64 VecToHash(Vector3i vec)
-{
-	uint64 hash = vec.x;
-	hash = (hash * 397ull) ^ vec.y;
-	hash = (hash * 397ull) ^ vec.z;
-	hash += hash << 3ull;
-	hash ^= hash >> 11ull;
-	hash += hash << 15ull;
-	return hash;
+	template<typename T>
+	FINLINE Vector2<T> Min(const Vector2<T>& a, const Vector2<T>& b) { return Vector2<T>(Min(a.x, b.x), Min(a.y, b.y)); }
+	template<typename T>
+	FINLINE Vector2<T> Max(const Vector2<T>& a, const Vector2<T>& b) { return Vector2<T>(Max(a.x, b.x), Max(a.y, b.y)); }
+
+	template<typename T>
+	FINLINE T Max3(const Vector3<T>& a) { return Max(Max(a.x, a.y), a.z); }
+	template<typename T>
+	FINLINE T Min3(const Vector3<T>& a) { return Min(Min(a.x, a.y), a.z); }
+
+	FINLINE Vector2f ToVector2f(const Vector2i& vec) { return Vector2f((float)vec.x, (float)vec.y); }
+	FINLINE Vector2i ToVector2f(const Vector2f& vec) { return Vector2i((int)vec.x, (int)vec.y); }
+
+	constexpr FINLINE uint32 WangHash(uint32 s) {
+		s = (s ^ 61u) ^ (s >> 16u);
+		s *= 9, s = s ^ (s >> 4u);
+		s *= 0x27d4eb2du;
+		s = s ^ (s >> 15u);
+		return s;
+	}
+
+	constexpr FINLINE uint64 MurmurHash(uint64 h) {
+		h ^= h >> 33ul;
+		h *= 0xff51afd7ed558ccdUL;
+		h ^= h >> 33ul;
+		h *= 0xc4ceb9fe1a85ec53UL;
+		h ^= h >> 33ul;
+		return h;
+	}
+
+	constexpr FINLINE uint64 VecToHash(Vector2c vec) 
+    { 
+		return uint64(vec.x * 3 ^ vec.y) | (uint64(vec.y) << 8ull); 
+	}
+	
+	constexpr FINLINE uint64 VecToHash(Vector2s vec) 
+    { 
+		return (uint64)WangHash(uint64(vec.x) | (uint64(vec.y) << 16ull)); 
+	}
+
+	constexpr FINLINE uint64 VecToHash(Vector2i vec) 
+    {
+		return MurmurHash(uint64(vec.x) | (uint64(vec.y) << 32ull));
+	}
+
+	constexpr FINLINE uint64 VecToHash(Vector3c vec) 
+	{
+		return (uint64)WangHash(uint64(vec.x) | (uint64(vec.y) << 8ull) | (uint64(vec.z) << 16ull)); 
+	}
+
+	FINLINE uint64 VecToHash(Vector3s vec)
+	{
+		uint64 hash = vec.x;
+		hash = (hash * 397ull) ^ vec.y;
+		hash = (hash * 397ull) ^ vec.z;
+		hash += hash << 3ull;
+		hash ^= hash >> 11ull;
+		hash += hash << 15ull;
+		return hash;
+	}
+
+	FINLINE uint64 VecToHash(Vector3i vec)
+	{
+		uint64 hash = vec.x;
+		hash = (hash * 397ull) ^ vec.y;
+		hash = (hash * 397ull) ^ vec.z;
+		hash += hash << 3ull;
+		hash ^= hash >> 11ull;
+		hash += hash << 15ull;
+		return hash;
+	}
+	// for using these hashes with stl containers
+	// namespace std {
+	// 	template <> struct hash<Vector2s> {
+	// 		uint64 operator()(const Vector2s& vec) const {
+	// 			return VecToHash(vec);
+	// 		}
+	// 	};
+	// }	
 }
-// for using these hashes with stl containers
-// namespace std {
-// 	template <> struct hash<Vector2s> {
-// 		uint64 operator()(const Vector2s& vec) const {
-// 			return VecToHash(vec);
-// 		}
-// 	};
-// }
