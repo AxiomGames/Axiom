@@ -130,7 +130,9 @@ AX_ALIGNAS(16) struct Matrix4
 		struct { float m[4][4]; };
 	};
 
-	Matrix4()
+	Matrix4() {}
+
+	Matrix4(EForceInit)
 	{
 		r[0] = g_XMIdentityR0;
 		r[1] = g_XMIdentityR1;
