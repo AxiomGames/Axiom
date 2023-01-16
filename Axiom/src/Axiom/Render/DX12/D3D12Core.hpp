@@ -2,7 +2,7 @@
 
 #include "Axiom/CoreMinimal.hpp"
 
-#ifdef AX_WIN
+#ifdef AX_WIN32
 
 namespace DX12
 {

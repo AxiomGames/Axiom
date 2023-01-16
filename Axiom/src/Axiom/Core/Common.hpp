@@ -41,6 +41,12 @@
 #define  AX_ALIGNAS(_x)
 #endif
 
+#if _WIN32 || _WIN64
+#   define AX_WIN32
+#elif __linux__
+#   define SK_LINUX
+#endif
+
 #ifndef AXGLOBALCONST
 #	if _MSC_VER
 #		define AXGLOBALCONST extern const __declspec(selectany)
@@ -52,7 +58,6 @@
 #endif
 
 #ifdef _MSC_VER
-#define AX_WIN
 #include <intrin.h>
 #	ifndef AXPopCount
 #		define AXPopCount(x) __popcnt(x)

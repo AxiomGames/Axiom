@@ -1,7 +1,7 @@
 #include "D3D12Core.hpp"
 #include "D3D12CommonHeaders.hpp"
 
-#ifdef AX_WIN
+#ifdef AX_WIN32
 
 namespace DX12
 {
