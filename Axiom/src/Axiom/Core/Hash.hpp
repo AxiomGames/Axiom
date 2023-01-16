@@ -37,7 +37,7 @@ struct Hash
 
 	static std::size_t hash(const T& value)
 	{
-		const std::size_t asint = (std::size_t) value;
+		const auto asint = (std::size_t) value;
 		const auto str = (const char*) &asint;
 		const auto len = sizeof(asint);
 

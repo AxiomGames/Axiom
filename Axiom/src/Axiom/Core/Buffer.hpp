@@ -360,7 +360,7 @@ namespace AxSTL
 		const size_t tail = (b->last - last);
 		pointer it = b->last - ((count < tail) ? count : tail);
 		for (pointer end = b->last, dest = first; it != end; ++it, ++dest)
-			move(*dest, *it);
+			Traits::move(*dest, *it);
 
 		buffer_destroy_range(b->last - count, b->last);
 

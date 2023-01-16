@@ -188,7 +188,7 @@ FINLINE Array<T, Alloc>::~Array()
 template<typename T, typename Alloc>
 FINLINE Array<T, Alloc>& Array<T, Alloc>::operator=(const Array& other)
 {
-	Array(other).swap(*this);
+	Array(other).Swap(*this);
 	return *this;
 }
 
