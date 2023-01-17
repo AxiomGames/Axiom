@@ -24,7 +24,7 @@ void EditorApplication::OnInit()
 
 	GEngine->Get<WindowManager>()->AddWindow(window, true);
 
-//	DX12::Initialize();
+	DX12::Initialize();
 
 	struct Test
 	{
@@ -51,14 +51,14 @@ void EditorApplication::OnInit()
 
 void EditorApplication::OnShutdown()
 {
-//	DX12::Shutdown();
+	DX12::Shutdown();
 
 	GEngine->Destroy<WindowManager>();
 }
 
 void EditorApplication::OnUpdate(float delta)
 {
-//	DX12::Render();
+	DX12::Render();
 }
 
 Application* CreateApplication(int argc, char* argv[])

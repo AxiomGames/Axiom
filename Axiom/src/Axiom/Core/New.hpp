@@ -37,7 +37,7 @@ namespace AxSTL
 }
 
 
-inline void* operator new(std::size_t, AxSTL::PlaceHolder, VoidPtr ptr)
+inline void* operator new(size_t, AxSTL::PlaceHolder, VoidPtr ptr)
 {
 	return ptr;
 }

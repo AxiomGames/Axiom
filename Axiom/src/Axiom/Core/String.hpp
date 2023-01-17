@@ -195,7 +195,7 @@ FINLINE BasicString<T, Alloc>::BasicString(const BasicString& other)
 }
 
 template<typename T, typename Alloc>
-BasicString<T, Alloc>::BasicString(BasicString&& other) noexcept
+BasicString<T, Alloc>::BasicString(BasicString&& other)  noexcept : m_Size(0)
 {
 	if (m_Size & c_LongFlag)
 	{
