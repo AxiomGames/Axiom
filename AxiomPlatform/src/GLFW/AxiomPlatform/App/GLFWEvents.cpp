@@ -11,11 +11,11 @@ namespace PlatformEvents
 
 		if (event == GLFW_CONNECTED)
 		{
-			AXLOG("The joystick was connected %d", jid);
+			AX_LOG("The joystick was connected %d", jid);
 		}
 		else if (event == GLFW_DISCONNECTED)
 		{
-			AXLOG("The joystick was disconnected %d", jid);
+			AX_LOG("The joystick was disconnected %d", jid);
 		}
 	}
 

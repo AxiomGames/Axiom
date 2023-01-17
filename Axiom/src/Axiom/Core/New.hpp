@@ -27,6 +27,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include "Common.hpp"
 
 namespace AxSTL

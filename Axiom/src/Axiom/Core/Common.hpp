@@ -44,7 +44,7 @@
 #if _WIN32 || _WIN64
 #   define AX_WIN32
 #elif __linux__
-#   define SK_LINUX
+#   define AX_LINUX
 #endif
 
 #ifndef AXGLOBALCONST
