@@ -132,7 +132,7 @@ AX_ALIGNAS(16) struct Matrix4
 
 	Matrix4() {}
 
-	Matrix4(EForceInit)
+	explicit Matrix4(EForceInit)
 	{
 		r[0] = g_XMIdentityR0;
 		r[1] = g_XMIdentityR1;
@@ -145,7 +145,8 @@ AX_ALIGNAS(16) struct Matrix4
 		for (int i = 0; i < 16; ++i) m[0][i] = s;
 	}
 
-	Matrix4(__m128 x, __m128 y, __m128 z, __m128 w)
+	// usage: _mm_setr_ps(1.0f,1.0f,1.0f,1.0f), _mm_setr_ps(2.0f, 2.0f, 2.0f, 2.0f)
+	Matrix4(__m128 x, __m128 y, const __m128& z, const __m128& w)
 	{
 		r[0] = x; r[1] = y; r[2] = z; r[3] = w;
 	}
@@ -422,7 +423,7 @@ AX_ALIGNAS(16) struct Matrix4
 	}
 
 	FINLINE static Matrix4 RotationX(float angleRadians) {
-		Matrix4  out_matrix{};
+		Matrix4  out_matrix(ForceInit);
 		float c = cosf(angleRadians);
 		float s = sinf(angleRadians);
 
@@ -434,7 +435,7 @@ AX_ALIGNAS(16) struct Matrix4
 	}
 
 	FINLINE static Matrix4 RotationY(float angleRadians) {
-		Matrix4 out_matrix{};
+		Matrix4 out_matrix(ForceInit);
 		float c = cosf(angleRadians);
 		float s = sinf(angleRadians);
 
@@ -446,7 +447,7 @@ AX_ALIGNAS(16) struct Matrix4
 	}
 	
 	FINLINE static Matrix4 RotationZ(float angleRadians) {
-		Matrix4 out_matrix{};
+		Matrix4 out_matrix(ForceInit);
 		float c = cosf(angleRadians);
 		float s = sinf(angleRadians);
 
