@@ -1,8 +1,9 @@
 #pragma once
 
+#include <iostream>
 #include "Axiom/CoreMinimal.hpp"
 
-#include <iostream>
+#ifdef AX_WIN32
 
 #include <dxgi1_6.h>
 #include <d3d12.h>
@@ -35,3 +36,5 @@ constexpr void ReleaseResource(T*& resource)
 		resource = nullptr;
 	}
 }
+
+#endif

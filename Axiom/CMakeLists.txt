@@ -17,5 +17,10 @@ endif()
 target_include_directories(Axiom PUBLIC src)
 target_include_directories(Axiom PRIVATE ${AXIOM_PLATFORM_INCLUDE_DIRS})
 
-target_link_libraries(Axiom PUBLIC glfw EnTT d3d12 dxgi dxguid d3dcompiler)
+target_link_libraries(Axiom PUBLIC glfw EnTT)
+
+if (MSVC)
+	target_link_libraries(Axiom PUBLIC d3d12 dxgi dxguid d3dcompiler)
+endif(MSVC)
+
 target_compile_definitions(Axiom PUBLIC NOMINMAX)

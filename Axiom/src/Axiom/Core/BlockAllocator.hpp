@@ -36,8 +36,8 @@ public:
 	bool CheckMemory(void* ptr) const;
 
 	[[nodiscard]] FINLINE uint32 GetNumberOfBlocks() const
-	{ return m_Memory.Size(); }
+	{ return m_Memory.Count(); }
 private:
 	MemoryBlock& AllocateMemoryBlock();
-	MemPtr AllocFromFragment(MemoryBlock& memoryBlock, const Array<MemoryFragment>::iterator& fragmentIt, uint64 size);
+	MemPtr AllocFromFragment(MemoryBlock& memoryBlock, const Array<MemoryFragment>::Iterator& fragmentIt, uint64 size);
 };

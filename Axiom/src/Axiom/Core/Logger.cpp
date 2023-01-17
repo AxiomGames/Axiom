@@ -139,7 +139,7 @@ namespace ColorCode
 	const char* KWHT = "\x1B[37m";
 }
 
-void Log(const char* filename, int line, const char* format, ...)
+void Logger::Log(const char* filename, int line, const char* format, ...)
 {
 	std::lock_guard<std::mutex> lock(logMutex);
 	printf("%s%s (line %d) Log: \n", ColorCode::KBLU, filename, line);
@@ -157,7 +157,7 @@ void Log(const char* filename, int line, const char* format, ...)
 	printf("\n");
 }
 
-void Warning(const char* filename, int line, const char* format, ...)
+void Logger::Warning(const char* filename, int line, const char* format, ...)
 {
 	std::lock_guard<std::mutex> lock(logMutex);
 	printf("%s%s (line %d) Warning: \n", ColorCode::KYEL, filename, line);
@@ -175,7 +175,7 @@ void Warning(const char* filename, int line, const char* format, ...)
 	printf("\n");
 }
 
-void Error(const char* filename, int line, const char* format, ...)
+void Logger::Error(const char* filename, int line, const char* format, ...)
 {
 	std::lock_guard<std::mutex> lock(logMutex);
 	printf("%s%s (line %d) Error: \n", ColorCode::KRED, filename, line);

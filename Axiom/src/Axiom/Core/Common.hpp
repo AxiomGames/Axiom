@@ -18,7 +18,7 @@
 #   elif __CLANG__
 #       define FINLINE [[clang::always_inline]] 
 #	elif __GNUC__
-#       define FINLINE  __attribute__((always_inline))
+#       define FINLINE  inline __attribute__((always_inline))
 #   endif
 #endif
 
@@ -41,6 +41,12 @@
 #define  AX_ALIGNAS(_x)
 #endif
 
+#if _WIN32 || _WIN64
+#   define AX_WIN32
+#elif __linux__
+#   define AX_LINUX
+#endif
+
 #ifndef AXGLOBALCONST
 #	if _MSC_VER
 #		define AXGLOBALCONST extern const __declspec(selectany)
@@ -60,11 +66,10 @@
 #		define AXPopCount64(x) __popcnt64(x)
 #   endif
 #elif defined(__GNUC__) && !defined(__MINGW32__)
-#include <builtins.h>
 #	ifndef AXPopCount
 #		define AXPopCount(x) __builtin_popcount(x)
 #   endif
-#	ifndef AXPopCount64()
+#	ifndef AXPopCount64
 #		define AXPopCount64() __builtin_popcountl(x)
 #   endif
 #else
@@ -106,6 +111,9 @@ typedef int8_t int8;
 typedef int16_t int16;
 typedef int32_t int32;
 typedef int64_t int64;
+
+using MemPtr = uint8*;
+using VoidPtr = void*;
 
 enum EForceInit
 {

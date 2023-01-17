@@ -43,3 +43,5 @@ struct AX_API Memory
 		Free(ptr);
 	}
 };
+
+#define DEFAULT_ALLOCATOR Memory
