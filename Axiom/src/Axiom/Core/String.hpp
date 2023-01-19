@@ -863,7 +863,8 @@ struct StringConverter<char>
 	constexpr static bool c_HasConverter = true;
 
 	template<typename CharType, typename Alloc>
-	static void Append(BasicString<CharType, Alloc>& string, const char& ch) {
+	static void Append(BasicString<CharType, Alloc>& string, const char& ch)
+	{
 		string.Append(&ch, &ch + 1);
 	}
 };
@@ -874,10 +875,11 @@ struct StringConverter<float>
 	constexpr static bool c_HasConverter = true;
 
 	template<typename CharType, typename Alloc>
-	static void Append(BasicString<CharType, Alloc>& string, const float& value) {
+	static void Append(BasicString<CharType, Alloc>& string, const float& value)
+	{
 		char buf[50];
 		int len = snprintf(buf, 50, "%f", value);
-		string.Append(buf, buf+len);
+		string.Append(buf, buf + len);
 	}
 
 };
