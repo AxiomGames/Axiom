@@ -65,6 +65,11 @@ StrHashID constexpr operator "" _HASH(const char* s, size_t)
 	return HashDjb2(s);
 }
 
+template<typename Type>
+struct StringConverter
+{
+	constexpr static bool c_HasConverter = false;
+};
 
 template<typename T, typename Alloc = DEFAULT_ALLOCATOR>
 class BasicString
@@ -148,6 +153,13 @@ public:
 	void PushBack(Type ch);
 
 	void Append(ConstPointer sz);
+
+	template<typename Type>
+	void Append(const Type& appendType)
+	{
+		static_assert(StringConverter<Type>::c_HasConverter);
+		StringConverter<Type>::Append(*this, appendType);
+	}
 
 	void Append(ConstPointer first, ConstPointer last);
 
@@ -842,4 +854,30 @@ struct Hash<String>
 		}
 		return hash;
 	}
+};
+
+
+template<>
+struct StringConverter<char>
+{
+	constexpr static bool c_HasConverter = true;
+
+	template<typename CharType, typename Alloc>
+	static void Append(BasicString<CharType, Alloc>& string, const char& ch) {
+		string.Append(&ch, &ch + 1);
+	}
+};
+
+template<>
+struct StringConverter<float>
+{
+	constexpr static bool c_HasConverter = true;
+
+	template<typename CharType, typename Alloc>
+	static void Append(BasicString<CharType, Alloc>& string, const float& value) {
+		char buf[50];
+		int len = snprintf(buf, 50, "%f", value);
+		string.Append(buf, buf+len);
+	}
+
 };
