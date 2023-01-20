@@ -1,3 +1,4 @@
+#include "GLFW.hpp"
 #include "GLFWWindow.hpp"
 #include "GLFWEvents.hpp"
 
@@ -159,6 +160,13 @@ void GLFWNativeWindow::SetTitle(const String& title)
 {
 	glfwSetWindowTitle(m_WindowHandle, title.CStr());
 }
+
+#ifdef AX_WIN32
+HWND GLFWNativeWindow::GetHWND()
+{
+	return glfwGetWin32Window(m_WindowHandle);
+}
+#endif
 
 bool GLFWNativeWindow::IsFocused() const
 {

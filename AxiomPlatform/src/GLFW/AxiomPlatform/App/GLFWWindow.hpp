@@ -2,7 +2,15 @@
 
 #include "Axiom/App/Window.hpp"
 
-#include "GLFW.hpp"
+#ifdef AX_WIN32
+
+// these are here because I didn't want to include whole windows.h
+struct HWND__;
+typedef HWND__* HWND;
+
+#endif
+
+struct GLFWwindow;
 
 class GLFWNativeWindow : public INativeWindow
 {
@@ -36,6 +44,10 @@ public:
 
 	void SetTitle(const String& title) override;
 
+#ifdef AX_WIN32
+	HWND GetHWND();
+#endif
+
 	[[nodiscard]] bool IsFocused() const override;
 
 	[[nodiscard]] bool IsShouldClose() const override;
@@ -48,6 +60,5 @@ public:
 
 	void SetFocused(bool focused) { m_Focused = focused; }
 
-	[[nodiscard]] GLFWwindow* GetWindowHandle() const
-	{ return m_WindowHandle; }
+	[[nodiscard]] GLFWwindow* GetWindowHandle() const { return m_WindowHandle; }
 };

@@ -23,8 +23,10 @@ void EditorApplication::OnInit()
 									.Title("Axiom");
 
 	GEngine->Get<WindowManager>()->AddWindow(window, true);
-
-	DX12::Initialize();
+#ifdef AX_WIN32
+	SharedPtr<INativeWindow> nativeWindow = window->GetNativeWindow();
+	DX12::Initialize(std::static_pointer_cast<GLFWNativeWindow>(nativeWindow));
+#endif
 
 	struct Test
 	{

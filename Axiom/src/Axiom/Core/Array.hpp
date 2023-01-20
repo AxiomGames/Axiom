@@ -138,6 +138,24 @@ private:
 	AxSTL::Buffer<T, Alloc> m_Buffer{};
 };
 
+template<typename T, int Size>
+struct FixedArray
+{
+	T _values[Size];
+
+	constexpr T& operator[](int idx) { return _values[idx]; }
+	constexpr const T& operator[](int idx) const { return _values[idx]; }
+
+	constexpr T* begin() { return _values; }
+	constexpr T* end() { return _values + Size; }
+	constexpr const T* begin() const { return _values; }
+	constexpr const T* end() const { return _values + Size; }
+	constexpr const T* cbegin() const { return _values; }
+	constexpr const T* cend() const { return _values + Size; }
+	constexpr T& Front() { return *_values; }
+	constexpr const T& Front() const { return *_values; }
+};
+
 template<typename T, typename Alloc>
 FINLINE Array<T, Alloc>::Array()
 {
