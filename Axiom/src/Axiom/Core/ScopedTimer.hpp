@@ -3,9 +3,9 @@
 #include "String.hpp"
 
 #ifndef NDEBUG
-#	define AXTIMER(message) ScopedTimer timer = ScopedTimer(message);
+#	define AX_TIMER(message) ScopedTimer timer = ScopedTimer(message);
 #else
-#   define AXTIMER(message) ScopedTimer timer = ScopedTimer(message);
+#   define AX_TIMER(message) ScopedTimer timer = ScopedTimer(message);
 #endif
 
 struct ScopedTimer
@@ -38,11 +38,11 @@ struct ScopedTimer
 		auto start = time_point_cast<microseconds>(start_point).time_since_epoch().count();
 		auto end = time_point_cast<microseconds>(end_point).time_since_epoch().count();
 		auto _duration = end - start;
-		message.AppendChar(' ');
+		message.Append(' ');
 		message.Append(_duration * 0.001f);
 		message.Append("ms");
 		Logger::ShowFileName(false);
-		AXLOG(message.CStr());
+		AX_LOG(message.CStr());
 		Logger::ShowFileName(true);
 	}
 };

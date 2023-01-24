@@ -192,6 +192,11 @@ void Logger::Error(const char* filename, int line, const char* format, ...)
 
 	printf("\n");
 }
+
+void Logger::ShowFileName(bool value)
+{
+
+}
 #else
 
 void Logger::Log(const char* filename, int line, const char* format, ...)
