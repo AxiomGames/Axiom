@@ -11,6 +11,10 @@ struct D3D12Shader : IShader
 
 };
 
+// view.BufferLocation = mpSysMemBuffer->GetGPUVirtualAddress();
+// view.SizeInBytes = sizeof(T) * size;
+// view.Format = TypeToFormat();
+
 struct D3D12Buffer : IBuffer
 {
 	ID3D12Resource* mpVidMemBuffer;

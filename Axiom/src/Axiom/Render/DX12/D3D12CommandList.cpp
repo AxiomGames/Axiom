@@ -21,8 +21,6 @@ void D3D12CommandList::Initialize(IDeviceContext* deviceContext)
 
 void D3D12CommandList::SetPipelineState(IPipeline* pipeline) 
 {
-	
-
 	m_CmdList->SetPipelineState();
 }
 
