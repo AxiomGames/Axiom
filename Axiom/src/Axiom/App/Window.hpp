@@ -49,6 +49,15 @@ struct WindowInitDesc
 	bool SupportsMaximize = true;
 };
 
+
+#ifdef AX_WIN32
+
+// these are here because I didn't want to include whole windows.h
+struct HWND__;
+typedef HWND__* HWND;
+
+#endif
+
 class INativeWindow
 {
 private:
@@ -91,6 +100,10 @@ public:
 	[[nodiscard]] virtual const ECursorMode& GetCursorMode() const = 0;
 
 	virtual bool IsIconified() = 0;
+
+#ifdef AX_WIN32
+	virtual HWND GetHWND() = 0;
+#endif
 
 	[[nodiscard]] FINLINE int GetWidth() const { return m_Width; }
 	[[nodiscard]] FINLINE int GetHeight() const { return m_Height; }

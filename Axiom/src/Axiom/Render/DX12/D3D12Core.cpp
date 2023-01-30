@@ -2,6 +2,7 @@
 #include "D3D12CommonHeaders.hpp"
 #include "D3D12Context.hpp"
 #include "D3D12SwapChain.hpp"
+#include <cassert>
 
 #ifdef AX_WIN32
 
@@ -29,8 +30,8 @@ namespace DX12
 
 		return true;
 	}
-
-	constexpr D3D_FEATURE_LEVEL minimum_feature_level = D3D_FEATURE_LEVEL_11_0;
+	
+	constexpr D3D_FEATURE_LEVEL minimum_feature_evel = D3D_FEATURE_LEVEL_11_0;
 
 	IDXGIAdapter4* DetermineMainAdapter(IDXGIFactory7* factory)
 	{
@@ -38,7 +39,7 @@ namespace DX12
 
 		for (uint32 i = 0; factory->EnumAdapterByGpuPreference(i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter)) != DXGI_ERROR_NOT_FOUND; i++)
 		{
-			if (SUCCEEDED(D3D12CreateDevice(adapter, minimum_feature_level, __uuidof(ID3D12Device), nullptr)))
+			if (SUCCEEDED(D3D12CreateDevice(adapter, minimum_feature_evel, __uuidof(ID3D12Device), nullptr)))
 			{
 				return adapter;
 			}
@@ -63,69 +64,63 @@ namespace DX12
 		featureLevelInfo.pFeatureLevelsRequested = featureLevels;
 
 		ComPtr<ID3D12Device> device;
-		DXCall(D3D12CreateDevice(adapter, minimum_feature_level, IID_PPV_ARGS(&device)));
+		DXCall(D3D12CreateDevice(adapter, minimum_feature_evel, IID_PPV_ARGS(&device)));
 		DXCall(device->CheckFeatureSupport(D3D12_FEATURE_FEATURE_LEVELS, &featureLevelInfo, sizeof(featureLevelInfo)));
 		return featureLevelInfo.MaxSupportedFeatureLevel;
 	}
 
-	IDXGIFactory7* DXFactory = nullptr;
-	ID3D12Device8* MainDevice = nullptr;
-	D3D12Context* RenderCtx = nullptr;
 
-	void Initialize(SharedPtr<GLFWNativeWindow> window)
+	DXGI_FORMAT ToDX12Format(VertexAttribType type)
 	{
-		InitializeDXFactory(&DXFactory);
-		IDXGIAdapter4* adapter = DetermineMainAdapter(DXFactory);
-		D3D_FEATURE_LEVEL maxFeatureLevel = GetMaxFeatureLevel(adapter);
-
-		DXCall(D3D12CreateDevice(adapter, maxFeatureLevel, IID_PPV_ARGS(&MainDevice)));
-
-		MainDevice->SetName(L"MAIN DEVICE");
-
-#ifdef _DEBUG
+		switch (type)
 		{
-			ComPtr<ID3D12InfoQueue> infoQueue;
-			DXCall(MainDevice->QueryInterface(IID_PPV_ARGS(&infoQueue)));
-
-			infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
-			infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
-			infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
-		};
-#endif
-
-		RenderCtx = new D3D12Context(MainDevice, window, DXFactory, MainDevice);
+		case VertexAttribType::Float:   return DXGI_FORMAT_R32_FLOAT; break;
+		case VertexAttribType::Float2:  return DXGI_FORMAT_R32G32_FLOAT;    break;
+		case VertexAttribType::Float3:  return DXGI_FORMAT_R32G32B32_FLOAT;    break;
+		case VertexAttribType::Float4:  return DXGI_FORMAT_R32G32B32A32_FLOAT;    break;
+		case VertexAttribType::Half:    return DXGI_FORMAT_R16_FLOAT;    break;
+		case VertexAttribType::Half2:   return DXGI_FORMAT_R16G16_FLOAT;    break;
+		case VertexAttribType::Half3:   assert(false && "Not Supported!");  return DXGI_FORMAT_UNKNOWN;    break;
+		case VertexAttribType::Half4:   return DXGI_FORMAT_R16G16B16A16_FLOAT;  break;
+		case VertexAttribType::UInt:    return DXGI_FORMAT_R32_UINT;    break;
+		default: assert(false && "Unknown Format!"); return DXGI_FORMAT_UNKNOWN; break;
+		}
 	}
 
-	void Shutdown()
+	DXGI_FORMAT ToDX12Format(EImageFormat type)
 	{
-		RenderCtx->Release();
-
-		ReleaseResource(DXFactory);
-
-#ifdef _DEBUG
+		switch (type)
 		{
-			ComPtr<ID3D12InfoQueue> infoQueue;
-			DXCall(MainDevice->QueryInterface(IID_PPV_ARGS(&infoQueue)));
-
-			infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, false);
-			infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, false);
-			infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, false);
-		};
-
-		ComPtr<ID3D12DebugDevice2> debugDevice;
-		DXCall(MainDevice->QueryInterface(IID_PPV_ARGS(&debugDevice)));
-		ReleaseResource(MainDevice);
-		DXCall(debugDevice->ReportLiveDeviceObjects(D3D12_RLDO_SUMMARY | D3D12_RLDO_DETAIL | D3D12_RLDO_IGNORE_INTERNAL));
-#else
-		ReleaseResource(MainDevice);
-#endif
+		case EImageFormat::RGBA8F:      break;
+		case EImageFormat::RGBA8_SRGBF: break;
+		case EImageFormat::BGRA8F:      break;
+		case EImageFormat::RGBA16F:     break;
+		case EImageFormat::RGBA32F:     break;
+		case EImageFormat::R32U:        break;
+		case EImageFormat::R32F:        break;
+		case EImageFormat::D32F:        break;
+		case EImageFormat::D32FS8U:     break;
+		case EImageFormat::RG32F:       break;
+		case EImageFormat::RG32I:       break;
+		case EImageFormat::RG16F:       break;
+		default: assert(false && "Unknown Format!");  return DXGI_FORMAT_UNKNOWN; break;
+		}
 	}
-
-	void Render()
+	
+	D3D12_RESOURCE_STATES ToDX12ResourceUsage(EResourceUsage usage)
 	{
-		RenderCtx->BeginFrame();
-		RenderCtx->Render();
-		RenderCtx->EndFrame();
+		switch (usage)
+		{
+		case EResourceUsage::VertexBuffer:    return D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER; break;
+		case EResourceUsage::IndexBuffer:     return D3D12_RESOURCE_STATE_INDEX_BUFFER; break;
+		case EResourceUsage::ConstantBuffer:  return D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER; break;
+		case EResourceUsage::TransferSrc:     return D3D12_RESOURCE_STATE_COPY_SOURCE; break;
+		case EResourceUsage::TransferDst:     return D3D12_RESOURCE_STATE_COPY_DEST; break;
+		case EResourceUsage::UnorderedAccess: return D3D12_RESOURCE_STATE_UNORDERED_ACCESS; break;
+		case EResourceUsage::Present:
+		case EResourceUsage::Unknown: return D3D12_RESOURCE_STATE_COMMON; break;
+		default: assert(false && "Unknown Format"); return D3D12_RESOURCE_STATE_COMMON; break;
+		}
 	}
 }
 

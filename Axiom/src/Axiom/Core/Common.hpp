@@ -119,3 +119,29 @@ enum EForceInit
 {
 	ForceInit
 };
+
+template<typename T>
+struct Slice
+{
+	T* data = nullptr;
+	int length = 0;
+
+	Slice() {}
+
+	Slice(T* ptr) : data(ptr)
+	{
+		
+	}
+
+	Slice(T* ptr, int size) : data(ptr), length(size)
+	{
+		
+	}
+
+	Slice(T* begin, T* end) : data(begin), length(0)
+	{
+		while (begin++ < end) length++;
+	}
+
+	// todo add initializer list in future
+};

@@ -1,7 +1,7 @@
 #include "D3D12SwapChain.hpp"
 #include "D3D12Context.hpp"
 
-D3D12SwapChain::D3D12SwapChain(const SwapChainDesc& arguments)
+D3D12SwapChain::D3D12SwapChain(const DX12SwapChainDesc& arguments)
 {
 	m_Device = arguments.device;
 

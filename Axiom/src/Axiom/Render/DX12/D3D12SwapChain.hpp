@@ -2,7 +2,7 @@
 #include "D3D12Core.hpp"
 #include "D3D12CommonHeaders.hpp"
 
-struct SwapChainDesc
+struct DX12SwapChainDesc
 {
 	int width, height;
 	ID3D12Device8* device;
@@ -15,7 +15,7 @@ struct SwapChainDesc
 class D3D12SwapChain
 {
 public:
-	D3D12SwapChain(const SwapChainDesc& swapChainDesc);
+	D3D12SwapChain(const DX12SwapChainDesc& swapChainDesc);
 
 	void Release();
 	void Present(bool gsync, uint32 flags);
