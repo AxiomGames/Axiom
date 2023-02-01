@@ -112,7 +112,7 @@ inline UnorderedMap<Key, Value, Alloc>::UnorderedMap(const UnorderedMap& other)
 			it->first, it->second);
 		newnode->next = newnode->prev = 0;
 
-		AxSTL::unordered_hash_node_insert(newnode,  Hash<Key>::hash(it->first), m_buckets.first, nbuckets - 1);
+		AxSTL::unordered_hash_node_insert(newnode,  HashValue(it->first), m_buckets.first, nbuckets - 1);
 	}
 }
 

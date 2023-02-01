@@ -1,6 +1,8 @@
 #include "Axiom/Core/String.hpp"
 #include "doctest.h"
 
+#include <algorithm>
+
 
 TEST_CASE("TestString_Constructor")
 {
