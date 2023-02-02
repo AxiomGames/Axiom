@@ -44,18 +44,4 @@ struct AX_API Memory
 	}
 };
 
-//TODO - temporary
-struct StaticAllocator
-{
-	static inline MemPtr Malloc(uint64 size, uint64_t alignment = 0)
-	{
-		return (MemPtr) operator new(size);
-	}
-
-	static void Free(VoidPtr ptr)
-	{
-		operator delete(ptr);
-	}
-};
-
-#define DEFAULT_ALLOCATOR StaticAllocator
+#define DEFAULT_ALLOCATOR Memory
