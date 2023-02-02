@@ -78,3 +78,5 @@ public:
 	MemPtr ReAlloc(MemPtr ptr, uint64 size, uint64_t alignment) override;
 	void Free(VoidPtr pointer) override;
 };
+
+extern AX_API DefaultAllocator GDefaultAllocator;

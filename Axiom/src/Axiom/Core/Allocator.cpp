@@ -1,6 +1,8 @@
 #include "Allocator.hpp"
 #include <memory>
 
+AX_API DefaultAllocator GDefaultAllocator;
+
 MemPtr DefaultAllocator::Malloc(uint64 size, uint64_t alignment)
 {
 	return reinterpret_cast<MemPtr>(std::malloc(size));
