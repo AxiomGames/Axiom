@@ -3,6 +3,8 @@
 #include "UnorderedMap.hpp"
 #include "StringView.hpp"
 #include "SharedPtr.hpp"
+#include "Array.hpp"
+#include "Span.hpp"
 
 
 struct FunctionStorage
@@ -10,15 +12,45 @@ struct FunctionStorage
 	String Name{};
 
 	VoidPtr InvokeAllParams{};
-	void (*InvokeArray)(VoidPtr instance, VoidPtr ret, VoidPtr* params);
+
+	void (* InvokeArray)(VoidPtr instance, VoidPtr ret, VoidPtr* params);
+};
+
+struct ValueStorage
+{
+	String Name{};
+	ConstVoidPtr (* GetValue)();
 };
 
 struct TypeStorage
 {
 	String Name{};
 	UnorderedMap<std::size_t, SharedPtr<FunctionStorage>> FunctionsByName{};
+	UnorderedMap<std::size_t, SharedPtr<ValueStorage>> ValuesByName{};
+	UnorderedMap<std::size_t, ValueStorage*> ValuesByHash{};
+	Array<ValueStorage*> ValuesByOrder{};
 };
 
+
+template<auto Value, typename Type, typename Owner>
+class NativeValueHandler
+{
+public:
+	explicit NativeValueHandler(ValueStorage& valueStorage) : m_ValueStorage(valueStorage)
+	{
+		m_ValueStorage.GetValue = GetValueImpl;
+	}
+
+private:
+	static constexpr Type value = Value;
+
+	ValueStorage& m_ValueStorage;
+
+	static ConstVoidPtr GetValueImpl()
+	{
+		return &value;
+	}
+};
 
 template<auto MFP, typename Return, typename Owner, typename ...Args>
 class NativeMemberFunctionHandler
@@ -94,8 +126,52 @@ public:
 		return MemberFunctionTemplateDecomposer<MFP, decltype(MFP)>::CreateHandler(*it->second);
 	}
 
+	template<auto Value>
+	auto Value(const StringView& valueName)
+	{
+		auto hashName = HashValue(valueName);
+		auto it = m_TypeStorage.ValuesByName.Find(hashName);
+		if (it == m_TypeStorage.ValuesByName.end())
+		{
+			it = m_TypeStorage.ValuesByName.Insert(MakePair(hashName, MakeShared<ValueStorage>(
+				String{valueName.begin(), valueName.end()}
+			))).first;
+
+			m_TypeStorage.ValuesByHash.Insert(MakePair(HashValue(Value), it->second.get()));
+			m_TypeStorage.ValuesByOrder.PushBack(it->second.get());
+		}
+		return NativeValueHandler<Value, decltype(Value), T>{*it->second};
+	}
+
 private:
 	TypeStorage& m_TypeStorage;
+};
+
+//---handlers
+
+class ValueHandler
+{
+public:
+	explicit ValueHandler(ValueStorage* valueStorage) : m_ValueStorage(valueStorage)
+	{}
+
+	explicit operator bool()
+	{
+		return m_ValueStorage != nullptr;
+	}
+
+	template<typename Type>
+	const Type& As() const
+	{
+		return *static_cast<const Type*>(m_ValueStorage->GetValue());
+	}
+
+	[[nodiscard]] StringView GetName() const {
+		return m_ValueStorage->Name;
+	}
+
+private:
+	ValueStorage* m_ValueStorage{};
 };
 
 
@@ -111,7 +187,7 @@ public:
 	}
 
 	template<typename Ret, typename ...Args>
-	Ret Invoke(VoidPtr instance, Args&&...args)
+	Ret Invoke(VoidPtr instance, Args&& ...args)
 	{
 		Ret ret{};
 		VoidPtr params[] = {&args...,};
@@ -145,6 +221,36 @@ public:
 		}
 		return FunctionHandler{nullptr};
 	}
+
+	auto FindValueByName(const StringView& valueName)
+	{
+		auto it = m_TypeStorage->ValuesByName.Find(HashValue(valueName));
+		if (it != m_TypeStorage->ValuesByName.end())
+		{
+			return ValueHandler{it->second.get()};
+		}
+		return ValueHandler{nullptr};
+	}
+
+	template<typename Type>
+	auto FindValue(const Type& value)
+	{
+		auto it = m_TypeStorage->ValuesByHash.Find(HashValue(value));
+		if (it != m_TypeStorage->ValuesByHash.end())
+		{
+			return ValueHandler{it->second};
+		}
+		return ValueHandler{nullptr};
+	}
+
+	[[nodiscard]] auto Values() const
+	{
+		return Span<ValueHandler>(
+			reinterpret_cast<ValueHandler*>(m_TypeStorage->ValuesByOrder.begin()),
+			reinterpret_cast<ValueHandler*>(m_TypeStorage->ValuesByOrder.end()));
+	}
+
+
 
 private:
 	TypeStorage* m_TypeStorage{};

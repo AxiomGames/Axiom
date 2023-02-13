@@ -43,3 +43,56 @@ TEST_CASE("Reflection_Register")
 
 
 }
+
+enum class EnumClassTest
+{
+	One = 1,
+	Two = 5,
+	Three = 3
+};
+
+TEST_CASE("Reflection_Register_Enum")
+{
+	//registry
+	{
+		auto enumClassTest = Reflection::NewType<EnumClassTest>("EnumClassTest");
+		enumClassTest.Value<EnumClassTest::One>("One");
+		enumClassTest.Value<EnumClassTest::Two>("Two");
+		enumClassTest.Value<EnumClassTest::Three>("Three");
+	}
+
+	//runtime
+	{
+		auto typeEnumClassTest = Reflection::FindType("EnumClassTest");
+		//by Name
+		{
+			auto value = typeEnumClassTest.FindValueByName("Two");
+			REQUIRE(value);
+			CHECK(value.As<EnumClassTest>() == EnumClassTest::Two);
+			CHECK(value.As<int>() == 5);
+			CHECK(value.GetName() == "Two");
+		}
+
+		//by Value
+		{
+			auto three = typeEnumClassTest.FindValue(EnumClassTest::Three);
+			REQUIRE(three);
+
+			CHECK(three.As<EnumClassTest>() == EnumClassTest::Three);
+			CHECK(three.As<int>() == 3);
+			CHECK(three.GetName() == "Three");
+		}
+		{
+			auto values = typeEnumClassTest.Values();
+			REQUIRE(values[0]);
+			REQUIRE(values[1]);
+			REQUIRE(values[2]);
+
+			CHECK(values[0].As<EnumClassTest>() == EnumClassTest::One);
+			CHECK(values[1].As<EnumClassTest>() == EnumClassTest::Two);
+			CHECK(values[2].As<EnumClassTest>() == EnumClassTest::Three);
+		}
+
+	}
+
+}
