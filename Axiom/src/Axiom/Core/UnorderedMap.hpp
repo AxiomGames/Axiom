@@ -102,8 +102,10 @@ template<typename Key, typename Value, typename Alloc>
 inline UnorderedMap<Key, Value, Alloc>::UnorderedMap(const UnorderedMap& other)
 	: m_size(other.m_size)
 {
-	const size_t nbuckets = (size_t) (other.m_buckets.last - other.m_buckets.first);
 	buffer_init<pointer, Alloc>(&m_buckets);
+	if (!other.m_buckets.first) return;
+
+	const size_t nbuckets = (size_t) (other.m_buckets.last - other.m_buckets.first);
 	buffer_resize<pointer, Alloc>(&m_buckets, nbuckets, 0);
 
 	for (pointer it = *other.m_buckets.first; it; it = it->next)
@@ -152,7 +154,7 @@ template<typename Key, typename Value, typename Alloc>
 inline typename UnorderedMap<Key, Value, Alloc>::Iterator UnorderedMap<Key, Value, Alloc>::begin()
 {
 	Iterator it;
-	it.node = *m_buckets.first;
+	it.node = m_buckets.first ? *m_buckets.first : 0;
 	return it;
 }
 
@@ -168,7 +170,7 @@ template<typename Key, typename Value, typename Alloc>
 inline typename UnorderedMap<Key, Value, Alloc>::ConstIterator UnorderedMap<Key, Value, Alloc>::begin() const
 {
 	ConstIterator cit;
-	cit.node = *m_buckets.first;
+	cit.node = m_buckets.first ? *m_buckets.first : 0;
 	return cit;
 }
 
@@ -195,6 +197,8 @@ inline size_t UnorderedMap<Key, Value, Alloc>::Size() const
 template<typename Key, typename Value, typename Alloc>
 inline void UnorderedMap<Key, Value, Alloc>::Clear()
 {
+	if (!m_buckets.first) return;
+
 	pointer it = *m_buckets.first;
 	while (it)
 	{
