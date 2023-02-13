@@ -56,6 +56,40 @@ TEST_CASE("TestUnorderedMap_Constructor")
 	}
 }
 
+TEST_CASE("TestUnorderedMap_Empty")
+{
+	UnorderedMap<int, int> empty{};
+	CHECK(empty.Empty());
+	{
+		//copy
+		auto other = empty;
+		CHECK(other.Empty());
+
+		//move
+		auto moved = std::move(other);
+		CHECK(moved.Empty());
+	}
+
+	auto it = empty.Find(10);
+	CHECK(it == empty.end());
+
+	int calc = 0;
+
+	for (auto& emptyIt: empty)
+	{
+		calc++;
+		calc += emptyIt.second;
+	}
+
+	for (const auto& emptyIt: empty)
+	{
+		calc++;
+		calc += emptyIt.second;
+	}
+	CHECK(calc == 0);
+	empty.Clear();
+}
+
 TEST_CASE("TestUnorderedMap_Assign")
 {
 	using BaseMap = UnorderedMap<int, int>;
