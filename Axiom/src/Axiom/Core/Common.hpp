@@ -114,6 +114,7 @@ typedef int64_t int64;
 
 using MemPtr = uint8*;
 using VoidPtr = void*;
+using ConstVoidPtr = const void*;
 
 enum EForceInit
 {

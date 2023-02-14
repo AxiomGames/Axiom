@@ -845,7 +845,7 @@ struct Hash<String>
 {
 	constexpr static bool c_HasHashImpl = true;
 
-	static std::size_t hash(const String& string)
+	static std::size_t GenerateHash(const String& string)
 	{
 		std::size_t hash = 0;
 		for (auto it = string.begin(); it != string.end(); ++it)

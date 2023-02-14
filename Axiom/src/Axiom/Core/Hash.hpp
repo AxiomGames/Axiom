@@ -35,7 +35,7 @@ struct Hash
 {
 	constexpr static bool c_HasHashImpl = true;
 
-	static std::size_t hash(const T& value)
+	static std::size_t GenerateHash(const T& value)
 	{
 		const auto asint = (std::size_t) value;
 		const auto str = (const char*) &asint;
@@ -56,6 +56,6 @@ template<typename TValue>
 inline std::size_t HashValue(const TValue& value)
 {
 	static_assert(Hash<TValue>::c_HasHashImpl, "type has no hash implementation");
-	return Hash<TValue>::hash(value);
+	return Hash<TValue>::GenerateHash(value);
 }
 
