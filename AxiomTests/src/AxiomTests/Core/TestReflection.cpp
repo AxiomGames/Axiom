@@ -51,13 +51,30 @@ enum class EnumClassTest
 	Three = 3
 };
 
+struct AttributeTest
+{
+	int Value{};
+};
+
+struct OtherAttribute{
+	String OtherValue{};
+};
+
+
 TEST_CASE("Reflection_Register_Enum")
 {
+
 	//registry
 	{
 		auto enumClassTest = Reflection::NewType<EnumClassTest>("EnumClassTest");
-		enumClassTest.Value<EnumClassTest::One>("One");
-		enumClassTest.Value<EnumClassTest::Two>("Two");
+
+		enumClassTest.Value<EnumClassTest::One>("One")
+		    .Attribute(AttributeTest{10});
+
+		enumClassTest.Value<EnumClassTest::Two>("Two")
+			.Attribute(AttributeTest{20})
+			.Attribute(OtherAttribute{"asdasd"});
+
 		enumClassTest.Value<EnumClassTest::Three>("Three");
 	}
 
@@ -66,11 +83,35 @@ TEST_CASE("Reflection_Register_Enum")
 		auto typeEnumClassTest = Reflection::FindType("EnumClassTest");
 		//by Name
 		{
+			auto value = typeEnumClassTest.FindValueByName("One");
+			REQUIRE(value);
+			CHECK(value.As<EnumClassTest>() == EnumClassTest::One);
+			CHECK(value.As<int>() == 1);
+			CHECK(value.GetName() == "One");
+
+			//attribute test
+			REQUIRE(value.HasAttribute<AttributeTest>());
+			auto& attr = value.GetAttribute<AttributeTest>();
+			CHECK(attr.Value == 10);
+		}
+
+		{
 			auto value = typeEnumClassTest.FindValueByName("Two");
 			REQUIRE(value);
 			CHECK(value.As<EnumClassTest>() == EnumClassTest::Two);
 			CHECK(value.As<int>() == 5);
 			CHECK(value.GetName() == "Two");
+
+			//attribute test
+			REQUIRE(value.HasAttribute<AttributeTest>());
+			auto& attr = value.GetAttribute<AttributeTest>();
+			CHECK(attr.Value == 20);
+
+
+			//attribute test
+			REQUIRE(value.HasAttribute<OtherAttribute>());
+			auto& otherAttr = value.GetAttribute<OtherAttribute>();
+			CHECK(otherAttr.OtherValue == "asdasd");
 		}
 
 		//by Value

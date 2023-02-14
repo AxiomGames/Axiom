@@ -5,12 +5,17 @@
 #include "SharedPtr.hpp"
 #include "Array.hpp"
 #include "Span.hpp"
+#include "TypeID.hpp"
 
+
+struct AttributeStorage
+{
+	ConstVoidPtr (* GetValue)();
+};
 
 struct FunctionStorage
 {
 	String Name{};
-
 	VoidPtr InvokeAllParams{};
 
 	void (* InvokeArray)(VoidPtr instance, VoidPtr ret, VoidPtr* params);
@@ -19,7 +24,10 @@ struct FunctionStorage
 struct ValueStorage
 {
 	String Name{};
+
 	ConstVoidPtr (* GetValue)();
+
+	UnorderedMap<TTypeID, SharedPtr<AttributeStorage>> Attributes;
 };
 
 struct TypeStorage
@@ -31,24 +39,58 @@ struct TypeStorage
 	Array<ValueStorage*> ValuesByOrder{};
 };
 
+template<typename Owner, typename AttrType>
+class NativeAttributeHandler
+{
+public:
+	inline static AttrType AttrValue{};
+
+	explicit NativeAttributeHandler(AttributeStorage& attributeStorage)
+	{
+		attributeStorage.GetValue = GetValueImpl;
+	}
+
+private:
+	static ConstVoidPtr GetValueImpl()
+	{
+		return &AttrValue;
+	}
+};
+
 
 template<auto Value, typename Type, typename Owner>
 class NativeValueHandler
 {
 public:
+	using ValueType = NativeValueHandler<Value, Type, Owner>;
+
 	explicit NativeValueHandler(ValueStorage& valueStorage) : m_ValueStorage(valueStorage)
 	{
 		m_ValueStorage.GetValue = GetValueImpl;
 	}
 
+	template<typename AttrType>
+	decltype(auto) Attribute(AttrType&& attr)
+	{
+		NativeAttributeHandler<ValueType, AttrType>::AttrValue = std::forward<AttrType>(attr);
+		auto typeId = TypeIDCache<AttrType>::Value;
+		auto it = m_ValueStorage.Attributes.Find(typeId);
+		if (it == m_ValueStorage.Attributes.end())
+		{
+			it = m_ValueStorage.Attributes.Insert(MakePair(typeId, MakeShared<AttributeStorage>())).first;
+			NativeAttributeHandler<ValueType, AttrType>{*it->second};
+		}
+		return *this;
+	}
+
 private:
-	static constexpr Type value = Value;
+	static constexpr Type c_Value = Value;
 
 	ValueStorage& m_ValueStorage;
 
 	static ConstVoidPtr GetValueImpl()
 	{
-		return &value;
+		return &c_Value;
 	}
 };
 
@@ -166,8 +208,36 @@ public:
 		return *static_cast<const Type*>(m_ValueStorage->GetValue());
 	}
 
-	[[nodiscard]] StringView GetName() const {
+	[[nodiscard]] StringView GetName() const
+	{
 		return m_ValueStorage->Name;
+	}
+
+	bool HasAttribute(TTypeID typeId)
+	{
+		return m_ValueStorage->Attributes.Find(typeId) != m_ValueStorage->Attributes.end();
+	}
+
+	template<typename Type>
+	bool HasAttribute()
+	{
+		return HasAttribute(TypeIDCache<Type>::Value);
+	}
+
+	ConstVoidPtr GetAttribute(TTypeID typeId)
+	{
+		auto it = m_ValueStorage->Attributes.Find(typeId);
+		if (it != m_ValueStorage->Attributes.end())
+		{
+			return it->second->GetValue();
+		}
+		return nullptr;
+	}
+
+	template<typename Type>
+	decltype(auto) GetAttribute()
+	{
+		return *static_cast<const Type*>(GetAttribute(TypeIDCache<Type>::Value));
 	}
 
 private:
@@ -249,7 +319,6 @@ public:
 			reinterpret_cast<ValueHandler*>(m_TypeStorage->ValuesByOrder.begin()),
 			reinterpret_cast<ValueHandler*>(m_TypeStorage->ValuesByOrder.end()));
 	}
-
 
 
 private:
