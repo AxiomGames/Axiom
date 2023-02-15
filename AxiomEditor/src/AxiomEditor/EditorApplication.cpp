@@ -16,14 +16,6 @@
 
 #include <fstream>
 
-static D3D12Context* context;
-static IShader* vertexShader;
-static IShader* fragmentShader;
-static IBuffer* vertexBuffer, *indexBuffer;
-static ICommandAllocator* commandAllocator;
-static ICommandList* commandList;
-static ICommandQueue* commandQueue;
-
 inline char* ReadAllFile(const char* fileName, int* numCharacters = 0)
 {
 	FILE* fp = fopen(fileName, "r");
@@ -62,25 +54,25 @@ void EditorApplication::OnInit()
 
 	GEngine->Get<WindowManager>()->AddWindow(window, true);
 #ifdef AX_WIN32
+	
 	SharedPtr<INativeWindow> nativeWindow = window->GetNativeWindow();
-	context = new D3D12Context();
+	IDeviceContext* context = new D3D12Context();
 	context->Initialize(nativeWindow);
 	char* shaderCode = ReadAllFile("../EngineAssets/Shaders/PBR.hlsl");
-	vertexShader = context->CreateShader(shaderCode, "VS", EShaderType::Vertex);
-	
-	fragmentShader = context->CreateShader(shaderCode, "PS", EShaderType::Fragment);
+	pipelineInfo.VertexShader = context->CreateShader(shaderCode, "VS", EShaderType::Vertex);
+	pipelineInfo.FragmentShader = context->CreateShader(shaderCode, "PS", EShaderType::Fragment);
 
 	free(shaderCode);
 
-	commandAllocator = context->CreateCommandAllocator(ECommandListType::Direct);
 	// todo create for each thread
-	commandList = context->CreateCommandList(commandAllocator, ECommandListType::Direct);
-
-	commandQueue = context->CreateCommandQueue(ECommandListType::Direct, ECommandQueuePriority::Normal);
+	ICommandAllocator* commandAllocator = context->CreateCommandAllocator(ECommandListType::Direct);
+	ICommandList* commandList = context->CreateCommandList(commandAllocator, ECommandListType::Direct);
+	ICommandQueue* commandQueue = context->CreateCommandQueue(ECommandListType::Direct, ECommandQueuePriority::Normal);
+	ISwapChain* swapchain = context->CreateSwapChain(EImageFormat::RGBA8);
 
 	struct PBRVertex {
 		Vector3f position;
-		Vector4 color;
+		float color[4];
 	};
 
 	static PBRVertex vertices[4] =
@@ -102,39 +94,44 @@ void EditorApplication::OnInit()
 	bufferDesc.ElementByteStride = sizeof(PBRVertex);
 	bufferDesc.Size = sizeof(PBRVertex) * _countof(vertices);
 
-	vertexBuffer = context->CreateBuffer(bufferDesc, commandList);
-
+	IBuffer* vertexBuffer = context->CreateBuffer(bufferDesc, commandList);
 	bufferDesc.Data = indices;
 	bufferDesc.ResourceUsage = EResourceUsage::IndexBuffer;
 	bufferDesc.ElementByteStride = sizeof(uint32);
 	bufferDesc.Size = sizeof(uint32) * _countof(vertices);
 
-	indexBuffer = context->CreateBuffer(bufferDesc, commandList);
+	IBuffer* indexBuffer = context->CreateBuffer(bufferDesc, commandList);
+	
+	PipelineInfo pipelineInfo{};
+	pipelineInfo.numRenderTargets = 1;
+	pipelineInfo.RTVFormats[0] = EImageFormat::RGBA8;
+	
+	pipelineInfo.inputLayouts[0] = { "POSITION", VertexAttribType::Float3 };
+	pipelineInfo.inputLayouts[1] = { "COLOR"   , VertexAttribType::Float4 };
 
+	IPipeline* pipeline = context->CreatePipeline(pipelineInfo);
 
-#endif
-
-	struct Test
+	while (!window->ShouldClose())
 	{
-		int A = 0;
-	};
+		context.BeginFrame();
+		
+		// todo wait for all threads to finish
 
-	Test* a = Memory::Alloc<Test>();
-	Memory::FreeDestruct<int>(a);
+		context.EndFrame();
+	}
 
-	int* b = (int*)Memory::Malloc(sizeof(int));
-	Memory::Free(b);
+	context->DestroyResource(indexBuffer);
+	context->DestroyResource(vertexBuffer);
+	context->DestroyResource(vertexShader);
+	context->DestroyResource(fragmentShader);
+	context->DestroyResource(swapchain);
+	context->DestroyResource(commandQueue);
+	context->DestroyResource(commandList);
+	context->DestroyResource(commandAllocator);
+	context->Release();
 
-	int* c = (int*)Memory::MallocZeroed(sizeof(int));
-	Memory::Free(c);
-
-
-	IAllocator* allocator = new BlockAllocator();
-
-	Test* d = allocator->Alloc<Test>();
-	allocator->FreeDestruct<Test>(d);
-
-	delete allocator;
+	delete context;
+#endif
 }
 
 void EditorApplication::OnShutdown()

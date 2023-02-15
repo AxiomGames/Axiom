@@ -14,9 +14,13 @@ public:
 	void Initialize(IDeviceContext* deviceContext) override;
 	void Close() override;
 	void Reset(ICommandAllocator* commandAllocator) override;
+	void Release() override;
 
 	void SetPipelineState(IPipeline* pipeline) override;
 	void DrawIndexedInstanced(int numIndex, int numInstance, int startIndex, int startVertex, int startInstance) override;
+	void SetBufferBarrier(IBuffer* pBuffer, const PipelineBarrier& pBarrier) override;
+	void ClearRenderTarget(IImage* image, float color[4]) override;
+	void SetRenderTargets(IImage** images, int numImages) override;
 
 	void SetVertexBuffers(IBuffer** vertexBuffers, int numVertexBuffers) override;
 	void SetIndexBuffers(IBuffer** indexBuffers, int numIndexBuffers) override;

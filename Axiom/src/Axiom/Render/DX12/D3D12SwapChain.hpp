@@ -12,13 +12,19 @@ struct DX12SwapChainDesc
 	HWND hwnd;
 };
 
-class D3D12SwapChain
+class D3D12SwapChain : ISwapChain
 {
 public:
 	D3D12SwapChain(const DX12SwapChainDesc& swapChainDesc);
 
 	void Release();
 	void Present(bool gsync, uint32 flags);
+	
+	IImage* GetBackBuffer(int index) override
+	{ 
+		// first member of 
+		return (IImage*)m_RenderTargetResources[index]; 
+	}
 	// getters
 	ID3D12Resource* GetBackBufferResource(int index) 
 	{ return m_RenderTargetResources[index]; }

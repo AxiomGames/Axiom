@@ -100,6 +100,7 @@ public:
 	[[nodiscard]] virtual const ECursorMode& GetCursorMode() const = 0;
 
 	virtual bool IsIconified() = 0;
+	virtual bool ShouldClose() = 0;
 
 #ifdef AX_WIN32
 	virtual HWND GetHWND() = 0;

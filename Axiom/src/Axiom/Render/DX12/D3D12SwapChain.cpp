@@ -68,4 +68,3 @@ void D3D12SwapChain::Release()
 	}
 }
 
-

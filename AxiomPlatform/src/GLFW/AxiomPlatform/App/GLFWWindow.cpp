@@ -211,3 +211,8 @@ bool GLFWNativeWindow::IsIconified()
 {
 	return glfwGetWindowAttrib(m_WindowHandle, GLFW_ICONIFIED) == GLFW_TRUE;
 }
+
+bool GLFWNativeWindow::ShouldClose()
+{
+	return glfwWindowShouldClose(m_WindowHandle);
+}

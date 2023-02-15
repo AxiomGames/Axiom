@@ -1,25 +1,10 @@
 
+#include <exception>
 #include "D3D12Context.hpp"
 #include "D3D12Core.hpp"
-#include <exception>
 #include "d3d12x.h"
-
 #include "../Shader.hpp"
-
-struct D3D12Shader : IShader
-{
-
-};
-
-// view.BufferLocation = mpSysMemBuffer->GetGPUVirtualAddress();
-// view.SizeInBytes = sizeof(T) * size;
-// view.Format = TypeToFormat();
-
-struct D3D12Buffer : IBuffer
-{
-	ID3D12Resource* mpVidMemBuffer;
-	ID3D12Resource* mpSysMemBuffer;
-};
+#include <cassert>
 
 Vector2i windowSize;
 
@@ -50,7 +35,7 @@ void D3D12Context::Initialize(SharedPtr<INativeWindow> window)
 	ax_assert(m_FenceEvent);
 
 	windowSize = window->GetSize();
-
+	
 	// create rendering commandQueue
 	D3D12_COMMAND_QUEUE_DESC cmdQueuedesc{};
 	cmdQueuedesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
@@ -59,20 +44,6 @@ void D3D12Context::Initialize(SharedPtr<INativeWindow> window)
 	cmdQueuedesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 
 	DXCall(m_Device->CreateCommandQueue(&cmdQueuedesc, IID_PPV_ARGS(&m_CmdQueue)));
-
-	// create swapchain
-	DX12SwapChainDesc swapchainDesc =
-	{
-		.width = window->GetWidth(),
-		.height = window->GetHeight(),
-		.device = m_Device,
-		.factory = DXFactory,
-		.commandQueue = m_CmdQueue,
-		.format = DXGI_FORMAT_R8G8B8A8_UNORM,
-		.hwnd = window->GetHWND()
-	};
-
-	m_SwapChain = new D3D12SwapChain(swapchainDesc);
 
 	D3D12_DESCRIPTOR_HEAP_DESC descHeapDesc = {};
 	descHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
@@ -131,6 +102,22 @@ IBuffer* D3D12Context::CreateBuffer(const BufferDesc& desc, ICommandList* comman
 	);
 	
 	pCmd->ResourceBarrier(1, &transion1);
+
+	switch (desc.ResourceUsage)
+	{
+	case EResourceUsage::IndexBuffer;
+		buffer->indexBufferView.BufferLocation = buffer->mpSysMemBuffer->GetGPUVirtualAddress();
+		buffer->indexBufferView.SizeInBytes = desc.Size;
+		buffer->indexBufferView.Format = DX12::ToDX12Format(EImageFormat::R32U); // only uint vertices for now
+		break;
+	case EResourceUsage::VertexBuffer;
+		buffer->vertexBufferView.BufferLocation = buffer->mpSysMemBuffer->GetGPUVirtualAddress();
+		buffer->vertexBufferView.SizeInBytes = desc.Size;
+		buffer->vertexBufferView.StrideInBytes = desc.ElementByteStride;
+		break;
+		default: assert(false && "unknown resource type for dx12 buffer creation");
+	};
+
 	// todo give a name
 	// buffer->mpVidMemBuffer->SetName(L"AX vertex buffer vid mem");
 	// buffer->mpSysMemBuffer->SetName(L"AX vertex buffer sys mem");
@@ -183,7 +170,7 @@ IPipeline* D3D12Context::CreateGraphicsPipeline(PipelineInfo& info)
 	psoDesc.PrimitiveTopologyType = (D3D12_PRIMITIVE_TOPOLOGY_TYPE)info.primitiveType;
 	psoDesc.pRootSignature = outPipeline->RootSignature;
 	psoDesc.SampleMask = UINT_MAX;
-	psoDesc.NumRenderTargets = 1;
+	psoDesc.NumRenderTargets = info.numRenderTargets;
 	psoDesc.DSVFormat = DX12::ToDX12Format(info.DepthStencilFormat);
 	psoDesc.SampleDesc.Quality = msaaQuality ? (msaaQuality - 1) : 0;
 	psoDesc.SampleDesc.Count = msaaQuality ? msaaQuality : 1;
@@ -278,6 +265,7 @@ IPipeline* D3D12Context::CreateGraphicsPipeline(PipelineInfo& info)
 	}
 
 	DXCall(m_Device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&outPipeline->PipelineState)));
+	outPipeline.info = info;
 	return outPipeline;
 }
 
@@ -309,6 +297,28 @@ ICommandQueue* D3D12Context::CreateCommandQueue(ECommandListType type, ECommandQ
 	return (ICommandQueue*)commandQueue;
 }
 	
+ISwapChain* D3D12Context::CreateSwapChain(EImageFormat format) 
+{
+	DX12SwapChainDesc swapchainDesc =
+	{
+		.width = window->GetWidth(),
+		.height = window->GetHeight(),
+		.device = m_Device,
+		.factory = DXFactory,
+		.commandQueue = m_CmdQueue,
+		.format = DXGI_FORMAT_R8G8B8A8_UNORM,
+		.hwnd = window->GetHWND()
+	};
+
+	return new D3D12SwapChain(swapchainDesc);
+}
+
+void D3D12Context::DestroyResource(IGraphicsResource* resource)
+{
+	resource->Release();
+	delete resource;
+}
+
 IShader* D3D12Context::CreateShader(const char* sourceCode, const char* functionName, EShaderType shaderType)
 {
 	D3D12Shader* shader = new D3D12Shader();
@@ -330,23 +340,7 @@ IShader* D3D12Context::CreateShader(const char* sourceCode, const char* function
 	shader->sourceCode = sourceCode;
 	return (IShader*)shader;
 }
-
-void D3D12Context::DestroyShader(IShader* shader) 
-{
-	// ReleaseResource(vertexShaderBlob); 
-}
 	
-void D3D12Context::SetBufferBarrier(IBuffer* pBuffer, const PipelineBarrier& pBarrier) 
-{
-	D3D12_RESOURCE_BARRIER barrier = {};
-	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrier.Transition.pResource = m_SwapChain->GetBackBufferResource(m_FrameIndex);
-	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-}
-
 D3D12Context::~D3D12Context()
 {
 	ax_assert(!m_CmdQueue && !m_CmdList && !m_Fence);

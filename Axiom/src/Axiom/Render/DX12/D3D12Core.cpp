@@ -91,18 +91,17 @@ namespace DX12
 	{
 		switch (type)
 		{
-		case EImageFormat::RGBA8F:      break;
-		case EImageFormat::RGBA8_SRGBF: break;
-		case EImageFormat::BGRA8F:      break;
-		case EImageFormat::RGBA16F:     break;
-		case EImageFormat::RGBA32F:     break;
-		case EImageFormat::R32U:        break;
-		case EImageFormat::R32F:        break;
-		case EImageFormat::D32F:        break;
-		case EImageFormat::D32FS8U:     break;
-		case EImageFormat::RG32F:       break;
-		case EImageFormat::RG32I:       break;
-		case EImageFormat::RG16F:       break;
+			case EImageFormat::RGBA8:       return DXGI_FORMAT_R8G8B8A8_UNORM; break;
+			case EImageFormat::RGBA8_SRGBF: return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
+			case EImageFormat::RGBA16F:     return DXGI_FORMAT_R16G16B16A16_FLOAT; break;
+			case EImageFormat::RGBA32F:     return DXGI_FORMAT_R32G32B32A32_FLOAT; break;
+			case EImageFormat::R32U:        return DXGI_FORMAT_R32_UINT; break;
+			case EImageFormat::R32F:        return DXGI_FORMAT_R32_FLOAT; break;
+			case EImageFormat::D32F:        return DXGI_FORMAT_D32_FLOAT; break;
+			case EImageFormat::D32FS8U:     return DXGI_FORMAT_D24_UNORM_S8_UINT; break;
+			case EImageFormat::RG32F:       return DXGI_FORMAT_R32G32_FLOAT; break;
+			case EImageFormat::RG32I:       return DXGI_FORMAT_R32G32_UINT; break;
+			case EImageFormat::RG16F:       return DXGI_FORMAT_R16G16_FLOAT; break;
 		default: assert(false && "Unknown Format!");  return DXGI_FORMAT_UNKNOWN; break;
 		}
 	}
@@ -117,8 +116,9 @@ namespace DX12
 		case EResourceUsage::TransferSrc:     return D3D12_RESOURCE_STATE_COPY_SOURCE; break;
 		case EResourceUsage::TransferDst:     return D3D12_RESOURCE_STATE_COPY_DEST; break;
 		case EResourceUsage::UnorderedAccess: return D3D12_RESOURCE_STATE_UNORDERED_ACCESS; break;
-		case EResourceUsage::Present:
-		case EResourceUsage::Unknown: return D3D12_RESOURCE_STATE_COMMON; break;
+		case EResourceUsage::Present:         return D3D12_RESOURCE_STATE_PRESENT; break;
+		case EResourceUsage::Unknown:         return D3D12_RESOURCE_STATE_COMMON; break;
+		case EResourceUsage::RenderTarget:    return D3D12_RESOURCE_STATE_RENDER_TARGET; break;
 		default: assert(false && "Unknown Format"); return D3D12_RESOURCE_STATE_COMMON; break;
 		}
 	}

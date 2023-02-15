@@ -177,7 +177,7 @@ static constexpr uint32 VertexAttribSize(VertexAttribType type)
 enum class EImageFormat
 {
     UNKNOWN,
-    RGBA8F,
+    RGBA8,
     RGBA8_SRGBF,
     BGRA8F,
     RGBA16F,
@@ -220,6 +220,59 @@ enum class ECPUAccessFlag
     Write
 };
 ENUM_FLAGS(ECPUAccessFlag, uint32)
+
+struct IGraphicsResource
+{
+	virtual void Release() = 0;
+};
+
+struct IImage : IGraphicsResource
+{
+		
+};
+
+enum class EShaderType : uint32
+{
+    None,
+    Vertex,
+    Fragment,
+    Compute
+};
+
+struct IShader : IGraphicsResource
+{
+    const char* sourceCode = nullptr;
+    struct ByteCode
+    {
+        void* blob = nullptr;
+        size_t blobSize = 0;
+    } byteCode{};
+};
+
+struct BufferDesc
+{
+	EResourceUsage ResourceUsage = EResourceUsage::Unknown;
+	uint64 Size = 0;
+	uint64 ElementByteStride = 0;
+	void* Data;
+};
+
+struct IBuffer : IGraphicsResource
+{
+	EResourceUsage ResourceUsage;
+	uint64 SizeInBytes = 0;
+	uint64 ElementByteStride = 0;
+	uint64 DataLen = 0;
+	uint64 DataOffset = 0;
+
+	void* BufferData;
+};
+
+struct ISwapChain : IGraphicsResource
+{
+	virtual void Present() = 0;
+	virtual IImage* GetBackBuffer(int index) = 0;
+};
 
 struct ViewportDesc
 {

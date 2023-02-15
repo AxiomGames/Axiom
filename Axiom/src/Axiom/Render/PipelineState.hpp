@@ -1,8 +1,6 @@
 #pragma once
 
-#include "Shader.hpp"
 #include "Types.hpp"
-#include "Buffer.hpp"
 
 struct SampleDesc
 {
@@ -10,33 +8,13 @@ struct SampleDesc
 	uint32 quality;
 };
 
-struct LayoutElement
+enum class ColorWriteEnable : uint32
 {
-	const char* HLSLSemantics;
-	int32 inputIndex = 0;
-	EImageFormat format = EImageFormat::UNKNOWN;
-	int32 slot = 0;
-	size_t offset = 0ull;
-
-	enum Classification 
-	{
-		PerVertex, PerInstance
-	} classification = PerVertex;
-};
-
-struct InputLayout
-{
-	int32 numLayoutElements = 0;
-	LayoutElement* layoutElements = nullptr;
-};
-
-enum ColorWriteEnable
-{
-	ColorWriteEnable_Red   = 1,
-	ColorWriteEnable_Green = 2,
-	ColorWriteEnable_Blue  = 4,
-	ColorWriteEnable_Alpha = 8,
-	ColorWriteEnable_All = 1 | 2 | 4 | 8,
+	Red   = 1,
+	Green = 2,
+	Blue  = 4,
+	Alpha = 8,
+	All = 1 | 2 | 4 | 8,
 };
 
 // Incomplete pipeline stage enums.
@@ -92,9 +70,6 @@ enum class EDescriptorType : uint32
 struct Sampler
 { };
 
-struct IImage 
-{ };
-
 struct DescriptorBindingDesc
 {
 	int BindingID = -1;
@@ -118,30 +93,30 @@ struct DescriptorSetDesc
 
 struct PipelineBarrier
 {
-	EResourceUsage m_CurrentUsage = EResourceUsage::Unknown;
-	EPipelineStage m_CurrentStage = EPipelineStage::None;
-	EPipelineAccess m_CurrentAccess = EPipelineAccess::None;
-	EResourceUsage m_NextUsage = EResourceUsage::Unknown;
-	EPipelineStage m_NextStage = EPipelineStage::None;
-	EPipelineAccess m_NextAccess = EPipelineAccess::None;
+	EResourceUsage CurrentUsage = EResourceUsage::Unknown;
+	EPipelineStage CurrentStage = EPipelineStage::None;
+	EPipelineAccess CurrentAccess = EPipelineAccess::None;
+	EResourceUsage NextUsage = EResourceUsage::Unknown;
+	EPipelineStage NextStage = EPipelineStage::None;
+	EPipelineAccess NextAccess = EPipelineAccess::None;
 };
 
 struct BlendDesc
 {
 	bool BlendEnable;
 
-	EBlendFactor SrcBlend;
-	EBlendFactor DestBlend;
-	EBlendOp BlendOp;
-	EBlendFactor SrcBlendAlpha;
-	EBlendFactor DestBlendAlpha;
-	EBlendOp BlendOpAlpha;
-	ColorWriteEnable RenderTargetWriteMask = ColorWriteEnable_All;
+	EBlendFactor SrcBlend = EBlendFactor::SrcAlpha;
+	EBlendFactor DestBlend = EBlendFactor::InvSrcAlpha;
+	EBlendOp BlendOp = EBlendOp::Add;
+	EBlendFactor SrcBlendAlpha = EBlendFactor::One;
+	EBlendFactor DestBlendAlpha = EBlendFactor::InvSrcAlpha;
+	EBlendOp BlendOpAlpha = EBlendOp::Add;
+	ColorWriteEnable RenderTargetWriteMask = ColorWriteEnable::All;
 };
 
 struct InputLayout
 {
-	Slice<const char> name{};// string view
+	const char* name = nullptr;// string view
 	VertexAttribType Type = VertexAttribType::None;
 };
 
@@ -161,7 +136,7 @@ struct PipelineInfo
 	EFillMode fillMode = EFillMode::Fill;
 	bool counterClockWise = false;
 
-	int32 numRenderTargets = 0;
+	int32 numRenderTargets = 1;
 	EImageFormat DepthStencilFormat = EImageFormat::UNKNOWN;
 	EImageFormat RTVFormats[MaxRenderTargets] = {};
 
@@ -171,7 +146,7 @@ struct PipelineInfo
 	BlendDesc RenderTargetBlendDescs[MaxRenderTargets] = {};
 	
 	int32 descriptorSetCount = 0;
-	DescriptorSetDesc descriptorSet;
+	DescriptorSetDesc descriptorSet = {};
 	
 	int32 numInputLayout = 0;
 	InputLayout inputLayouts[8] = {};
@@ -180,7 +155,7 @@ struct PipelineInfo
 	SampleDesc sampleDesc = {}; // multisampling parameters
 };
 
-struct IPipeline
+struct IPipeline : IGraphicsResource
 {
 	PipelineInfo info;
 };

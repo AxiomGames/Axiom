@@ -49,6 +49,7 @@ public:
 	[[nodiscard]] const ECursorMode& GetCursorMode() const override;
 
 	bool IsIconified() override;
+	bool ShouldClose() override;
 
 	void SetFocused(bool focused) { m_Focused = focused; }
 

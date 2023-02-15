@@ -1,15 +1,14 @@
 #pragma once
 #include "PipelineState.hpp"
-#include "Buffer.hpp"
 
-struct ICommandAllocator 
+struct ICommandAllocator : IGraphicsResource
 {
 	
 };
 
 class IDeviceContext;
 
-struct ICommandList
+struct ICommandList : IGraphicsResource
 {
 	virtual void Initialize(IDeviceContext* deviceContext) = 0;
 	virtual void Close() = 0;
@@ -17,6 +16,9 @@ struct ICommandList
 
 	virtual void SetPipelineState(IPipeline* pipeline) = 0;
 	virtual void DrawIndexedInstanced(int numIndex, int numInstance, int startIndexLocation, int startVertexLocation, int startInstanceLocation) = 0;
+	virtual void SetBufferBarrier(IBuffer* pBuffer, const PipelineBarrier& pBarrier) = 0;
+	virtual void ClearRenderTarget(IImage* image, float color[4]) = 0;
+	virtual void SetRenderTargets(IImage** images, int numImages) = 0;
 
 	virtual void SetVertexBuffers(IBuffer** vertexBuffers, int numVertexBuffers) = 0;
 	virtual void SetIndexBuffers(IBuffer** indexBuffers, int numIndexBuffers) = 0;
