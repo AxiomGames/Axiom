@@ -18,6 +18,12 @@ struct RemovePtr { typedef T Type; };
 template<typename T>
 struct RemovePtr<T*> { typedef T Type; };
 
+template <class T>
+using TRemoveRef = typename RemoveRef<T>::Type;
+
+template <class T>
+using TRemovePtr = typename RemovePtr<T>::Type;
+
 template<typename T>
 FINLINE typename RemoveRef<T>::Type&& Move(T&& obj)
 {

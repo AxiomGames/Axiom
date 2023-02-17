@@ -1,12 +1,12 @@
 #pragma once
 
+#include "TemplateBase.hpp"
 #include "UnorderedMap.hpp"
 #include "StringView.hpp"
 #include "SharedPtr.hpp"
 #include "Array.hpp"
 #include "Span.hpp"
 #include "TypeID.hpp"
-
 
 struct AttributeStorage
 {
@@ -106,15 +106,15 @@ public:
 
 private:
 
-	static void InvokeAllParams(VoidPtr instance, VoidPtr ret, std::remove_reference_t<Args>* ...args)
+	static void InvokeAllParams(VoidPtr instance, VoidPtr ret, TRemoveRef<Args>* ...args)
 	{
-		*static_cast<std::remove_reference_t<Return>*>(ret) = (static_cast<Owner*>(instance)->*MFP)(*static_cast<std::remove_reference_t<Args>*>(args)...);
+		*static_cast<TRemoveRef<Return>*>(ret) = (static_cast<Owner*>(instance)->*MFP)(*static_cast<TRemoveRef<Args>*>(args)...);
 	}
 
 	static void InvokeArray(VoidPtr instance, VoidPtr ret, VoidPtr* params)
 	{
 		std::size_t i{sizeof...(Args)};
-		*static_cast<std::remove_reference_t<Return>*>(ret) = (static_cast<Owner*>(instance)->*MFP)(*static_cast<std::remove_reference_t<Args>*>(params[--i])...);
+		*static_cast<TRemoveRef<Return>*>(ret) = (static_cast<Owner*>(instance)->*MFP)(*static_cast<TRemoveRef<Args>*>(params[--i])...);
 	}
 
 	FunctionStorage& m_FunctionStorage;
@@ -344,7 +344,6 @@ public:
 		return NativeTypeHandler<T>{*it->second};
 	}
 
-
 	static auto FindType(const StringView& typeName)
 	{
 		auto hashName = HashValue(typeName);
@@ -356,6 +355,19 @@ public:
 		return TypeHandler{nullptr};
 	}
 
+	static auto FindType(std::size_t hash)
+	{
+		auto it = m_TypesByName.Find(hash);
+		if (it != m_TypesByName.end())
+		{
+			return TypeHandler{it->second.get()};
+		}
+		return TypeHandler{nullptr};
+	}
+
 private:
 	static UnorderedMap<std::size_t, SharedPtr<TypeStorage>> m_TypesByName;
 };
+
+template<typename T>
+TypeHandler StaticType();
