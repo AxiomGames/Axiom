@@ -31,38 +31,11 @@
 
 #pragma once
 
-typedef uint64_t StrHashID;
+typedef uint64 StrHashID;
 
-template<typename T>
-constexpr StrHashID HashDjb2(const T* str)
+StrHashID constexpr operator "" _HASH(const char* s, size_t len)
 {
-	uint64 hash = 5381;
-
-	T c = *str;
-	while (c != 0)
-	{
-		hash = ((hash << 5) + hash) + c;
-		c = *(++str);
-	}
-
-	return hash;
-}
-
-constexpr StrHashID HashDjb2(const std::string_view& view)
-{
-	uint64 hash = 5381;
-
-	for (const char c: view)
-	{
-		hash = ((hash << 5) + hash) + c;
-	}
-
-	return hash;
-}
-
-StrHashID constexpr operator "" _HASH(const char* s, size_t)
-{
-	return HashDjb2(s);
+	return HashRaw(s, len);
 }
 
 template<typename Type>
@@ -845,9 +818,9 @@ struct Hash<String>
 {
 	constexpr static bool c_HasHashImpl = true;
 
-	static std::size_t GenerateHash(const String& string)
+	static uint64 GenerateHash(const String& string)
 	{
-		std::size_t hash = 0;
+		uint64 hash = 0;
 		for (auto it = string.begin(); it != string.end(); ++it)
 		{
 			hash = *it + (hash << 6) + (hash << 16) - hash;

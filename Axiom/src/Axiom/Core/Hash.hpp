@@ -30,30 +30,32 @@
 
 #include "Common.hpp"
 
+constexpr static uint64 HashRaw(const char* data, uint64 size)
+{
+	uint64 hash = 0;
+
+	typedef const char* pointer;
+	for (pointer it = data, end = data + size; it != end; ++it)
+	{
+		hash = *it + (hash << 6) + (hash << 16) - hash;
+	}
+
+	return hash;
+}
+
 template<typename T>
 struct Hash
 {
 	constexpr static bool c_HasHashImpl = true;
 
-	static std::size_t GenerateHash(const T& value)
+	constexpr static uint64 GenerateHash(const T& value)
 	{
-		const auto asint = (std::size_t) value;
-		const auto str = (const char*) &asint;
-		const auto len = sizeof(asint);
-
-		std::size_t hash = 0;
-		typedef const char* pointer;
-		for (pointer it = str, end = str + len; it != end; ++it)
-		{
-			hash = *it + (hash << 6) + (hash << 16) - hash;
-		}
-
-		return hash;
+		return HashRaw((const char*)&value, sizeof(T));
 	}
 };
 
 template<typename TValue>
-inline std::size_t HashValue(const TValue& value)
+inline constexpr uint64 HashValue(const TValue& value)
 {
 	static_assert(Hash<TValue>::c_HasHashImpl, "type has no hash implementation");
 	return Hash<TValue>::GenerateHash(value);
