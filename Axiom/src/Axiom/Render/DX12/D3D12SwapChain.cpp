@@ -44,14 +44,15 @@ D3D12SwapChain::D3D12SwapChain(const DX12SwapChainDesc& arguments)
 
 	for (int i = 0; i < g_NumBackBuffers; i++)
 	{
-		m_RenderTargetDescriptors[i] = hRTV;
+		D3D12Image*& img = m_BackBuffers[i];
+		img->DescriptorHandle = hRTV;
 		hRTV.ptr += RTVDescSize;
 		
 		ID3D12Resource* pBackBuffer = NULL;
 		DXCall(m_SwapChain->GetBuffer(i, IID_PPV_ARGS(&pBackBuffer)));
-		m_Device->CreateRenderTargetView(pBackBuffer, nullptr, m_RenderTargetDescriptors[i]);
-		m_RenderTargetResources[i] = pBackBuffer;
-		D3D12SetName(m_RenderTargetResources[i], "Swapchain Render Target %d", i);
+		m_Device->CreateRenderTargetView(pBackBuffer, nullptr, img->DescriptorHandle);
+		img->Resource = pBackBuffer;
+		D3D12SetName(img->Resource, "Swapchain Render Target %d", i);
 	}
 }
 
@@ -64,7 +65,7 @@ void D3D12SwapChain::Release()
 {
 	for (int i = 0; i < g_NumBackBuffers; i++)
 	{
-		m_RenderTargetResources[i]->Release();
+		m_BackBuffers[i]->Resource->Release();
 	}
 }
 

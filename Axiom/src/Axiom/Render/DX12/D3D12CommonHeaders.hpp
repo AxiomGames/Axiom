@@ -27,7 +27,7 @@ using namespace Microsoft::WRL;
 	#endif
 #endif
 
-static constexpr uint32 g_NumBackBuffers = 3;
+static constexpr uint32 g_NumBackBuffers = 2;
 
 template<typename T>
 constexpr void ReleaseResource(T*& resource)

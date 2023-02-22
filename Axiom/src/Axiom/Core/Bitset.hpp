@@ -41,7 +41,7 @@ template<int numBits> struct Bitset
 	int Count() const {
 		int sum = 0;
 		for (int i = 0; i < size-1; ++i)
-			sum += AXPopCount64(bits[i]);
+			sum += PopCount(bits[i]);
         
 		int lastBits = numBits & 63;
 		for (int i = 0; i < lastBits; ++i)
@@ -82,7 +82,7 @@ struct Bitset128
 	
 	bool All()  const { return bits[0] == ~0ul && bits[1] == ~0ul; }
 	bool Any()  const { return bits[0] + bits[1] > 0; }
-	int Count() const { return AXPopCount64(bits[0]) + AXPopCount64(bits[1]); }
+	unsigned long Count() const { return PopCount(bits[0]) + PopCount(bits[1]); }
 };
 
 AX_ALIGNAS(32) struct Bitset256
@@ -122,7 +122,7 @@ AX_ALIGNAS(32) struct Bitset256
 		return _mm256_movemask_epi8(_mm256_cmpgt_epi64(sse, _mm256_setzero_si256())) > 0;
 	}
 	
-	int Count() const { return popcount256_epi64(sse); }
+	long long Count() const { return popcount256_epi64(sse); }
 };
 
 #define _AND(a, b) _mm256_and_si256(a, b)
@@ -174,7 +174,7 @@ AX_ALIGNAS(32) struct Bitset512
 		return _mm256_movemask_epi8(_mm256_cmpgt_epi64(sse[0], zero)) > 0 || _mm256_movemask_epi8(_mm256_cmpgt_epi64(sse[1], zero)) > 0;
 	}
 
-	int Count() const {
+	long long Count() const {
 		return hsum_256_epi64(_mm256_add_epi64(popcnt256si(sse[0]), popcnt256si(sse[1])));
 	}
 };
@@ -225,7 +225,7 @@ AX_ALIGNAS(32) struct Bitset1024
 		const __m256i zero = _mm256_setzero_si256();
 		return _mm256_movemask_epi8(_mm256_cmpgt_epi64(v[0], zero)) > 0 || _mm256_movemask_epi8(_mm256_cmpgt_epi64(v[1], zero)) > 0 || _mm256_movemask_epi8(_mm256_cmpgt_epi64(v[2], zero)) > 0 || _mm256_movemask_epi8(_mm256_cmpgt_epi64(v[3], zero)) > 0;
 	}
-	int Count() const
+	long long Count() const
 	{
 		return hsum_256_epi64( // horizontal_add(popcnt(v0,v1,v2,v3))
 			_mm256_add_epi64(_mm256_add_epi64(popcnt256si(v[0]), popcnt256si(v[1])), _mm256_add_epi64(popcnt256si(v[2]), popcnt256si(v[3])))
@@ -274,7 +274,7 @@ AX_ALIGNAS(32) struct Bitset2048
 	}
 	bool All()  const { return b1.All() && b2.All(); }
 	bool Any()  const { return b1.Any() && b2.Any(); }
-	int Count() const { return b1.Count() + b2.Count(); }
+	long long Count() const { return b1.Count() + b2.Count(); }
 };
 
 AX_ALIGNAS(32) struct Bitset4096
@@ -314,7 +314,7 @@ AX_ALIGNAS(32) struct Bitset4096
 	void Flip()  { b1.Flip(), b2.Flip(); }
 	bool All()  const { return b1.All() && b2.All(); }
 	bool Any()  const { return b1.Any() && b2.Any(); }
-	int Count() const { return b1.Count() + b2.Count(); }
+	long long Count() const { return b1.Count() + b2.Count(); }
 };
 
 #undef _AND

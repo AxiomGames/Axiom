@@ -2,6 +2,7 @@
 
 #include "Axiom/CoreMinimal.hpp"
 #include "../Types.hpp"
+#include "../PipelineState.hpp"
 
 #ifdef AX_WIN32
 
@@ -24,5 +25,6 @@ namespace DX12
 	DXGI_FORMAT ToDX12Format(VertexAttribType type);
 	DXGI_FORMAT ToDX12Format(EImageFormat type);
 	D3D12_RESOURCE_STATES ToDX12ResourceUsage(EResourceUsage usage);
+	D3D12_RESOURCE_STATES ToDX12PipelineStage(EPipelineStage stage);
 }
 #endif

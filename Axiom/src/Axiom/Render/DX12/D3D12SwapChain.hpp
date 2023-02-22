@@ -12,25 +12,16 @@ struct DX12SwapChainDesc
 	HWND hwnd;
 };
 
-class D3D12SwapChain : ISwapChain
+class D3D12SwapChain : public ISwapChain
 {
 public:
 	D3D12SwapChain(const DX12SwapChainDesc& swapChainDesc);
 
-	void Release();
-	void Present(bool gsync, uint32 flags);
+	void Release() override;
+	void Present(bool gsync, uint32 flags) override;
 	
 	IImage* GetBackBuffer(int index) override
-	{ 
-		// first member of 
-		return (IImage*)m_RenderTargetResources[index]; 
-	}
-	// getters
-	ID3D12Resource* GetBackBufferResource(int index) 
-	{ return m_RenderTargetResources[index]; }
-	
-	D3D12_CPU_DESCRIPTOR_HANDLE GetBackBufferDescriptorHandle(int index)
-	{ return m_RenderTargetDescriptors[index]; }
+	{  return (IImage*)m_BackBuffers[index]; }
 	
 	ID3D12DescriptorHeap** GetDescriptorHeapPtr() 
 	{ return &m_DescriptorHeap; }
@@ -39,7 +30,6 @@ private:
 	IDXGISwapChain4* m_SwapChain;
 	ID3D12Device8* m_Device;
 	ID3D12DescriptorHeap* m_DescriptorHeap;
-	ID3D12Resource* m_RenderTargetResources[g_NumBackBuffers] = {};
-	D3D12_CPU_DESCRIPTOR_HANDLE m_RenderTargetDescriptors[g_NumBackBuffers] = {};
+	D3D12Image* m_BackBuffers[g_NumBackBuffers] = {};
 	ID3D12Fence* m_Fence;
 };

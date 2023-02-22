@@ -270,7 +270,7 @@ struct IBuffer : IGraphicsResource
 
 struct ISwapChain : IGraphicsResource
 {
-	virtual void Present() = 0;
+	virtual void Present(bool gsync, uint32 flags) = 0;
 	virtual IImage* GetBackBuffer(int index) = 0;
 };
 
@@ -299,17 +299,16 @@ struct ViewportDesc
     {}
 };
 
-struct Rect
+struct GraphicsRect
 {
-    float Left, Top, Front, Right, Bottom, Back;
-
-    Rect(
-        float left,
-        float top,
-        float front,
-        float right,
-        float bottom,
-        float back
+    uint32 Left, Top, Front, Right, Bottom, Back;
+    GraphicsRect(
+        uint32 left,
+        uint32 top,
+        uint32 front,
+        uint32 right,
+        uint32 bottom,
+        uint32 back
     ) : Left(left),
         Top(top),
         Front(front),

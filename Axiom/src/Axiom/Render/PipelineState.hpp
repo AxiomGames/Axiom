@@ -10,48 +10,67 @@ struct SampleDesc
 
 enum class ColorWriteEnable : uint32
 {
-	Red   = 1,
-	Green = 2,
-	Blue  = 4,
-	Alpha = 8,
-	All = 1 | 2 | 4 | 8,
+	Red   = 1u,
+	Green = 2u,
+	Blue  = 4u,
+	Alpha = 8u,
+	All = 1u | 2u | 4u | 8u,
 };
 
 // Incomplete pipeline stage enums.
 enum class EPipelineStage : uint32
 {
-	None = 0,
-	VertexInput = 1 << 0,
-	VertexShader = 1 << 1,
-	PixelShader = 1 << 2,
-	EarlyPixelTests = 1 << 3,
-	LatePixelTests = 1 << 4,
-	RenderTarget = 1 << 5,
-	ComputeShader = 1 << 6,
-	Transfer = 1 << 7,
-	AllCommands = 1 << 8,
-	Host = 1 << 20 // API exclusive pipeline enum
+	Unknown          = 0u,
+	Undefined        = 1u << 0u,
+	VertexBuffer     = 1u << 1u,
+	ConstantBuffer   = 1u << 2u,
+	IndexBuffer      = 1u << 3u,
+	RenderTarget     = 1u << 4u,
+	UnorderedAccess  = 1u << 5u,
+	DepthWrite       = 1u << 6u,
+	DepthRead        = 1u << 7u,
+	ShaderResource   = 1u << 8u,
+	StreamOut        = 1u << 9u,
+	IndirectArgument = 1u << 10u,
+	CopyDest         = 1u << 11u,
+	CopySource       = 1u << 12u,
+	ResolveDest      = 1u << 13u,
+	ResolveSource    = 1u << 14u,
+	InputAttachment  = 1u << 15u,
+	Present          = 1u << 16u,
+	BuildAsRead      = 1u << 17u,
+	BuildAsWrite     = 1u << 18u,
+	RayTracing       = 1u << 19u,
+	Common           = 1u << 20u,
+	ShadingRate      = 1u << 21u,
+	MaxBit = ShadingRate,
+	GenericRead = VertexBuffer |
+	ConstantBuffer |
+	IndexBuffer |
+	ShaderResource |
+	IndirectArgument |
+	CopySource
 };
 ENUM_FLAGS(EPipelineStage, uint32);
 
 enum class EPipelineAccess : uint32
 {
-	None = 0,
-	VertexRead = 1 << 0,
-	IndexRead = 1 << 1,
-	ShaderRead = 1 << 2,
-	ShaderWrite = 1 << 3,
-	RenderTargetRead = 1 << 4,
-	RenderTargetWrite = 1 << 5,
-	DepthStencilRead = 1 << 6,
-	DepthStencilWrite = 1 << 7,
-	TransferRead = 1 << 8,
-	TransferWrite = 1 << 9,
-	MemoryRead = 1 << 10,
-	MemoryWrite = 1 << 11,
+	None = 0u,
+	VertexRead        = 1u << 0u,
+	IndexRead         = 1u << 1u,
+	ShaderRead        = 1u << 2u,
+	ShaderWrite       = 1u << 3u,
+	RenderTargetRead  = 1u << 4u,
+	RenderTargetWrite = 1u << 5u,
+	DepthStencilRead  = 1u << 6u,
+	DepthStencilWrite = 1u << 7u,
+	TransferRead      = 1u << 8u,
+	TransferWrite     = 1u << 9u,
+	MemoryRead        = 1u << 10u,
+	MemoryWrite       = 1u << 11u,
 	// API exclusive pipeline enums
-	HostRead = 1 << 20,
-	HostWrite = 1 << 21
+	HostRead  = 1u << 20u,
+	HostWrite = 1u << 21u
 };
 ENUM_FLAGS(EPipelineAccess, uint32);
 
@@ -94,10 +113,10 @@ struct DescriptorSetDesc
 struct PipelineBarrier
 {
 	EResourceUsage CurrentUsage = EResourceUsage::Unknown;
-	EPipelineStage CurrentStage = EPipelineStage::None;
+	EPipelineStage CurrentStage = EPipelineStage::Unknown;
 	EPipelineAccess CurrentAccess = EPipelineAccess::None;
 	EResourceUsage NextUsage = EResourceUsage::Unknown;
-	EPipelineStage NextStage = EPipelineStage::None;
+	EPipelineStage NextStage = EPipelineStage::Unknown;
 	EPipelineAccess NextAccess = EPipelineAccess::None;
 };
 
@@ -158,4 +177,9 @@ struct PipelineInfo
 struct IPipeline : IGraphicsResource
 {
 	PipelineInfo info;
+};
+
+struct IFence : IGraphicsResource
+{
+	virtual void Wait() = 0;
 };

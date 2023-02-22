@@ -59,16 +59,27 @@ void EditorApplication::OnInit()
 	IDeviceContext* context = new D3D12Context();
 	context->Initialize(nativeWindow);
 	char* shaderCode = ReadAllFile("../EngineAssets/Shaders/PBR.hlsl");
+	PipelineInfo pipelineInfo{};
 	pipelineInfo.VertexShader = context->CreateShader(shaderCode, "VS", EShaderType::Vertex);
 	pipelineInfo.FragmentShader = context->CreateShader(shaderCode, "PS", EShaderType::Fragment);
 
 	free(shaderCode);
 
+	constexpr int numFrames = 2; // double buffering
+	// we may want to store command allocator and fence value in struct called frame context
+	ICommandAllocator* commandAllocators[numFrames] = {
+		context->CreateCommandAllocator(ECommandListType::Direct),
+		context->CreateCommandAllocator(ECommandListType::Direct)
+	};
+
+	uint64 fenceValues[2] = { 0, 0 };
+
+	IFence* fence = context->CreateFence();
+
 	// todo create for each thread
-	ICommandAllocator* commandAllocator = context->CreateCommandAllocator(ECommandListType::Direct);
-	ICommandList* commandList = context->CreateCommandList(commandAllocator, ECommandListType::Direct);
+	ICommandList* commandList = context->CreateCommandList(commandAllocators[0], ECommandListType::Direct);
 	ICommandQueue* commandQueue = context->CreateCommandQueue(ECommandListType::Direct, ECommandQueuePriority::Normal);
-	ISwapChain* swapchain = context->CreateSwapChain(EImageFormat::RGBA8);
+	ISwapChain* swapchain = context->CreateSwapChain(commandQueue, EImageFormat::RGBA8);
 
 	struct PBRVertex {
 		Vector3f position;
@@ -109,37 +120,73 @@ void EditorApplication::OnInit()
 	pipelineInfo.inputLayouts[0] = { "POSITION", VertexAttribType::Float3 };
 	pipelineInfo.inputLayouts[1] = { "COLOR"   , VertexAttribType::Float4 };
 
-	IPipeline* pipeline = context->CreatePipeline(pipelineInfo);
+	IPipeline* pipeline = context->CreateGraphicsPipeline(pipelineInfo);
 
-	while (!window->ShouldClose())
+	uint32 frameIndex = 0u;
+	uint64 fenceValue = 0ull;
+	SharedPtr<INativeWindow> nativeWindow = window->GetNativeWindow();
+
+	while (!nativeWindow->ShouldClose())
 	{
-		context.BeginFrame();
+		// wait for gpu
+		context->WaitFence(fence);
+		commandAllocators[frameIndex]->Reset();
+		commandList->Reset(commandAllocators[frameIndex]);
+
+		PipelineBarrier barrier{};
+		barrier.CurrentStage = EPipelineStage::Present;
+		barrier.NextStage = EPipelineStage::RenderTarget;
+		IImage* backBuffer = swapchain->GetBackBuffer(frameIndex);
+		float clearColor[4] = { 0.4f, 0.0f, 0.0f, 0.0f };
+
+		commandList->SetImageBarrier(backBuffer, barrier);
+		commandList->ClearRenderTarget(backBuffer, clearColor);
+		commandList->SetRenderTargets(&backBuffer, 1);
+
+		ViewportDesc viewport(0.0f, 0.0f, (float)nativeWindow->GetWidth(), (float)nativeWindow->GetHeight());
+		GraphicsRect rect(0u, 0u, (uint32)nativeWindow->GetWidth(), (uint32)nativeWindow->GetHeight(), 0u, 0u);
+		commandList->SetViewport(viewport);
+		commandList->SetScissorRects(&rect, 1);
+
+		// todo seperate this task in between threads
+		commandList->SetIndexBuffer(indexBuffer);
+		commandList->SetVertexBuffers(&vertexBuffer, 1);
+		commandList->SetPipelineState(pipeline);
+		commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
 		
-		// todo wait for all threads to finish
+		barrier.CurrentStage = EPipelineStage::RenderTarget;
+		barrier.NextStage = EPipelineStage::Present;
+		commandList->SetImageBarrier(backBuffer, barrier);
+		commandList->Close();
 
-		context.EndFrame();
+		swapchain->Present(false, 0u);
+
+		fenceValue++;
+		fenceValues[frameIndex] = fenceValue;
+		commandQueue->Signal(fence, fenceValue);
+
+		frameIndex ^= 1;
 	}
-
+	
 	context->DestroyResource(indexBuffer);
 	context->DestroyResource(vertexBuffer);
-	context->DestroyResource(vertexShader);
-	context->DestroyResource(fragmentShader);
+	context->DestroyResource(pipelineInfo.VertexShader);
+	context->DestroyResource(pipelineInfo.FragmentShader);
 	context->DestroyResource(swapchain);
 	context->DestroyResource(commandQueue);
 	context->DestroyResource(commandList);
-	context->DestroyResource(commandAllocator);
+	context->DestroyResource(commandAllocators[0]);
+	context->DestroyResource(commandAllocators[1]);
 	context->Release();
 
 	delete context;
+	context = nullptr;
+
 #endif
 }
 
 void EditorApplication::OnShutdown()
 {
-	context->~D3D12Context();
-	delete context;
-	context = nullptr;
-
 	GEngine->Destroy<WindowManager>();
 }
 

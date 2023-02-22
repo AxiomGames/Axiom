@@ -2,8 +2,8 @@
 #include <exception>
 #include "D3D12Context.hpp"
 #include "D3D12Core.hpp"
+#include "D3D12CommandList.hpp"
 #include "d3d12x.h"
-#include "../Shader.hpp"
 #include <cassert>
 
 Vector2i windowSize;
@@ -29,21 +29,11 @@ void D3D12Context::Initialize(SharedPtr<INativeWindow> window)
 	};
 #endif
 
-	DXCall(m_Device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_Fence)));
-
+	
 	m_FenceEvent = CreateEventEx(nullptr, nullptr, 0, EVENT_ALL_ACCESS);
 	ax_assert(m_FenceEvent);
 
 	windowSize = window->GetSize();
-	
-	// create rendering commandQueue
-	D3D12_COMMAND_QUEUE_DESC cmdQueuedesc{};
-	cmdQueuedesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-	cmdQueuedesc.NodeMask = 0;
-	cmdQueuedesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
-	cmdQueuedesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-
-	DXCall(m_Device->CreateCommandQueue(&cmdQueuedesc, IID_PPV_ARGS(&m_CmdQueue)));
 
 	D3D12_DESCRIPTOR_HEAP_DESC descHeapDesc = {};
 	descHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
@@ -105,12 +95,12 @@ IBuffer* D3D12Context::CreateBuffer(const BufferDesc& desc, ICommandList* comman
 
 	switch (desc.ResourceUsage)
 	{
-	case EResourceUsage::IndexBuffer;
+	case EResourceUsage::IndexBuffer:
 		buffer->indexBufferView.BufferLocation = buffer->mpSysMemBuffer->GetGPUVirtualAddress();
 		buffer->indexBufferView.SizeInBytes = desc.Size;
 		buffer->indexBufferView.Format = DX12::ToDX12Format(EImageFormat::R32U); // only uint vertices for now
 		break;
-	case EResourceUsage::VertexBuffer;
+	case EResourceUsage::VertexBuffer:
 		buffer->vertexBufferView.BufferLocation = buffer->mpSysMemBuffer->GetGPUVirtualAddress();
 		buffer->vertexBufferView.SizeInBytes = desc.Size;
 		buffer->vertexBufferView.StrideInBytes = desc.ElementByteStride;
@@ -123,19 +113,6 @@ IBuffer* D3D12Context::CreateBuffer(const BufferDesc& desc, ICommandList* comman
 	// buffer->mpSysMemBuffer->SetName(L"AX vertex buffer sys mem");
 	return (IBuffer*)buffer;
 }
-
-void D3D12Context::DestroyBuffer(IBuffer* buffer) 
-{
-	D3D12Buffer* dxBuffer = (D3D12Buffer*)buffer;
-	if (dxBuffer->BufferData)
-	{
-		ReleaseResource(dxBuffer->mpVidMemBuffer);
-		ReleaseResource(dxBuffer->mpSysMemBuffer);
-		// free(dxBuffer->BufferData); // todo something else
-	}
-}
-
-ENUM_FLAGS(D3D12_ROOT_SIGNATURE_FLAGS, uint32)
 
 IPipeline* D3D12Context::CreateGraphicsPipeline(PipelineInfo& info)
 {
@@ -221,7 +198,7 @@ IPipeline* D3D12Context::CreateGraphicsPipeline(PipelineInfo& info)
 	{
 		InputLayout& layout = info.inputLayouts[i];
 		uint32 elemSize = VertexAttribSize(layout.Type);
-		local_layout[i].SemanticName = layout.name.data;
+		local_layout[i].SemanticName = layout.name;
 		local_layout[i].SemanticIndex = 0;
 		local_layout[i].Format = DX12::ToDX12Format(layout.Type);
 		local_layout[i].InputSlot = 0;
@@ -240,13 +217,13 @@ IPipeline* D3D12Context::CreateGraphicsPipeline(PipelineInfo& info)
 		D3D12_RASTERIZER_DESC& desc = psoDesc.RasterizerState;
 		desc.FillMode = (D3D12_FILL_MODE)info.fillMode;
 		desc.CullMode = (D3D12_CULL_MODE)info.cullMode;
-		desc.FrontCounterClockwise = FALSE;
+		desc.FrontCounterClockwise = false;
 		desc.DepthBias = D3D12_DEFAULT_DEPTH_BIAS;
 		desc.DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
 		desc.SlopeScaledDepthBias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
 		desc.DepthClipEnable = true;
-		desc.MultisampleEnable = FALSE;
-		desc.AntialiasedLineEnable = FALSE;
+		desc.MultisampleEnable = false;
+		desc.AntialiasedLineEnable = false;
 		desc.ForcedSampleCount = 0;
 		desc.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
 	}
@@ -265,23 +242,23 @@ IPipeline* D3D12Context::CreateGraphicsPipeline(PipelineInfo& info)
 	}
 
 	DXCall(m_Device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&outPipeline->PipelineState)));
-	outPipeline.info = info;
+	outPipeline->info = info;
 	return outPipeline;
 }
 
 ICommandAllocator* D3D12Context::CreateCommandAllocator(ECommandListType type)
 {
-	ID3D12CommandAllocator* allocator;
-	m_Device->CreateCommandAllocator((D3D12_COMMAND_LIST_TYPE)type, IID_PPV_ARGS(&allocator));
-	return (ICommandAllocator*)allocator;
+	D3D12CommandAllocator* allocator = new D3D12CommandAllocator();
+	m_Device->CreateCommandAllocator((D3D12_COMMAND_LIST_TYPE)type, IID_PPV_ARGS(&allocator->allocator));
+	return static_cast<ICommandAllocator*>(allocator);
 }
 
 ICommandList* D3D12Context::CreateCommandList(ICommandAllocator* commandAllocator, ECommandListType type)
 {
-	ID3D12CommandList* commandList;
+	D3D12CommandList* commandList = new D3D12CommandList();
 	D3D12_COMMAND_LIST_TYPE d3dType = (D3D12_COMMAND_LIST_TYPE)type;
-	DXCall(m_Device->CreateCommandList(0, d3dType, (ID3D12CommandAllocator*)commandAllocator, nullptr, IID_PPV_ARGS(&commandList)));
-	return (ICommandList*)commandList;
+	DXCall(m_Device->CreateCommandList(0, d3dType, (ID3D12CommandAllocator*)commandAllocator, nullptr, IID_PPV_ARGS(&commandList->m_CmdList)));
+	return static_cast<ICommandList*>(commandList);
 }
 
 ICommandQueue* D3D12Context::CreateCommandQueue(ECommandListType type, ECommandQueuePriority priority) 
@@ -291,26 +268,43 @@ ICommandQueue* D3D12Context::CreateCommandQueue(ECommandListType type, ECommandQ
 	cmdQueuedesc.NodeMask = 0;
 	cmdQueuedesc.Priority = pow((int)priority, 10);
 	cmdQueuedesc.Type = (D3D12_COMMAND_LIST_TYPE)((uint32)type); // our enum is directly convertible to dx12 command list type enum
-	ID3D12CommandQueue* commandQueue;
+	D3D12CommandQueue* commandQueue;
 
-	DXCall(m_Device->CreateCommandQueue(&cmdQueuedesc, IID_PPV_ARGS(&commandQueue)));
-	return (ICommandQueue*)commandQueue;
+	DXCall(m_Device->CreateCommandQueue(&cmdQueuedesc, IID_PPV_ARGS(&commandQueue->queue)));
+	return static_cast<ICommandQueue*>(commandQueue);
 }
 	
-ISwapChain* D3D12Context::CreateSwapChain(EImageFormat format) 
+ISwapChain* D3D12Context::CreateSwapChain(ICommandQueue* commandQueue, EImageFormat format)
 {
 	DX12SwapChainDesc swapchainDesc =
 	{
-		.width = window->GetWidth(),
-		.height = window->GetHeight(),
+		.width = windowSize.x,
+		.height = windowSize.y,
 		.device = m_Device,
 		.factory = DXFactory,
-		.commandQueue = m_CmdQueue,
-		.format = DXGI_FORMAT_R8G8B8A8_UNORM,
-		.hwnd = window->GetHWND()
+		.commandQueue = (ID3D12CommandQueue*)commandQueue,
+		.format = DX12::ToDX12Format(format),
+		.hwnd = m_Window->GetHWND()
 	};
-
 	return new D3D12SwapChain(swapchainDesc);
+}
+
+IFence* D3D12Context::CreateFence()
+{
+	ID3D12Fence1* fence;
+	DXCall(m_Device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)));
+	return (IFence*)fence;
+}
+
+void D3D12Context::WaitFence(IFence* fence)
+{
+	D3D12Fence* dxFence = (D3D12Fence*)fence;
+
+	if (dxFence->fence->GetCompletedValue() < dxFence->value)
+	{
+		DXCall(dxFence->fence->SetEventOnCompletion(dxFence->value, m_FenceEvent));
+		WaitForSingleObject(m_FenceEvent, INFINITE);
+	}
 }
 
 void D3D12Context::DestroyResource(IGraphicsResource* resource)
@@ -346,101 +340,12 @@ D3D12Context::~D3D12Context()
 	ax_assert(!m_CmdQueue && !m_CmdList && !m_Fence);
 }
 
-void D3D12Context::Flush()
-{
-	for (uint32 i = 0; i < g_NumBackBuffers; ++i)
-	{
-		D3D12CommandFrame& cmdFrame = m_CmdFrames[i];
-		cmdFrame.Wait(m_FenceEvent, m_Fence);
-	}
-	m_FrameIndex = 0;
-}
-
-void D3D12Context::BeginFrame()
-{
-	D3D12CommandFrame& frame = m_CmdFrames[m_FrameIndex];
-
-	// Wait for GPU
-	frame.Wait(m_FenceEvent, m_Fence);
-
-	DXCall(frame.CommandAllocator->Reset());
-	DXCall(m_CmdList->Reset(frame.CommandAllocator, nullptr));
-}
-
-void D3D12Context::Render(ICommandList** commandLists, size_t numCommandLists)
-{
-	// todo record command lists in other threads and push with this function
-	if constexpr (false)
-	{
-		D3D12_RESOURCE_BARRIER barrier = {};
-		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-		barrier.Transition.pResource = m_SwapChain->GetBackBufferResource(m_FrameIndex);
-		barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-		m_CmdList->ResourceBarrier(1, &barrier);
-
-		float clearColor[] = { 0.4f, 0.6f, 0.9f, 1.0f };
-		auto backBufferDescriptorHandle = m_SwapChain->GetBackBufferDescriptorHandle(m_FrameIndex);
-		m_CmdList->ClearRenderTargetView(backBufferDescriptorHandle, clearColor, 0, nullptr);
-		m_CmdList->OMSetRenderTargets(1, &backBufferDescriptorHandle, false, nullptr);
-		m_CmdList->SetDescriptorHeaps(1, &m_DescriptorHeap);
-
-		CD3DX12_VIEWPORT viewport(0.0f, 0.0f, (float)windowSize.x, (float)windowSize.y);
-
-		// m_CommandList->RSSetViewports(1, &vp);
-		// m_CommandList->RSSetScissorRects(1, &rect);
-		// m_CommandList->IASetVertexBuffers(0, 1, m_VertexBuffer->GetViewPtr());
-		// m_CommandList->IASetIndexBuffer(m_IndexBuffer->GetViewPtr());
-		// m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		// m_CommandList->SetPipelineState(m_PipelineState);
-		// m_CommandList->SetGraphicsRootSignature(m_RootSignature);
-		// 
-		// const float blend_factor[4] = { 0.f, 0.f, 0.f, 0.f };
-		// m_CommandList->OMSetBlendFactor(blend_factor);
-		// 
-		// m_CommandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
-
-		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-		m_CmdList->ResourceBarrier(1, &barrier);
-		m_CmdList->Close();
-	}
-
-	m_CmdQueue->ExecuteCommandLists(numCommandLists, (ID3D12CommandList**)commandLists);
-
-	m_SwapChain->Present(false, 0);
-}
-
-void D3D12Context::EndFrame()
-{
-	m_FenceValue++;
-	D3D12CommandFrame& frame = m_CmdFrames[m_FrameIndex];
-	frame.FenceValue = m_FenceValue;
-	m_CmdQueue->Signal(m_Fence, m_FenceValue);
-
-	m_FrameIndex = (m_FrameIndex + 1) % g_NumBackBuffers;
-}
-
 void D3D12Context::Release()
 {
 	ReleaseResource(DXFactory);
 
-	Flush();
-	ReleaseResource(m_Fence);
-	m_FenceValue = 0;
-
 	CloseHandle(m_FenceEvent);
 	m_FenceEvent = nullptr;
-
-	ReleaseResource(m_CmdQueue);
-	ReleaseResource(m_CmdList);
-
-	for (uint32 i = 0; i < g_NumBackBuffers; ++i)
-	{
-		m_CmdFrames[i].Release();
-	}
 
 #ifdef _DEBUG
 	{
