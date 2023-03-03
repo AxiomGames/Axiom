@@ -325,26 +325,28 @@ private:
 	TypeStorage* m_TypeStorage{};
 };
 
-
 class AX_API Reflection
 {
-public:
+private:
+	UnorderedMap<Hash_t, SharedPtr<TypeStorage>> m_TypesByName;
 
+	Reflection() = default;
+public:
 	template<typename T>
-	static auto NewType(const StringView& typeName)
+	auto NewType(const StringView& typeName)
 	{
 		auto hashName = HashValue(typeName);
 		auto it = m_TypesByName.Find(hashName);
 		if (it == m_TypesByName.end())
 		{
-			it = m_TypesByName.Insert(Pair<std::size_t, SharedPtr<TypeStorage>>(hashName, MakeShared<TypeStorage>(
+			it = m_TypesByName.Insert(Pair<Hash_t, SharedPtr<TypeStorage>>(hashName, MakeShared<TypeStorage>(
 				String{typeName.begin(), typeName.end()}
 			))).first;
 		}
 		return NativeTypeHandler<T>{*it->second};
 	}
 
-	static auto FindType(const StringView& typeName)
+	auto FindType(const StringView& typeName)
 	{
 		auto hashName = HashValue(typeName);
 		auto it = m_TypesByName.Find(hashName);
@@ -355,7 +357,7 @@ public:
 		return TypeHandler{nullptr};
 	}
 
-	static auto FindType(std::size_t hash)
+	auto FindType(Hash_t hash)
 	{
 		auto it = m_TypesByName.Find(hash);
 		if (it != m_TypesByName.end())
@@ -365,8 +367,20 @@ public:
 		return TypeHandler{nullptr};
 	}
 
-private:
-	static UnorderedMap<std::size_t, SharedPtr<TypeStorage>> m_TypesByName;
+	static Reflection& Get()
+	{
+		static Reflection reflection;
+		return reflection;
+	}
+};
+
+struct CompileStaticRegister
+{
+	template<typename Fnc>
+	CompileStaticRegister(Fnc fnc)
+	{
+		fnc(Reflection::Get());
+	}
 };
 
 template<typename T>

@@ -30,9 +30,9 @@
 
 #include "Common.hpp"
 
-constexpr static uint64 HashRaw(const char* data, uint64 size)
+constexpr static Hash_t HashRaw(const char* data, Hash_t size)
 {
-	uint64 hash = 0;
+	Hash_t hash = 0;
 
 	typedef const char* pointer;
 	for (pointer it = data, end = data + size; it != end; ++it)
@@ -48,14 +48,14 @@ struct Hash
 {
 	constexpr static bool c_HasHashImpl = true;
 
-	constexpr static uint64 GenerateHash(const T& value)
+	constexpr static Hash_t GenerateHash(const T& value)
 	{
 		return HashRaw((const char*)&value, sizeof(T));
 	}
 };
 
 template<typename TValue>
-inline constexpr uint64 HashValue(const TValue& value)
+inline constexpr Hash_t HashValue(const TValue& value)
 {
 	static_assert(Hash<TValue>::c_HasHashImpl, "type has no hash implementation");
 	return Hash<TValue>::GenerateHash(value);

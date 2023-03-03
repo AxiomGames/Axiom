@@ -31,9 +31,7 @@
 
 #pragma once
 
-typedef uint64 StrHashID;
-
-StrHashID constexpr operator "" _HASH(const char* s, size_t len)
+Hash_t constexpr operator "" _HASH(const char* s, size_t len)
 {
 	return HashRaw(s, len);
 }
@@ -812,15 +810,14 @@ FINLINE bool operator>=(typename BasicString<T, Alloc>::ConstPointer lhs, const 
 using String = BasicString<char>;
 using WString = BasicString<wchar_t>;
 
-
 template<>
 struct Hash<String>
 {
 	constexpr static bool c_HasHashImpl = true;
 
-	static uint64 GenerateHash(const String& string)
+	static Hash_t GenerateHash(const String& string)
 	{
-		uint64 hash = 0;
+		Hash_t hash = 0;
 		for (auto it = string.begin(); it != string.end(); ++it)
 		{
 			hash = *it + (hash << 6) + (hash << 16) - hash;

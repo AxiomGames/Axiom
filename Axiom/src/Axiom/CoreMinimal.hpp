@@ -8,4 +8,5 @@
 #include "Core/Logger.hpp"
 #include "Core/Memory.hpp"
 #include "Core/SharedPtr.hpp"
-#include "Math/Vector.hpp" 
+#include "Core/MacroBase.hpp"
+#include "Math/Vector.hpp"

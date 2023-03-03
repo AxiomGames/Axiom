@@ -112,6 +112,8 @@ typedef int16_t int16;
 typedef int32_t int32;
 typedef int64_t int64;
 
+typedef size_t Hash_t;
+
 using MemPtr = uint8*;
 using VoidPtr = void*;
 using ConstVoidPtr = const void*;

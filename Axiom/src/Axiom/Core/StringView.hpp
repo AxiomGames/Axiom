@@ -325,9 +325,9 @@ struct Hash<BasicStringView<Element>>
 {
 	constexpr static bool c_HasHashImpl = true;
 
-	constexpr static uint64 GenerateHash(const BasicStringView<Element>& string)
+	constexpr static Hash_t GenerateHash(const BasicStringView<Element>& string)
 	{
-		uint64 hash = 0;
+		Hash_t hash = 0;
 		for (auto it = string.begin(); it != string.end(); ++it)
 		{
 			hash = *it + (hash << 6) + (hash << 16) - hash;
