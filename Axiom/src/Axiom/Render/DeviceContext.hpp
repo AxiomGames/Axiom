@@ -15,17 +15,15 @@ public:
 
 	virtual IPipeline* CreateGraphicsPipeline(PipelineInfo& info) = 0;
 	virtual ICommandAllocator* CreateCommandAllocator(ECommandListType type) = 0; // aka command pool in vulkan
-	virtual ICommandList* CreateCommandList(ICommandAllocator* allocator, ECommandListType type) = 0; // aka command list in vulkan
-	virtual ICommandQueue* CreateCommandQueue(ECommandListType type, ECommandQueuePriority priority) = 0; // aka vqQueue in vulkan
+	virtual ICommandList* CreateCommandList(ICommandAllocator* allocator, ECommandListType type) = 0;
+	virtual ICommandQueue* CreateCommandQueue(ECommandListType type, ECommandQueuePriority priority) = 0; 
 	virtual ISwapChain* CreateSwapChain(ICommandQueue* commandQueue, EImageFormat format) = 0;
 	virtual IFence* CreateFence() = 0;
 	virtual IShader* CreateShader(const char* sourceCode, const char* functionName, EShaderType shaderType) = 0;
 	
 	virtual void DestroyResource(IGraphicsResource* resource) = 0;
 
-	virtual void WaitFence(IFence* fence);
-	virtual void BeginFrame() = 0;
-	virtual void EndFrame() = 0;
+	virtual void WaitFence(IFence* fence, uint32 fenceValue) = 0;
 	virtual void Release() = 0;
 
 	// todo add coppy buffer 

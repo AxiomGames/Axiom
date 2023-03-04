@@ -16,6 +16,7 @@ namespace DX12
 		ComPtr<ID3D12Debug3> debugInterface;
 		DXCall(D3D12GetDebugInterface(IID_PPV_ARGS(&debugInterface)));
 		debugInterface->EnableDebugLayer();
+		debugInterface->SetEnableGPUBasedValidation(true);
 
 		dx_factory_flags |= DXGI_CREATE_FACTORY_DEBUG;
 #endif
@@ -92,6 +93,7 @@ namespace DX12
 	{
 		switch (type)
 		{
+		case EImageFormat::UNKNOWN:     return DXGI_FORMAT_UNKNOWN;
 		case EImageFormat::RGBA8:       return DXGI_FORMAT_R8G8B8A8_UNORM; 
 		case EImageFormat::RGBA8_SRGBF: return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; 
 		case EImageFormat::RGBA16F:     return DXGI_FORMAT_R16G16B16A16_FLOAT; 
@@ -103,7 +105,7 @@ namespace DX12
 		case EImageFormat::RG32F:       return DXGI_FORMAT_R32G32_FLOAT; 
 		case EImageFormat::RG32I:       return DXGI_FORMAT_R32G32_UINT; 
 		case EImageFormat::RG16F:       return DXGI_FORMAT_R16G16_FLOAT; 
-		   default: assert(false && "Unknown Format!");  return DXGI_FORMAT_UNKNOWN; 
+		   default: assert(false && "Unknown Format!");  return DXGI_FORMAT_UNKNOWN;
 		}
 	}
 	
@@ -124,62 +126,34 @@ namespace DX12
 		}
 	}
 
-	struct DXPipelineConverter
-	{
-		D3D12_RESOURCE_STATES stages[22] = {};
-
-		static constexpr D3D12_RESOURCE_STATES Map12PipelineStage(EPipelineStage stage)
-		{
-			switch (stage)
-			{
-			case EPipelineStage::Undefined       : return D3D12_RESOURCE_STATE_COMMON;
-			case EPipelineStage::VertexBuffer    : return D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
-			case EPipelineStage::ConstantBuffer  : return D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
-			case EPipelineStage::IndexBuffer     : return D3D12_RESOURCE_STATE_INDEX_BUFFER;
-			case EPipelineStage::RenderTarget    : return D3D12_RESOURCE_STATE_RENDER_TARGET;
-			case EPipelineStage::UnorderedAccess : return D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-			case EPipelineStage::DepthWrite      : return D3D12_RESOURCE_STATE_DEPTH_WRITE;
-			case EPipelineStage::DepthRead       : return D3D12_RESOURCE_STATE_DEPTH_READ;
-			case EPipelineStage::ShaderResource  : return D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-			case EPipelineStage::StreamOut       : return D3D12_RESOURCE_STATE_STREAM_OUT;
-			case EPipelineStage::IndirectArgument: return D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT;
-			case EPipelineStage::CopyDest        : return D3D12_RESOURCE_STATE_COPY_DEST;
-			case EPipelineStage::CopySource      : return D3D12_RESOURCE_STATE_COPY_SOURCE;
-			case EPipelineStage::ResolveDest     : return D3D12_RESOURCE_STATE_RESOLVE_DEST;
-			case EPipelineStage::ResolveSource   : return D3D12_RESOURCE_STATE_RESOLVE_SOURCE;
-			case EPipelineStage::InputAttachment : return D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-			case EPipelineStage::Present         : return D3D12_RESOURCE_STATE_PRESENT;
-			case EPipelineStage::BuildAsRead     : return D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-			case EPipelineStage::BuildAsWrite    : return D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-			case EPipelineStage::RayTracing      : return D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-			case EPipelineStage::Common          : return D3D12_RESOURCE_STATE_COMMON;
-			case EPipelineStage::ShadingRate     : return D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE;
-			default:
-				assert("Unexpected resource state flag");
-				return static_cast<D3D12_RESOURCE_STATES>(0);
-			}
-		}
-		
-		constexpr DXPipelineConverter()
-		{
-			for (uint32 stage = 1, i = 1; stage < (uint32)EPipelineStage::MaxBit; )
-			{
-				stages[i] = Map12PipelineStage((EPipelineStage)stage);
-				stage <<= 1;
-				i++;
-			}
-		}
-
-		constexpr D3D12_RESOURCE_STATES Convert(EPipelineStage stage) const
-		{
-			return stages[TrailingZeroCount((uint32)stage)];
-		}
-	};
-
 	D3D12_RESOURCE_STATES ToDX12PipelineStage(EPipelineStage stage)
 	{
-		constexpr DXPipelineConverter converter = DXPipelineConverter();
-		return converter.Convert(stage);
+		constexpr D3D12_RESOURCE_STATES stages[22] =
+		{
+			D3D12_RESOURCE_STATE_COMMON,
+			D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER,
+			D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER,
+			D3D12_RESOURCE_STATE_INDEX_BUFFER,
+			D3D12_RESOURCE_STATE_RENDER_TARGET,
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+			D3D12_RESOURCE_STATE_DEPTH_WRITE,
+			D3D12_RESOURCE_STATE_DEPTH_READ,
+			D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+			D3D12_RESOURCE_STATE_STREAM_OUT,
+			D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT,
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			D3D12_RESOURCE_STATE_COPY_SOURCE,
+			D3D12_RESOURCE_STATE_RESOLVE_DEST,
+			D3D12_RESOURCE_STATE_RESOLVE_SOURCE,
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+			D3D12_RESOURCE_STATE_PRESENT,
+			D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+			D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
+			D3D12_RESOURCE_STATE_COMMON,
+			D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE
+		};
+		return stages[TrailingZeroCount((uint32)stage)];
 	}
 }
 

@@ -20,7 +20,7 @@
 // THE SOFTWARE.
 //
 
-#include "D3D12MemAlloc.h"
+#include "D3D12MemoryAllocator.hpp"
 
 #include <combaseapi.h>
 #include <mutex>

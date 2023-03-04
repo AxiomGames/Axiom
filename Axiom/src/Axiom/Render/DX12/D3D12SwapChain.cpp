@@ -1,13 +1,14 @@
 #include "D3D12SwapChain.hpp"
 #include "D3D12Context.hpp"
+#include "d3d12x.h"
 
 D3D12SwapChain::D3D12SwapChain(const DX12SwapChainDesc& arguments)
 {
-	m_Device = arguments.device;
+    m_Device = arguments.device;
 
 	DXGI_SWAP_CHAIN_DESC1 swapchainDesc = {};
-	swapchainDesc.Width = arguments.width;
-	swapchainDesc.Height = arguments.height;
+	swapchainDesc.Width = arguments.Width;
+	swapchainDesc.Height = arguments.Height;
 	swapchainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	swapchainDesc.BufferCount = g_NumBackBuffers;
 	swapchainDesc.SampleDesc.Quality = 0;
@@ -44,16 +45,58 @@ D3D12SwapChain::D3D12SwapChain(const DX12SwapChainDesc& arguments)
 
 	for (int i = 0; i < g_NumBackBuffers; i++)
 	{
-		D3D12Image*& img = m_BackBuffers[i];
+		D3D12Image* img = new D3D12Image();
+		m_BackBuffers[i] = img;
 		img->DescriptorHandle = hRTV;
-		hRTV.ptr += RTVDescSize;
 		
-		ID3D12Resource* pBackBuffer = NULL;
-		DXCall(m_SwapChain->GetBuffer(i, IID_PPV_ARGS(&pBackBuffer)));
-		m_Device->CreateRenderTargetView(pBackBuffer, nullptr, img->DescriptorHandle);
-		img->Resource = pBackBuffer;
+		DXCall(m_SwapChain->GetBuffer(i, IID_PPV_ARGS(&img->Resource)));
+		m_Device->CreateRenderTargetView(img->Resource, nullptr, img->DescriptorHandle);
+	
+		hRTV.ptr += RTVDescSize;
 		D3D12SetName(img->Resource, "Swapchain Render Target %d", i);
 	}
+
+    // create a depth stencil descriptor heap so we can get a pointer to the depth stencil buffer
+    D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
+    dsvHeapDesc.NumDescriptors = 1;
+    dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+    dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+    DXCall(m_Device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&m_depthStencilDescriptorHeap)));
+    
+    CD3DX12_HEAP_PROPERTIES heapProperties(D3D12_HEAP_TYPE_DEFAULT);
+	CD3DX12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(
+		DXGI_FORMAT_D32_FLOAT, 
+        arguments.Width,
+        arguments.Height, 1, 0, 1, 0,
+        D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL
+    );
+
+    D3D12_CLEAR_VALUE clearValue{};
+    clearValue.Format = DXGI_FORMAT_D32_FLOAT;
+    clearValue.DepthStencil.Depth = 1.0f;
+    clearValue.DepthStencil.Stencil = 0;
+    
+	m_DepthStencilBuffer = new D3D12Image();
+
+    m_Device->CreateCommittedResource(
+      &heapProperties,
+      D3D12_HEAP_FLAG_NONE,
+      &resourceDesc,
+      D3D12_RESOURCE_STATE_DEPTH_WRITE,
+      &clearValue,
+      IID_PPV_ARGS(&m_DepthStencilBuffer->Resource)
+    );
+
+    D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
+    depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+    depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
+
+	m_DepthStencilBuffer->DescriptorHandle = m_depthStencilDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+
+    m_Device->CreateDepthStencilView(
+		m_DepthStencilBuffer->Resource, &depthStencilDesc,
+        m_DepthStencilBuffer->DescriptorHandle);
 }
 
 void D3D12SwapChain::Present(bool gsync, uint32 flags)
@@ -66,6 +109,12 @@ void D3D12SwapChain::Release()
 	for (int i = 0; i < g_NumBackBuffers; i++)
 	{
 		m_BackBuffers[i]->Resource->Release();
+        delete m_BackBuffers[i];
 	}
+    
+    m_DepthStencilBuffer->Resource->Release();
+    delete m_DepthStencilBuffer;
+
+	m_depthStencilDescriptorHeap->Release();
 }
 

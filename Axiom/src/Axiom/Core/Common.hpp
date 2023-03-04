@@ -61,7 +61,7 @@
 #define ax_assert(...)
 
 template<typename T>
-FINLINE constexpr T PopCount(T i)
+FINLINE constexpr T PopCount(T x)
 {
 #ifdef _MSC_VER
 	if      constexpr (sizeof(T) == 4) return __popcnt(x);

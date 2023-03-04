@@ -21,7 +21,6 @@ enum class ColorWriteEnable : uint32
 enum class EPipelineStage : uint32
 {
 	Unknown          = 0u,
-	Undefined        = 1u << 0u,
 	VertexBuffer     = 1u << 1u,
 	ConstantBuffer   = 1u << 2u,
 	IndexBuffer      = 1u << 3u,
@@ -76,7 +75,7 @@ ENUM_FLAGS(EPipelineAccess, uint32);
 
 enum class EDescriptorType : uint32
 {
-	Unknown = -1,
+	Unknown,
 	Sampler,
 	ShaderResource,
 	ConstantBuffer,
@@ -94,7 +93,7 @@ struct DescriptorBindingDesc
 	int BindingID = -1;
 	EDescriptorType Type = EDescriptorType::Unknown;
 	EShaderType TargetShader = EShaderType::None;
-	uint32 ArraySize = -1;
+	uint32 ArraySize = 0;
 
 	union
 	{
@@ -124,18 +123,22 @@ struct BlendDesc
 {
 	bool BlendEnable;
 
-	EBlendFactor SrcBlend = EBlendFactor::SrcAlpha;
-	EBlendFactor DestBlend = EBlendFactor::InvSrcAlpha;
+	EBlendFactor SrcBlend = EBlendFactor::One;
+	EBlendFactor DestBlend = EBlendFactor::Zero;
 	EBlendOp BlendOp = EBlendOp::Add;
 	EBlendFactor SrcBlendAlpha = EBlendFactor::One;
-	EBlendFactor DestBlendAlpha = EBlendFactor::InvSrcAlpha;
+	EBlendFactor DestBlendAlpha = EBlendFactor::Zero;
 	EBlendOp BlendOpAlpha = EBlendOp::Add;
 	ColorWriteEnable RenderTargetWriteMask = ColorWriteEnable::All;
 };
 
+#include <string>
+
+typedef std::string_view StringView;
+
 struct InputLayout
 {
-	const char* name = nullptr;// string view
+	StringView name{};// string view
 	VertexAttribType Type = VertexAttribType::None;
 };
 
@@ -167,7 +170,7 @@ struct PipelineInfo
 	int32 descriptorSetCount = 0;
 	DescriptorSetDesc descriptorSet = {};
 	
-	int32 numInputLayout = 0;
+	uint32 numInputLayout = 0u;
 	InputLayout inputLayouts[8] = {};
 
 	bool enableMultiSampling = false;
@@ -181,5 +184,4 @@ struct IPipeline : IGraphicsResource
 
 struct IFence : IGraphicsResource
 {
-	virtual void Wait() = 0;
 };

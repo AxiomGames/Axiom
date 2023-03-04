@@ -4,7 +4,6 @@
 #include "D3D12Core.hpp"
 #include "D3D12CommandList.hpp"
 #include "d3d12x.h"
-#include <cassert>
 
 Vector2i windowSize;
 
@@ -26,20 +25,14 @@ void D3D12Context::Initialize(SharedPtr<INativeWindow> window)
 		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
 		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
 		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
-	};
+	}
 #endif
-
 	
-	m_FenceEvent = CreateEventEx(nullptr, nullptr, 0, EVENT_ALL_ACCESS);
+	m_FenceEvent = CreateEvent(nullptr, false, false, nullptr);
 	ax_assert(m_FenceEvent);
 
 	windowSize = window->GetSize();
-
-	D3D12_DESCRIPTOR_HEAP_DESC descHeapDesc = {};
-	descHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	descHeapDesc.NumDescriptors = 1;
-	descHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	DXCall(m_Device->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&m_DescriptorHeap)) != S_OK);
+    m_Window = window;
 }
 
 IBuffer* D3D12Context::CreateBuffer(const BufferDesc& desc, ICommandList* commandList) 
@@ -49,7 +42,7 @@ IBuffer* D3D12Context::CreateBuffer(const BufferDesc& desc, ICommandList* comman
 	auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 	auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(desc.Size, D3D12_RESOURCE_FLAG_NONE); // todo add options instead of none
 	D3D12_RESOURCE_STATES resourceState = DX12::ToDX12ResourceUsage(desc.ResourceUsage);
-	ID3D12GraphicsCommandList6* pCmd = (ID3D12GraphicsCommandList6*)commandList;
+	ID3D12GraphicsCommandList6* pCmd = static_cast<D3D12CommandList*>(commandList)->m_CmdList;
 
 	DXCall(m_Device->CreateCommittedResource(
 		&heapProperties,
@@ -93,6 +86,8 @@ IBuffer* D3D12Context::CreateBuffer(const BufferDesc& desc, ICommandList* comman
 	
 	pCmd->ResourceBarrier(1, &transion1);
 
+	buffer->BufferData = desc.Data;
+
 	switch (desc.ResourceUsage)
 	{
 	case EResourceUsage::IndexBuffer:
@@ -105,7 +100,7 @@ IBuffer* D3D12Context::CreateBuffer(const BufferDesc& desc, ICommandList* comman
 		buffer->vertexBufferView.SizeInBytes = desc.Size;
 		buffer->vertexBufferView.StrideInBytes = desc.ElementByteStride;
 		break;
-		default: assert(false && "unknown resource type for dx12 buffer creation");
+		default: ax_assert(false && "unknown resource type for dx12 buffer creation");
 	};
 
 	// todo give a name
@@ -121,13 +116,7 @@ IPipeline* D3D12Context::CreateGraphicsPipeline(PipelineInfo& info)
 
 	// Create the root signature
 	{
-		using RSFlag = D3D12_ROOT_SIGNATURE_FLAGS;
-		RSFlag flags = D3D12_ROOT_SIGNATURE_FLAG_NONE;
-
-		flags &= D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-		flags |= (RSFlag)(uint32(info.HullShader == nullptr) * (uint32)D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS);
-		flags |= (RSFlag)(uint32(info.DomainShader == nullptr) * (uint32)D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS);
-		flags |= (RSFlag)(uint32(info.GeometryShader == nullptr) * (uint32)D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS);
+		D3D12_ROOT_SIGNATURE_FLAGS flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 		
 		CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
 		rootSignatureDesc.Init(0, nullptr, 0, nullptr, flags);
@@ -141,8 +130,7 @@ IPipeline* D3D12Context::CreateGraphicsPipeline(PipelineInfo& info)
 
 	const uint32 msaaQuality = 0; // D3D12Backend::GetMSAAQuality();
 
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
-	memset(&psoDesc, 0, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 	psoDesc.NodeMask = 1;
 	psoDesc.PrimitiveTopologyType = (D3D12_PRIMITIVE_TOPOLOGY_TYPE)info.primitiveType;
 	psoDesc.pRootSignature = outPipeline->RootSignature;
@@ -176,7 +164,7 @@ IPipeline* D3D12Context::CreateGraphicsPipeline(PipelineInfo& info)
 	D3D12_BLEND_DESC& blendDesc = psoDesc.BlendState;
 	blendDesc.AlphaToCoverageEnable = info.AlphaToCoverageEnable;
 	blendDesc.IndependentBlendEnable = info.IndependentBlendEnable;
-
+	
 	for (int i = 0; i < info.numRenderTargets; ++i)
 	{
 		psoDesc.RTVFormats[i] = DX12::ToDX12Format(info.RTVFormats[i]);
@@ -185,12 +173,13 @@ IPipeline* D3D12Context::CreateGraphicsPipeline(PipelineInfo& info)
 		blendDesc.RenderTarget[i].SrcBlend = blendFactorLUT[(uint32)bDesc.SrcBlend];
 		blendDesc.RenderTarget[i].DestBlend = blendFactorLUT[(uint32)bDesc.DestBlend];
 		blendDesc.RenderTarget[i].SrcBlendAlpha = blendFactorLUT[(uint32)bDesc.SrcBlendAlpha];
-		blendDesc.RenderTarget[i].DestBlendAlpha= blendFactorLUT[(uint32)bDesc.DestBlendAlpha];
+		blendDesc.RenderTarget[i].DestBlendAlpha = blendFactorLUT[(uint32)bDesc.DestBlendAlpha];
 		blendDesc.RenderTarget[i].BlendOp = (D3D12_BLEND_OP)(bDesc.BlendOp);
 		blendDesc.RenderTarget[i].BlendOpAlpha = (D3D12_BLEND_OP)(bDesc.BlendOpAlpha);
+		blendDesc.RenderTarget[i].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 	}
-
-	psoDesc.VS = *(D3D12_SHADER_BYTECODE*)(&info.VertexShader->byteCode); // convert IShader::ByteCode to D3D12_SHADER_BYTECODE these structs are identical
+	
+	psoDesc.VS = { info.VertexShader->byteCode.blob, info.VertexShader->byteCode.blobSize }; // convert IShader::ByteCode to D3D12_SHADER_BYTECODE these structs are identical
 
 	D3D12_INPUT_ELEMENT_DESC local_layout[16] = {};
 
@@ -198,7 +187,7 @@ IPipeline* D3D12Context::CreateGraphicsPipeline(PipelineInfo& info)
 	{
 		InputLayout& layout = info.inputLayouts[i];
 		uint32 elemSize = VertexAttribSize(layout.Type);
-		local_layout[i].SemanticName = layout.name;
+		local_layout[i].SemanticName = layout.name.data();
 		local_layout[i].SemanticIndex = 0;
 		local_layout[i].Format = DX12::ToDX12Format(layout.Type);
 		local_layout[i].InputSlot = 0;
@@ -208,9 +197,10 @@ IPipeline* D3D12Context::CreateGraphicsPipeline(PipelineInfo& info)
 		offset += elemSize;
 	}
 
-	psoDesc.InputLayout = { local_layout, _countof(local_layout) };
+	psoDesc.InputLayout = { local_layout, info.numInputLayout };
+	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 
-	psoDesc.PS = *(D3D12_SHADER_BYTECODE*)(&info.FragmentShader->byteCode);
+	psoDesc.PS = { info.FragmentShader->byteCode.blob, info.FragmentShader->byteCode.blobSize};
 
 	// Create the rasterizer state
 	{
@@ -231,14 +221,8 @@ IPipeline* D3D12Context::CreateGraphicsPipeline(PipelineInfo& info)
 	// Create depth-stencil State
 	if (info.DepthStencilFormat != EImageFormat::UNKNOWN)
 	{
-		D3D12_DEPTH_STENCIL_DESC& desc = psoDesc.DepthStencilState;
-		desc.DepthEnable = true;
-		desc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-		desc.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-		desc.StencilEnable = false;
-		desc.FrontFace.StencilFailOp = desc.FrontFace.StencilDepthFailOp = desc.FrontFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
-		desc.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-		desc.BackFace = desc.FrontFace;
+		// a default depth stencil state
+		psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT); 
 	}
 
 	DXCall(m_Device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&outPipeline->PipelineState)));
@@ -249,60 +233,63 @@ IPipeline* D3D12Context::CreateGraphicsPipeline(PipelineInfo& info)
 ICommandAllocator* D3D12Context::CreateCommandAllocator(ECommandListType type)
 {
 	D3D12CommandAllocator* allocator = new D3D12CommandAllocator();
-	m_Device->CreateCommandAllocator((D3D12_COMMAND_LIST_TYPE)type, IID_PPV_ARGS(&allocator->allocator));
+	DXCall(m_Device->CreateCommandAllocator((D3D12_COMMAND_LIST_TYPE)type, IID_PPV_ARGS(&allocator->allocator)));
 	return static_cast<ICommandAllocator*>(allocator);
 }
 
 ICommandList* D3D12Context::CreateCommandList(ICommandAllocator* commandAllocator, ECommandListType type)
 {
 	D3D12CommandList* commandList = new D3D12CommandList();
+	ID3D12CommandAllocator* dxCmdAlloc = static_cast<D3D12CommandAllocator*>(commandAllocator)->allocator;
 	D3D12_COMMAND_LIST_TYPE d3dType = (D3D12_COMMAND_LIST_TYPE)type;
-	DXCall(m_Device->CreateCommandList(0, d3dType, (ID3D12CommandAllocator*)commandAllocator, nullptr, IID_PPV_ARGS(&commandList->m_CmdList)));
+	DXCall(m_Device->CreateCommandList(0, d3dType, dxCmdAlloc, nullptr, IID_PPV_ARGS(&commandList->m_CmdList)));
 	return static_cast<ICommandList*>(commandList);
 }
 
 ICommandQueue* D3D12Context::CreateCommandQueue(ECommandListType type, ECommandQueuePriority priority) 
 {
+	const int priorities[3] = { 0, 10, 10000 };
 	D3D12_COMMAND_QUEUE_DESC cmdQueuedesc{};
 	cmdQueuedesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
 	cmdQueuedesc.NodeMask = 0;
-	cmdQueuedesc.Priority = pow((int)priority, 10);
+	cmdQueuedesc.Priority = priorities[(int)priority];
 	cmdQueuedesc.Type = (D3D12_COMMAND_LIST_TYPE)((uint32)type); // our enum is directly convertible to dx12 command list type enum
-	D3D12CommandQueue* commandQueue;
+	D3D12CommandQueue* cmdQueue = new D3D12CommandQueue();
 
-	DXCall(m_Device->CreateCommandQueue(&cmdQueuedesc, IID_PPV_ARGS(&commandQueue->queue)));
-	return static_cast<ICommandQueue*>(commandQueue);
+	DXCall(m_Device->CreateCommandQueue(&cmdQueuedesc, IID_PPV_ARGS(&cmdQueue->queue)));
+	return static_cast<ICommandQueue*>(cmdQueue);
 }
 	
 ISwapChain* D3D12Context::CreateSwapChain(ICommandQueue* commandQueue, EImageFormat format)
 {
+	ID3D12CommandQueue* dxCommandQueue = static_cast<D3D12CommandQueue*>(commandQueue)->queue;
 	DX12SwapChainDesc swapchainDesc =
 	{
-		.width = windowSize.x,
-		.height = windowSize.y,
+		.Width = windowSize.x,
+		.Height = windowSize.y,
 		.device = m_Device,
 		.factory = DXFactory,
-		.commandQueue = (ID3D12CommandQueue*)commandQueue,
+		.commandQueue = dxCommandQueue ,
 		.format = DX12::ToDX12Format(format),
-		.hwnd = m_Window->GetHWND()
+		.hwnd = m_Window->GetHWND() // last time we was here todo TODO
 	};
 	return new D3D12SwapChain(swapchainDesc);
 }
 
 IFence* D3D12Context::CreateFence()
 {
-	ID3D12Fence1* fence;
-	DXCall(m_Device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)));
-	return (IFence*)fence;
+	D3D12Fence* dxFence = new D3D12Fence();
+	DXCall(m_Device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&dxFence->fence)));
+	return static_cast<IFence*>(dxFence);
 }
 
-void D3D12Context::WaitFence(IFence* fence)
+void D3D12Context::WaitFence(IFence* fence, uint32 fenceValue)
 {
-	D3D12Fence* dxFence = (D3D12Fence*)fence;
+	D3D12Fence* dxFence = static_cast<D3D12Fence*>(fence);
 
-	if (dxFence->fence->GetCompletedValue() < dxFence->value)
+	if (dxFence->fence->GetCompletedValue() < fenceValue)
 	{
-		DXCall(dxFence->fence->SetEventOnCompletion(dxFence->value, m_FenceEvent));
+		DXCall(dxFence->fence->SetEventOnCompletion(fenceValue, m_FenceEvent));
 		WaitForSingleObject(m_FenceEvent, INFINITE);
 	}
 }
@@ -315,22 +302,26 @@ void D3D12Context::DestroyResource(IGraphicsResource* resource)
 
 IShader* D3D12Context::CreateShader(const char* sourceCode, const char* functionName, EShaderType shaderType)
 {
+	ax_assert((shaderType == EShaderType::Vertex || shaderType == EShaderType::Fragment) && "Shader type is not supported!");
+	
 	D3D12Shader* shader = new D3D12Shader();
 	ID3DBlob* errorBlob, *blob;
-#ifdef  DEBUG
+#ifdef _DEBUG
 	D3D_SHADER_MACRO shaderMacros[] = { {"DEBUG", "1"}, {nullptr, nullptr} };
 #else 
 	D3D_SHADER_MACRO shaderMacros[] = { {"RELEASE", "1"}, {nullptr, nullptr} };
 #endif //  DEBUG
+	
+	const char* shaderModel = shaderType == EShaderType::Vertex ? "vs_5_0" : "ps_5_0";
 
 	if (FAILED(D3DCompile(sourceCode, strlen(sourceCode), nullptr,
-		shaderMacros, nullptr, functionName, "vs_5_0", 0, 0, &blob, &errorBlob)))
+		shaderMacros, nullptr, functionName, shaderModel, 0, 0, &blob, &errorBlob)))
 	{
 		AX_ERROR("Shader Compiling Error:\n %s", (char*)errorBlob->GetBufferPointer());
 		throw std::exception("shader compiling failed!");
 	}
-	shader->byteCode.blobSize = blob->GetBufferSize();
-	shader->byteCode.blob = (void*)blob;
+	shader->byteCode.blobSize = blob->GetBufferSize(); 
+	shader->byteCode.blob = blob->GetBufferPointer();
 	shader->sourceCode = sourceCode;
 	return (IShader*)shader;
 }

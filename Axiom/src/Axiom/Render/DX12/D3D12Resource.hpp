@@ -1,7 +1,7 @@
 #pragma once
 
 #include "D3D12CommonHeaders.hpp"
-#include "../PipelineState.hpp"
+#include "../CommandList.hpp"
 
 struct D3D12Buffer : IBuffer
 {
@@ -30,12 +30,6 @@ struct D3D12Image : IImage
 	{ ReleaseResource(Resource); }
 };
 
-struct D3D12Shader : public IShader
-{
-	void Release() override
-	{ } // todo delete shader code
-};
-
 struct D3D12Pipeline : public IPipeline
 {
 	ID3D12PipelineState* PipelineState;
@@ -49,16 +43,22 @@ struct D3D12Pipeline : public IPipeline
 
 struct D3D12Fence : public IFence
 {
+	void Release() override
+	{ fence->Release(); }
 public:
-	ID3D12Fence1* fence;
-	uint64 value;
+	ID3D12Fence1* fence = nullptr;
 };
 
 struct D3D12CommandAllocator : ICommandAllocator
 {
 	ID3D12CommandAllocator* allocator;
 	void Reset() override
-	{ allocator->Reset(); }
+	{ 
+		DXCall(allocator->Reset());
+	}
+
 	void Release() override
-	{ allocator->Release(); }
+	{
+		allocator->Release();
+	}
 };

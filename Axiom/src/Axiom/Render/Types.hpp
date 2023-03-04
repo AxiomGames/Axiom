@@ -136,8 +136,8 @@ ENUM_FLAGS(ECommandListType, uint32)
 
 enum class ECommandQueuePriority : uint32
 {
-    Normal,
-    High,
+    Normal  ,
+    High    ,
     Realtime
 };
 ENUM_FLAGS(ECommandQueuePriority, uint32)
@@ -270,8 +270,10 @@ struct IBuffer : IGraphicsResource
 
 struct ISwapChain : IGraphicsResource
 {
+    virtual uint32 GetCurrentBackBufferIndex() = 0;
 	virtual void Present(bool gsync, uint32 flags) = 0;
 	virtual IImage* GetBackBuffer(int index) = 0;
+    virtual IImage* GetDepthStencilBuffer() = 0;
 };
 
 struct ViewportDesc

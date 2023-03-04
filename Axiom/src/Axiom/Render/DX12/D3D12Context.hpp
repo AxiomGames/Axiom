@@ -24,13 +24,9 @@ public:
 	
 	void DestroyResource(IGraphicsResource* resource) override;
 
-	void WaitFence(IFence* fence) override;
+	void WaitFence(IFence* fence, uint32 value) override;
 
 	void Release() override;
-
-	void BeginFrame() override;
-
-	void EndFrame() override;
 
 	ID3D12Device8* GetDevice() { return m_Device; };
 
