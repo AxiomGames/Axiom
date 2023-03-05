@@ -13,6 +13,8 @@ struct IDXGIAdapter4;
 enum D3D_FEATURE_LEVEL;
 enum DXGI_FORMAT;
 enum D3D12_RESOURCE_STATES;
+enum D3D12_ROOT_PARAMETER_TYPE;
+enum D3D12_SHADER_VISIBILITY;
 
 namespace DX12
 {
@@ -26,5 +28,7 @@ namespace DX12
 	DXGI_FORMAT ToDX12Format(EImageFormat type);
 	D3D12_RESOURCE_STATES ToDX12ResourceUsage(EResourceUsage usage);
 	D3D12_RESOURCE_STATES ToDX12PipelineStage(EPipelineStage stage);
+    D3D12_ROOT_PARAMETER_TYPE ToDX12DescriptorType(EDescriptorType descType);
+    D3D12_SHADER_VISIBILITY ToDX12ShaderVisibility(EShaderType shaderType);
 }
 #endif

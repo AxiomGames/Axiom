@@ -26,6 +26,8 @@ struct ICommandList : IGraphicsResource
 	virtual void SetIndexBuffer(IBuffer* indexBuffer) = 0;
 	virtual void SetViewports(uint32 numViewports, const ViewportDesc* desc) = 0;
 	virtual void SetScissorRects(uint32 numRects, GraphicsRect* rects) = 0;
+    
+    virtual void SetGraphicsPushConstants(IPipeline* pipeline, EShaderType stage, void* data, size_t size) = 0;
 	virtual void Dispatch(uint32 groupX, uint32 groupY, uint32 groupZ) = 0;
 };
 

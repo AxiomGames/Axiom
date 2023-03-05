@@ -119,7 +119,9 @@ IPipeline* D3D12Context::CreateGraphicsPipeline(PipelineInfo& info)
 		D3D12_ROOT_SIGNATURE_FLAGS flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 		
 		CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
-		rootSignatureDesc.Init(0, nullptr, 0, nullptr, flags);
+		CD3DX12_ROOT_PARAMETER rootParameters[1];
+		rootParameters[0].InitAsConstants(64 / 4, 0, 0, D3D12_SHADER_VISIBILITY_VERTEX);
+		rootSignatureDesc.Init(1, rootParameters, 0, nullptr, flags);
 
 		ID3DBlob* signature = nullptr;
 		hr = D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, nullptr);
@@ -283,6 +285,50 @@ IFence* D3D12Context::CreateFence()
 	return static_cast<IFence*>(dxFence);
 }
 
+DescriptorSet* D3D12Context::CreateDescriptorSet(DescriptorSetDesc& desc)
+{
+    D3D12DescriptorSet* descriptorSet = new D3D12DescriptorSet();
+    descriptorSet->BindingCount = desc.BindingCount;
+
+    D3D12_ROOT_SIGNATURE_DESC1 rootSigDesc{};
+    D3D12_ROOT_PARAMETER bindings[8]{};
+
+    for (uint32 bindingIndex = 0u; bindingIndex < desc.BindingCount; bindingIndex++)
+    {
+        DescriptorBindingDesc& element = desc.Bindings[bindingIndex];
+        descriptorSet->BindingTypes[bindingIndex] = element.Type;
+        
+        D3D12_ROOT_PARAMETER& binding = bindings[bindingIndex];
+        binding.ParameterType = DX12::ToDX12DescriptorType(element.Type);
+        binding.ShaderVisibility = DX12::ToDX12ShaderVisibility(element.ShaderVisibility);
+        binding.Descriptor.RegisterSpace = 0;
+        binding.Descriptor.ShaderRegister = element.BindingID;
+    }
+
+    D3D12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc{};
+    rootSignatureDesc.Version = D3D_ROOT_SIGNATURE_VERSION_1_0;
+    rootSignatureDesc.Desc_1_0.NumParameters = desc.BindingCount;
+    rootSignatureDesc.Desc_1_0.pParameters = bindings;
+
+    ID3DBlob* rootSigBlob = nullptr;
+    ID3DBlob* errorBlob = nullptr;
+
+    D3D12SerializeVersionedRootSignature(&rootSignatureDesc, &rootSigBlob, &errorBlob);
+
+    if (errorBlob != nullptr)
+    {
+        AX_ERROR("shader compilation failed with error: \n%s", (const char*)errorBlob->GetBufferPointer());
+        ax_assert(false);
+    }
+    m_Device->CreateRootSignature(
+        0u,
+        rootSigBlob->GetBufferPointer(), 
+        rootSigBlob->GetBufferSize(), 
+        IID_PPV_ARGS(&descriptorSet->RootSignature)
+    );
+    return descriptorSet;
+}
+
 void D3D12Context::WaitFence(IFence* fence, uint32 fenceValue)
 {
 	D3D12Fence* dxFence = static_cast<D3D12Fence*>(fence);
@@ -312,7 +358,7 @@ IShader* D3D12Context::CreateShader(const char* sourceCode, const char* function
 	D3D_SHADER_MACRO shaderMacros[] = { {"RELEASE", "1"}, {nullptr, nullptr} };
 #endif //  DEBUG
 	
-	const char* shaderModel = shaderType == EShaderType::Vertex ? "vs_5_0" : "ps_5_0";
+	const char* shaderModel = shaderType == EShaderType::Vertex ? "vs_5_1" : "ps_5_1";
 
 	if (FAILED(D3DCompile(sourceCode, strlen(sourceCode), nullptr,
 		shaderMacros, nullptr, functionName, shaderModel, 0, 0, &blob, &errorBlob)))

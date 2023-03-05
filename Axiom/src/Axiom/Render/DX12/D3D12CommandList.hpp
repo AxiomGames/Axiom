@@ -32,7 +32,8 @@ public:
 	void SetIndexBuffer(IBuffer* indexBuffers) override;
 	void SetViewports(uint32 numViewports, const ViewportDesc* desc) override;
 	void SetScissorRects(uint32 numRects, GraphicsRect* rects) override;
-	void Dispatch(uint32 groupX, uint32 groupY, uint32 groupZ) override;
+    void SetGraphicsPushConstants(IPipeline* pipeline, EShaderType stage, void* data, size_t size) override;
+    void Dispatch(uint32 groupX, uint32 groupY, uint32 groupZ) override;
 	
 public:
 	ID3D12GraphicsCommandList6* m_CmdList = nullptr;

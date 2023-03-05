@@ -233,11 +233,14 @@ struct IImage : IGraphicsResource
 
 enum class EShaderType : uint32
 {
-    None,
-    Vertex,
-    Fragment,
-    Compute
+    None     = 0,
+    Vertex   = 1 << 0,
+    Fragment = 1 << 1,
+    Compute  = 1 << 2,
+    Hull     = 1 << 3,
+    Domain   = 1 << 4
 };
+ENUM_FLAGS(EShaderType, uint32);
 
 struct IShader : IGraphicsResource
 {

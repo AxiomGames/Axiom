@@ -1,4 +1,5 @@
 #include "Renderer.hpp"
+#include "Axiom/Math/Matrix.hpp"
 #include <fstream>
 
 #ifdef AX_WIN32
@@ -35,39 +36,27 @@ inline char* ReadAllFile(StringView fileName)
 
 GraphicsRenderer::GraphicsRenderer(SharedPtr<UIWindow> window)
 {
-	struct PBRVertex {
-		Vector3f position;
-		float color[4];
+	struct VertexPosColor { Vector3f position, color; };
+
+	const VertexPosColor vertices[8] = {
+		{ Vector3f(-1.0f, -1.0f, -1.0f), Vector3f(0.0f, 0.0f, 0.0f) }, // 0
+		{ Vector3f(-1.0f,  1.0f, -1.0f), Vector3f(0.0f, 1.0f, 0.0f) }, // 1
+		{ Vector3f( 1.0f,  1.0f, -1.0f), Vector3f(1.0f, 1.0f, 0.0f) }, // 2
+		{ Vector3f( 1.0f, -1.0f, -1.0f), Vector3f(1.0f, 0.0f, 0.0f) }, // 3
+		{ Vector3f(-1.0f, -1.0f,  1.0f), Vector3f(0.0f, 0.0f, 1.0f) }, // 4
+		{ Vector3f(-1.0f,  1.0f,  1.0f), Vector3f(0.0f, 1.0f, 1.0f) }, // 5
+		{ Vector3f( 1.0f,  1.0f,  1.0f), Vector3f(1.0f, 1.0f, 1.0f) }, // 6
+		{ Vector3f( 1.0f, -1.0f,  1.0f), Vector3f(1.0f, 0.0f, 1.0f) }  // 7
 	};
 
-	static PBRVertex vertices[] =
+	const uint32 indices[36] =
 	{
-        // first quad (closer to camera, blue)
-		{ {-0.5f,  0.5f, 0.5f}, {0.0f, 0.0f, 1.0f, 1.0f } },
-		{ { 0.5f, -0.5f, 0.5f}, {0.0f, 0.0f, 1.0f, 1.0f } },
-		{ {-0.5f, -0.5f, 0.5f}, {0.0f, 0.0f, 1.0f, 1.0f } },
-		{ { 0.5f,  0.5f, 0.5f}, {0.0f, 0.0f, 1.0f, 1.0f } },
-	    
-        // second quad (further from camera, green)
-        { {-0.75f,  0.75f, 0.7f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
-		{ {  0.0f,  0.00f, 0.7f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
-		{ {-0.75f,  0.00f, 0.7f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
-		{ { 0.00f,  0.75f, 0.7f }, { 0.0f, 1.0f, 0.0f, 1.0f } }
-	};
-
-	static uint32 indices[]{
-		// front face
-        0, 1, 2,
-	    0, 3, 1,
-        
-        4, 5, 6,
-        5, 7, 6
-        // // back face
-        // 6, 7, 5,
-        // 6, 5, 4,
-        // // right Face
-        // 1, 4, 3,
-        // 3, 4, 6
+		0, 1, 2, 0, 2, 3,
+		4, 6, 5, 4, 7, 6,
+		4, 5, 1, 4, 1, 0,
+		3, 2, 6, 3, 6, 7,
+		1, 5, 6, 1, 6, 2,
+		4, 0, 3, 4, 3, 7
 	};
 
 #ifdef AX_WIN32
@@ -86,13 +75,13 @@ GraphicsRenderer::GraphicsRenderer(SharedPtr<UIWindow> window)
 	m_CommandList = m_Context->CreateCommandList(m_CommandAllocator, ECommandListType::Direct);
 
 	BufferDesc bufferDesc{};
-	bufferDesc.Data = vertices;
+	bufferDesc.Data = (void*)vertices;
 	bufferDesc.ResourceUsage = EResourceUsage::VertexBuffer;
-	bufferDesc.ElementByteStride = sizeof(PBRVertex);
-	bufferDesc.Size = sizeof(PBRVertex) * _countof(vertices);
+	bufferDesc.ElementByteStride = sizeof(VertexPosColor);
+	bufferDesc.Size = sizeof(VertexPosColor) * _countof(vertices);
 	m_VertexBuffer = m_Context->CreateBuffer(bufferDesc, m_CommandList);
 
-	bufferDesc.Data = indices;
+	bufferDesc.Data = (void*)indices;
 	bufferDesc.ResourceUsage = EResourceUsage::IndexBuffer;
 	bufferDesc.ElementByteStride = sizeof(uint32);
 	bufferDesc.Size = sizeof(uint32) * _countof(indices);
@@ -107,7 +96,7 @@ GraphicsRenderer::GraphicsRenderer(SharedPtr<UIWindow> window)
 
 	m_PipelineInfo.numInputLayout = 2;
 	m_PipelineInfo.inputLayouts[0] = { "POSITION", VertexAttribType::Float3 };
-	m_PipelineInfo.inputLayouts[1] = { "COLOR"   , VertexAttribType::Float4 };
+	m_PipelineInfo.inputLayouts[1] = { "COLOR"   , VertexAttribType::Float3 };
 
 	m_Pipeline = m_Context->CreateGraphicsPipeline(m_PipelineInfo);
 	m_Fence = m_Context->CreateFence();
@@ -142,11 +131,23 @@ void GraphicsRenderer::Render()
 	m_CommandList->ClearRenderTarget(backBuffer, clearColor);
 	m_CommandList->ClearDepthStencil(depthStencilBuffer);
 
+	// rotate camera around our cube
+	static float f = 1.0f;
+	f += 0.01f;
+	Vector3f position(sinf(f) * 5.0f, 0.0f, cosf(f) * 5.0f);
+	float verticalFOV = 65.0f;
+	float nearClip = 0.01f;
+	float farClip = 500.0f;
+
+	Matrix4 projection = Matrix4::PerspectiveFovRH(verticalFOV * Math::DegToRad, m_NativeWindow->GetWidth(), m_NativeWindow->GetHeight(), nearClip, farClip);
+	Matrix4 viewProjection = projection * Matrix4::LookAtRH(position, -Vector3f::Normalize(position), Vector3f::Up());
+	
 	// todo seperate this task in between threads
 	m_CommandList->SetIndexBuffer(m_IndexBuffer);
 	m_CommandList->SetVertexBuffers(&m_VertexBuffer, 1);
-	m_CommandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
-    m_CommandList->DrawIndexedInstanced(6, 1, 0, 4, 0);
+	m_CommandList->SetGraphicsPushConstants(m_Pipeline, EShaderType::Vertex, &viewProjection, sizeof(Matrix4));
+	
+	m_CommandList->DrawIndexedInstanced(36, 1, 0, 0, 0);
 
 	barrier.CurrentStage = EPipelineStage::RenderTarget;
 	barrier.NextStage = EPipelineStage::Present;

@@ -118,6 +118,11 @@ void D3D12CommandList::SetScissorRects(uint32 numRects, GraphicsRect* rects)
 	m_CmdList->RSSetScissorRects(numRects, (const D3D12_RECT*)(rects));
 }
 
+void D3D12CommandList::SetGraphicsPushConstants(IPipeline* pipeline, EShaderType stage, void* data, size_t size)
+{
+    m_CmdList->SetGraphicsRoot32BitConstants(0, size / sizeof(uint32), data, 0);
+}
+
 void D3D12CommandList::Dispatch(uint32 groupX, uint32 groupY, uint32 groupZ) 
 {
 	m_CmdList->Dispatch(groupX, groupY, groupZ);

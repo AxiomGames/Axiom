@@ -45,7 +45,6 @@ struct D3D12Fence : public IFence
 {
 	void Release() override
 	{ fence->Release(); }
-public:
 	ID3D12Fence1* fence = nullptr;
 };
 
@@ -61,4 +60,14 @@ struct D3D12CommandAllocator : ICommandAllocator
 	{
 		allocator->Release();
 	}
+};
+
+struct D3D12DescriptorSet : DescriptorSet
+{
+    ID3D12RootSignature* RootSignature;
+    D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHandles[8];
+    void Release()
+    {
+        ReleaseResource(RootSignature);
+    }
 };

@@ -88,6 +88,31 @@ namespace DX12
 		}
 	}
 
+    D3D12_ROOT_PARAMETER_TYPE ToDX12DescriptorType(EDescriptorType descType)
+    {
+        constexpr D3D12_ROOT_PARAMETER_TYPE descriptorTypeLUT[] = {
+            D3D12_ROOT_PARAMETER_TYPE_SRV,              
+            D3D12_ROOT_PARAMETER_TYPE_SRV,              
+            D3D12_ROOT_PARAMETER_TYPE_SRV,              
+            D3D12_ROOT_PARAMETER_TYPE_CBV,              
+            D3D12_ROOT_PARAMETER_TYPE_UAV,              
+            D3D12_ROOT_PARAMETER_TYPE_UAV,              
+            D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS,  
+        };
+        return descriptorTypeLUT[(uint32)descType];
+    }
+
+    D3D12_SHADER_VISIBILITY ToDX12ShaderVisibility(EShaderType shaderType)
+    {
+        uint32 visibility = 0u;
+        if ((uint32)(shaderType & EShaderType::Compute))  return D3D12_SHADER_VISIBILITY_ALL; // compute shaders must use this enum
+        if ((uint32)(shaderType & EShaderType::Vertex))   visibility |= D3D12_SHADER_VISIBILITY_VERTEX;
+        if ((uint32)(shaderType & EShaderType::Fragment)) visibility |= D3D12_SHADER_VISIBILITY_PIXEL;
+        if ((uint32)(shaderType & EShaderType::Hull))     visibility |= D3D12_SHADER_VISIBILITY_HULL;
+        if ((uint32)(shaderType & EShaderType::Domain))   visibility |= D3D12_SHADER_VISIBILITY_DOMAIN;
+        return (D3D12_SHADER_VISIBILITY)visibility;
+    }
+
 	// todo use compile time lookup table like in ToDX12PipelineStage
 	DXGI_FORMAT ToDX12Format(EImageFormat type)
 	{

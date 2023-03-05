@@ -19,6 +19,7 @@ public:
 	ICommandQueue* CreateCommandQueue(ECommandListType type, ECommandQueuePriority priority) override;
 	ISwapChain* CreateSwapChain(ICommandQueue* commandQueue, EImageFormat format) override;
 	IFence* CreateFence() override;
+    DescriptorSet* CreateDescriptorSet(DescriptorSetDesc& desc) override;
 
 	IShader* CreateShader(const char* sourceCode, const char* functionName, EShaderType shaderType) override;
 	
@@ -27,7 +28,7 @@ public:
 	void WaitFence(IFence* fence, uint32 value) override;
 
 	void Release() override;
-
+    
 	ID3D12Device8* GetDevice() { return m_Device; };
 
 private:

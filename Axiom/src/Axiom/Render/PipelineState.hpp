@@ -90,10 +90,10 @@ struct Sampler
 
 struct DescriptorBindingDesc
 {
-	int BindingID = -1;
+	uint32 BindingID = ~0u;
 	EDescriptorType Type = EDescriptorType::Unknown;
-	EShaderType TargetShader = EShaderType::None;
-	uint32 ArraySize = 0;
+    EShaderType ShaderVisibility = EShaderType::None;
+	uint32 ArraySize = 1;
 
 	union
 	{
@@ -105,8 +105,15 @@ struct DescriptorBindingDesc
 
 struct DescriptorSetDesc
 {
-	uint32 m_BindingCount = 0u;
-	DescriptorBindingDesc m_pBindings[16];
+	uint32 BindingCount = 0u;
+    DescriptorBindingDesc Bindings[8]{};
+};
+
+
+struct DescriptorSet : IGraphicsResource
+{
+    uint32 BindingCount = 0;
+    EDescriptorType BindingTypes[8]{};
 };
 
 struct PipelineBarrier
@@ -132,7 +139,7 @@ struct BlendDesc
 	ColorWriteEnable RenderTargetWriteMask = ColorWriteEnable::All;
 };
 
-#include <string>
+#include <string_view>
 
 typedef std::string_view StringView;
 

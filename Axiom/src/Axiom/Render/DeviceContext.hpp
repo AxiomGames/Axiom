@@ -20,7 +20,8 @@ public:
 	virtual ISwapChain* CreateSwapChain(ICommandQueue* commandQueue, EImageFormat format) = 0;
 	virtual IFence* CreateFence() = 0;
 	virtual IShader* CreateShader(const char* sourceCode, const char* functionName, EShaderType shaderType) = 0;
-	
+    virtual DescriptorSet* CreateDescriptorSet(DescriptorSetDesc& desc) = 0;
+
 	virtual void DestroyResource(IGraphicsResource* resource) = 0;
 
 	virtual void WaitFence(IFence* fence, uint32 fenceValue) = 0;
