@@ -67,108 +67,140 @@ void D3D12Context::Initialize(SharedPtr<INativeWindow> window)
     }
 }
 
-IBuffer* D3D12Context::CreateBuffer(const BufferDesc& desc, ICommandList* commandList) 
+static D3D12_RESOURCE_DESC CreateResourceDesc(const BufferDesc& desc, bool isTexture)
 {
     static const D3D12_RESOURCE_DIMENSION bufferTypeLUT[] = { // texture arrays are not supported yet
-		D3D12_RESOURCE_DIMENSION_UNKNOWN  ,
-		D3D12_RESOURCE_DIMENSION_BUFFER	  , 
-		D3D12_RESOURCE_DIMENSION_TEXTURE1D,
-		D3D12_RESOURCE_DIMENSION_TEXTURE2D, 
-		D3D12_RESOURCE_DIMENSION_TEXTURE3D	
-	};
-	D3D12Buffer* buffer = new D3D12Buffer();
-	ID3D12GraphicsCommandList6* pCmd = static_cast<D3D12CommandList*>(commandList)->m_CmdList;
-	D3D12_RESOURCE_STATES resourceState = DX12::ToDX12ResourceUsage(desc.ResourceUsage);
-	D3D12_RESOURCE_DESC bufferResourceDesc = {};
-	D3D12MA::ALLOCATION_DESC bufferAllocDesc = {};
+        D3D12_RESOURCE_DIMENSION_UNKNOWN  ,
+        D3D12_RESOURCE_DIMENSION_BUFFER	  , 
+        D3D12_RESOURCE_DIMENSION_TEXTURE1D,
+        D3D12_RESOURCE_DIMENSION_TEXTURE2D, 
+        D3D12_RESOURCE_DIMENSION_TEXTURE3D	
+    };
+    D3D12_RESOURCE_DESC bufferResourceDesc = {};
+    bufferResourceDesc.Dimension = bufferTypeLUT[(uint32)desc.BufferType];
+    bufferResourceDesc.Alignment = 0;
+    bufferResourceDesc.Width  = desc.Width;
+    bufferResourceDesc.Height = desc.Height;
+    bufferResourceDesc.DepthOrArraySize = 1;
+    bufferResourceDesc.MipLevels = 1;
+    bufferResourceDesc.Format = DX12::ToDX12Format(desc.Format);
+    bufferResourceDesc.SampleDesc.Count = 1;
+    bufferResourceDesc.SampleDesc.Quality = 0;
+    bufferResourceDesc.Layout = isTexture ? D3D12_TEXTURE_LAYOUT_UNKNOWN : D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+    bufferResourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;    
+    return bufferResourceDesc;
+}
+
+void D3D12Context::DirectUploadBuffer(BufferDesc& desc, D3D12Buffer* buffer, ID3D12GraphicsCommandList6* cmdList)
+{
+    D3D12MA::ALLOCATION_DESC bufferUploadAllocDesc = {};
+    bufferUploadAllocDesc.HeapType = D3D12_HEAP_TYPE_UPLOAD;
+    // bufferResourceDesc.Width = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
     bool isTexture = uint32(desc.BufferType) > 1;
-	bool isDirectUpload = uint32(desc.flags & EBufferDescFlags::DirectUpload);
+    D3D12_RESOURCE_DESC bufferResourceDesc = CreateResourceDesc(desc, isTexture);
 
-	// create default heap, default heap is memory on the GPU. Only the GPU has access to this memory
-	// To get data into this heap, we will have to upload the data using an upload heap
-	bufferResourceDesc.Dimension = bufferTypeLUT[(uint32)desc.BufferType];
-	bufferResourceDesc.Alignment = 0;
-	bufferResourceDesc.Width = isDirectUpload ? (desc.Width + 255) & ~255 : desc.Width;
-	bufferResourceDesc.Height = desc.Height;
-	bufferResourceDesc.DepthOrArraySize = 1;
-	bufferResourceDesc.MipLevels = 1;
-	bufferResourceDesc.Format = DX12::ToDX12Format(desc.Format);
-	bufferResourceDesc.SampleDesc.Count = 1;
-	bufferResourceDesc.SampleDesc.Quality = 0;
-	bufferResourceDesc.Layout = isTexture ? D3D12_TEXTURE_LAYOUT_UNKNOWN : D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-	bufferResourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+    D3D12MA::Allocation* bufferUploadHeapAllocation = nullptr;
+    DXCall(m_Allocator->CreateResource(
+        &bufferUploadAllocDesc,
+        &bufferResourceDesc, // resource description for a buffer
+        D3D12_RESOURCE_STATE_GENERIC_READ, // GPU will read from this buffer and copy its contents to the default heap
+        nullptr,
+        &bufferUploadHeapAllocation,
+        IID_PPV_ARGS(&buffer->UploadResource)));
+}
 
-	if (isDirectUpload) goto upload;
-	
-	bufferAllocDesc.HeapType = D3D12_HEAP_TYPE_DEFAULT;
-	DXCall(m_Allocator->CreateResource(
-		&bufferAllocDesc,
-		&bufferResourceDesc, // resource description for a buffer
-		D3D12_RESOURCE_STATE_COPY_DEST, // we will start this heap in the copy destination state since we will copy data
-		// from the upload heap to this heap
-		nullptr, // optimized clear value must be null for this type of resource. used for render targets and depth/stencil buffers
-		&buffer->VidAlloc,
-		IID_PPV_ARGS(&buffer->VidMemBuffer)));
+void D3D12Context::AllocateAndUploadBuffer(BufferDesc& desc, D3D12Buffer* buffer, ID3D12GraphicsCommandList6* pCmd)
+{
+    D3D12_RESOURCE_STATES resourceState = DX12::ToDX12ResourceUsage(desc.ResourceUsage);
+    bool isTexture = uint32(desc.BufferType) > 1;
+    
+    // create default heap, default heap is memory on the GPU. Only the GPU has access to this memory
+    // To get data into this heap, we will have to upload the data using an upload heap
+    D3D12_RESOURCE_DESC bufferResourceDesc = CreateResourceDesc(desc, isTexture);
+
+    D3D12MA::ALLOCATION_DESC bufferAllocDesc = {};
+    bufferAllocDesc.HeapType = D3D12_HEAP_TYPE_DEFAULT;
+    DXCall(m_Allocator->CreateResource(
+    	&bufferAllocDesc,
+    	&bufferResourceDesc, // resource description for a buffer
+    	D3D12_RESOURCE_STATE_COPY_DEST, // we will start this heap in the copy destination state since we will copy data
+    	// from the upload heap to this heap
+    	nullptr, // optimized clear value must be null for this type of resource. used for render targets and depth/stencil buffers
+    	&buffer->VidAlloc,
+    	IID_PPV_ARGS(&buffer->VidMemBuffer)));
     
     if (isTexture) { 
         m_Device->GetCopyableFootprints(&bufferResourceDesc, 0, 1, 0, nullptr, nullptr, nullptr, &bufferResourceDesc.Width); 
         bufferResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-		bufferResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
-		bufferResourceDesc.Height = 1;
-		bufferResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+    	bufferResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+    	bufferResourceDesc.Height = 1;
+    	bufferResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
     }
-	upload:
+    
     // create upload heap. upload heaps are used to upload data to the GPU. CPU can write to it, GPU can read from it
-	// We will upload the buffer using this heap to the default heap
-	D3D12MA::ALLOCATION_DESC bufferUploadAllocDesc = {};
-	bufferUploadAllocDesc.HeapType = D3D12_HEAP_TYPE_UPLOAD;
-    if (isDirectUpload) bufferResourceDesc.Width = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
-
-	D3D12MA::Allocation* bufferUploadHeapAllocation = nullptr;
-	DXCall(m_Allocator->CreateResource(
-		&bufferUploadAllocDesc,
-		&bufferResourceDesc, // resource description for a buffer
-		D3D12_RESOURCE_STATE_GENERIC_READ, // GPU will read from this buffer and copy its contents to the default heap
-		nullptr,
-		&bufferUploadHeapAllocation,
+    // We will upload the buffer using this heap to the default heap
+    D3D12MA::ALLOCATION_DESC bufferUploadAllocDesc = {};
+    bufferUploadAllocDesc.HeapType = D3D12_HEAP_TYPE_UPLOAD;
+    
+    D3D12MA::Allocation* bufferUploadHeapAllocation = nullptr;
+    DXCall(m_Allocator->CreateResource(
+    	&bufferUploadAllocDesc,
+    	&bufferResourceDesc, // resource description for a buffer
+    	D3D12_RESOURCE_STATE_GENERIC_READ, // GPU will read from this buffer and copy its contents to the default heap
+    	nullptr,
+    	&bufferUploadHeapAllocation,
         IID_PPV_ARGS(&buffer->UploadResource)));
-	
-	D3D12_SUBRESOURCE_DATA resourceData = {};
-	D3D12_RESOURCE_BARRIER vbBarrier = {};
     
-    if (isDirectUpload) goto create_view;
     
-	// store buffer in upload heap
-	resourceData.pData = desc.Data; // pointer to our data
+    // store buffer in upload heap
+    D3D12_SUBRESOURCE_DATA resourceData = {};
+    resourceData.pData = desc.Data; // pointer to our data
     resourceData.RowPitch = isTexture ? desc.Width * GetImageFormatSize(desc.Format) : desc.Width; // size of all data
     resourceData.SlicePitch = isTexture ? resourceData.RowPitch * desc.Height : desc.Width; // also the size of data
     
-	// we are now creating a command with the command list to copy the data from
-	// the upload heap to the default heap
-	UpdateSubresources(pCmd, buffer->VidMemBuffer, buffer->UploadResource, 0, 0, 1, &resourceData);
-	
-	if (isDirectUpload) goto create_view;
-	// transition the buffer data from copy destination state to buffer state
-	vbBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    vbBarrier.Transition.pResource = buffer->VidMemBuffer;
-	vbBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-    vbBarrier.Transition.StateAfter = isTexture ? D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE : resourceState; // todo change this
-	vbBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	pCmd->ResourceBarrier(1, &vbBarrier);
-
-create_view:
-    constexpr EResourceUsage CBV_SRV_UAV = EResourceUsage::ConstantBuffer | EResourceUsage::ShaderResource | EResourceUsage::UnorderedAccess;
-	D3D12DescriptorHeap& descHeap = m_CBV_SRV_UAV_HEAPS[desc.FrameIndex]; //m_DescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV];
+    // we are now creating a command with the command list to copy the data from
+    // the upload heap to the default heap
+    UpdateSubresources(pCmd, buffer->VidMemBuffer, buffer->UploadResource, 0, 0, 1, &resourceData);
     
-	if (uint32(desc.ResourceUsage & CBV_SRV_UAV)) // is our buffer cbv or srv or uav?
+    // transition the buffer data from copy destination state to buffer state
+    D3D12_RESOURCE_BARRIER vbBarrier = {};
+    vbBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    vbBarrier.Transition.pResource = buffer->VidMemBuffer;
+    vbBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+    vbBarrier.Transition.StateAfter = isTexture ? D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE : resourceState; // todo change this
+    vbBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    pCmd->ResourceBarrier(1, &vbBarrier);
+}
+
+IBuffer* D3D12Context::CreateBuffer(BufferDesc& desc, ICommandList* commandList) 
+{
+    D3D12Buffer* buffer = new D3D12Buffer();
+    ID3D12GraphicsCommandList6* pCmd = static_cast<D3D12CommandList*>(commandList)->m_CmdList;
+
+    if (desc.ResourceUsage == EResourceUsage::ConstantBuffer) desc.Width = (desc.Width + 255) & ~255;
+
+    if (uint32(desc.flags & EBufferDescFlags::DirectUpload))
     {
+        DirectUploadBuffer(desc, buffer, pCmd);
+    }
+    else
+    {
+        AllocateAndUploadBuffer(desc, buffer, pCmd);
+    }
+    
+    constexpr EResourceUsage CBV_SRV_UAV = EResourceUsage::ConstantBuffer | EResourceUsage::ShaderResource | EResourceUsage::UnorderedAccess;
+    D3D12DescriptorHeap& descHeap = m_CBV_SRV_UAV_HEAPS[desc.FrameIndex]; //m_DescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV];
+    
+    if (uint32(desc.ResourceUsage & CBV_SRV_UAV)) // is our buffer cbv or srv or uav?
+    {
+        // incrementing heap offset here, we will add other buffers and increment the pointers
         buffer->CPUDescHandle = descHeap.Heap->GetCPUDescriptorHandleForHeapStart();
         buffer->GPUDescHandle = descHeap.Heap->GetGPUDescriptorHandleForHeapStart();
         buffer->CPUDescHandle.ptr += descHeap.IncrementSize * descHeap.Offset;    
-		buffer->GPUDescHandle.ptr += descHeap.IncrementSize * descHeap.Offset;    
-		descHeap.Offset++;
-	}
-
+        buffer->GPUDescHandle.ptr += descHeap.IncrementSize * descHeap.Offset;    
+        descHeap.Offset++;
+    }
+    
     switch (desc.ResourceUsage)
     {
     case EResourceUsage::VertexBuffer:
@@ -189,17 +221,17 @@ create_view:
     {
         D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc{};
         cbvDesc.BufferLocation = buffer->UploadResource->GetGPUVirtualAddress();
-        cbvDesc.SizeInBytes = bufferResourceDesc.Width;
+        cbvDesc.SizeInBytes = desc.Width;
         m_Device->CreateConstantBufferView(&cbvDesc, buffer->CPUDescHandle);
         buffer->UploadResource->Map(0, nullptr, &buffer->MapPtr);
-		buffer->GPUDescHandle = {cbvDesc.BufferLocation};
+        buffer->GPUDescHandle = {cbvDesc.BufferLocation};
     }
     break;
     case EResourceUsage::UnorderedAccess:
     {	
         D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc{};
         uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-		uavDesc.Buffer.FirstElement = 0;
+        uavDesc.Buffer.FirstElement = 0;
         uavDesc.Buffer.NumElements = desc.Width / desc.ElementByteStride;
         uavDesc.Buffer.StructureByteStride = desc.ElementByteStride; 
         m_Device->CreateUnorderedAccessView(buffer->VidMemBuffer, nullptr, &uavDesc, buffer->CPUDescHandle);
@@ -208,7 +240,7 @@ create_view:
     case EResourceUsage::ShaderResource:
     {
         D3D12_SHADER_RESOURCE_VIEW_DESC viewDesc = {};
-        viewDesc.Format = bufferResourceDesc.Format;
+        viewDesc.Format = DX12::ToDX12Format(desc.Format);
         viewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D; // todo change
         viewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
         viewDesc.Texture2D.MipLevels = 1;
@@ -216,10 +248,8 @@ create_view:
     }
     break; default: ax_assert(false); break;
     }
-		
-	// todo give a name
-	// buffer->VidMemBuffer->SetName(L"AX vertex buffer vid mem");
-	return (IBuffer*)buffer;
+
+    return static_cast<IBuffer*>(buffer);
 }
 
 IPipeline* D3D12Context::CreateGraphicsPipeline(PipelineInfo& info)

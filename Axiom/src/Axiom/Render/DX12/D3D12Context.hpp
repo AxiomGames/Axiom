@@ -20,7 +20,7 @@ public:
 	~D3D12Context();
 	void Initialize(SharedPtr<INativeWindow> window) override;
 	
-	IBuffer* CreateBuffer(const BufferDesc& description, ICommandList* commandList) override;
+	IBuffer* CreateBuffer(BufferDesc& description, ICommandList* commandList) override;
 	IPipeline* CreateGraphicsPipeline(PipelineInfo& info) override;
 	ICommandAllocator* CreateCommandAllocator(ECommandListType type) override;
 	ICommandList* CreateCommandList(ICommandAllocator* allocator, ECommandListType type) override;
@@ -41,6 +41,8 @@ public:
 	ID3D12Device8* GetDevice() { return m_Device; };
 private:
     ID3D12RootSignature* CreateRootSignature(DescriptorSetDesc& desc);
+    void AllocateAndUploadBuffer(BufferDesc& desc, D3D12Buffer* buffer, ID3D12GraphicsCommandList6* cmdList);
+    void DirectUploadBuffer(BufferDesc& desc, D3D12Buffer* buffer, ID3D12GraphicsCommandList6* cmdList);
 private:
     SharedPtr<INativeWindow> m_Window;
 	ID3D12DescriptorHeap* m_DescriptorHeap = nullptr;

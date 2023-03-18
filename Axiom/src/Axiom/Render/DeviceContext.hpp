@@ -17,7 +17,7 @@ struct ICommandQueue : IGraphicsResource
 struct IDeviceContext 
 {
 	virtual void Initialize(SharedPtr<INativeWindow> window) = 0;
-	virtual IBuffer* CreateBuffer(const BufferDesc& description, ICommandList* commandList) = 0;
+	virtual IBuffer* CreateBuffer(BufferDesc& description, ICommandList* commandList) = 0;
 
 	virtual IPipeline* CreateGraphicsPipeline(PipelineInfo& info) = 0;
 	virtual ICommandAllocator* CreateCommandAllocator(ECommandListType type) = 0; // aka command pool in vulkan

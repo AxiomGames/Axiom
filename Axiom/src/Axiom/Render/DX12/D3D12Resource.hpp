@@ -15,10 +15,10 @@ struct D3D12Buffer : public IBuffer
     D3D12MA::Allocation* VidAlloc{};
     void* MapPtr = nullptr;
 
-	union
-	{
-		D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
-		D3D12_INDEX_BUFFER_VIEW indexBufferView;
+    union
+    {
+        D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
+        D3D12_INDEX_BUFFER_VIEW indexBufferView;
         struct
         {
             // for srv_cbv_uav
@@ -26,13 +26,13 @@ struct D3D12Buffer : public IBuffer
             D3D12_GPU_DESCRIPTOR_HANDLE GPUDescHandle;
         };
     };
-
-	void Release() override
-	{
+    
+    void Release() override
+    {
         // delete Allocation;
         ReleaseResource(UploadResource);
         ReleaseResource(VidMemBuffer);
-	}
+    }
 };
 
 struct D3D12Image : IImage

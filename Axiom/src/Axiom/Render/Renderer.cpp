@@ -91,23 +91,23 @@ GraphicsRenderer::GraphicsRenderer(SharedPtr<UIWindow> window)
 #ifdef AX_WIN32
 	m_Context = new D3D12Context();
 #endif
-	m_Window = window;
-	m_NativeWindow = window->GetNativeWindow();
-	m_Context->Initialize(m_NativeWindow);
-	// todo: nativeWindow->AddOnResize(OnResize);
-
-	m_CommandQueue = m_Context->CreateCommandQueue(ECommandListType::Direct, ECommandQueuePriority::Normal);
+    m_Window = window;
+    m_NativeWindow = window->GetNativeWindow();
+    m_Context->Initialize(m_NativeWindow);
+    // todo: nativeWindow->AddOnResize(OnResize);
+    
+    m_CommandQueue = m_Context->CreateCommandQueue(ECommandListType::Direct, ECommandQueuePriority::Normal);
     m_Swapchain = m_Context->CreateSwapChain(m_CommandQueue, EGraphicsFormat::RGBA8);
-	// we may want to store command allocator and fence value in struct called frame context
+    // we may want to store command allocator and fence value in struct called frame context
     // iedoc has seperate allocators for each frame
     m_CommandAllocator = m_Context->CreateCommandAllocator(ECommandListType::Direct);
-	// todo create for each thread
-	m_CommandList = m_Context->CreateCommandList(m_CommandAllocator, ECommandListType::Direct);
-
-	int width, height, comp;
+    // todo create for each thread
+    m_CommandList = m_Context->CreateCommandList(m_CommandAllocator, ECommandListType::Direct);
+    
+    int width, height, comp;
     stbi_uc* image = stbi_load("../EngineAssets/Images/earthmap.jpg", &width, &height, &comp, 4);
     
-	BufferDesc imageDesc{};
+    BufferDesc imageDesc{};
     imageDesc.Data = image;
     imageDesc.Format = EGraphicsFormat::RGBA8;
     imageDesc.ResourceUsage = EResourceUsage::ShaderResource;
@@ -115,69 +115,69 @@ GraphicsRenderer::GraphicsRenderer(SharedPtr<UIWindow> window)
     imageDesc.Width = width;
     imageDesc.Height = height;
     m_CheckerTexture = m_Context->CreateBuffer(imageDesc, m_CommandList);
-	
+    
     // create mvp constant buffers for each frame
-	for (int i = 0; i < g_NumBackBuffers; ++i)
-	{
-		BufferDesc cbDesc{};
-		cbDesc.BufferType = EBufferType::Buffer;
-		cbDesc.Width = sizeof(Matrix4);
-		cbDesc.FrameIndex = i;
-		cbDesc.ResourceUsage = EResourceUsage::ConstantBuffer;
-		cbDesc.flags = EBufferDescFlags::DirectUpload;
+    for (int i = 0; i < g_NumBackBuffers; ++i)
+    {
+    	BufferDesc cbDesc{};
+    	cbDesc.BufferType = EBufferType::Buffer;
+    	cbDesc.Width = sizeof(Matrix4);
+    	cbDesc.FrameIndex = i;
+    	cbDesc.ResourceUsage = EResourceUsage::ConstantBuffer;
+    	cbDesc.flags = EBufferDescFlags::DirectUpload;
         m_MatrixCBPerFrame[i] = m_Context->CreateBuffer(cbDesc, m_CommandList);
-	}
-
-	BufferDesc bufferDesc{};
-	bufferDesc.Data = (void*)vertices;
-	bufferDesc.ResourceUsage = EResourceUsage::VertexBuffer;
-	bufferDesc.ElementByteStride = sizeof(Vertex);
-	bufferDesc.Width = sizeof(Vertex) * _countof(vertices);
-	bufferDesc.Height = 1;
-	bufferDesc.BufferType = EBufferType::Buffer;
-	bufferDesc.Format = EGraphicsFormat::UNKNOWN;
-	m_VertexBuffer = m_Context->CreateBuffer(bufferDesc, m_CommandList);
-
-	bufferDesc.Data = (void*)indices;
-	bufferDesc.ResourceUsage = EResourceUsage::IndexBuffer;
-	bufferDesc.ElementByteStride = sizeof(uint32);
-	bufferDesc.Width = sizeof(uint32) * _countof(indices);
-	bufferDesc.Format = EGraphicsFormat::UNKNOWN;
-	m_IndexBuffer = m_Context->CreateBuffer(bufferDesc, m_CommandList);
-
-	char* shaderCode = ReadAllFile("../EngineAssets/Shaders/PBR.hlsl");
-	m_PipelineInfo.VertexShader = m_Context->CreateShader(shaderCode, "VS", EShaderType::Vertex);
-	m_PipelineInfo.FragmentShader = m_Context->CreateShader(shaderCode, "PS", EShaderType::Pixel);
-	m_PipelineInfo.numRenderTargets = 1;
+    }
+    
+    BufferDesc bufferDesc{};
+    bufferDesc.Data = (void*)vertices;
+    bufferDesc.ResourceUsage = EResourceUsage::VertexBuffer;
+    bufferDesc.ElementByteStride = sizeof(Vertex);
+    bufferDesc.Width = sizeof(Vertex) * _countof(vertices);
+    bufferDesc.Height = 1;
+    bufferDesc.BufferType = EBufferType::Buffer;
+    bufferDesc.Format = EGraphicsFormat::UNKNOWN;
+    m_VertexBuffer = m_Context->CreateBuffer(bufferDesc, m_CommandList);
+    
+    bufferDesc.Data = (void*)indices;
+    bufferDesc.ResourceUsage = EResourceUsage::IndexBuffer;
+    bufferDesc.ElementByteStride = sizeof(uint32);
+    bufferDesc.Width = sizeof(uint32) * _countof(indices);
+    bufferDesc.Format = EGraphicsFormat::UNKNOWN;
+    m_IndexBuffer = m_Context->CreateBuffer(bufferDesc, m_CommandList);
+    
+    char* shaderCode = ReadAllFile("../EngineAssets/Shaders/PBR.hlsl");
+    m_PipelineInfo.VertexShader = m_Context->CreateShader(shaderCode, "VS", EShaderType::Vertex);
+    m_PipelineInfo.FragmentShader = m_Context->CreateShader(shaderCode, "PS", EShaderType::Pixel);
+    m_PipelineInfo.numRenderTargets = 1;
     m_PipelineInfo.RTVFormats[0] = EGraphicsFormat::RGBA8;
     m_PipelineInfo.DepthStencilFormat = EGraphicsFormat::D32F;
-
-	m_PipelineInfo.numInputLayout = 2;
-	m_PipelineInfo.inputLayouts[0] = { "POSITION", VertexAttribType::Float3 };
-	m_PipelineInfo.inputLayouts[1] = { "TEXCOORD", VertexAttribType::Float2 };
-
-	DescriptorSetDesc& descriptorDesc = m_PipelineInfo.descriptorSet;
-	descriptorDesc.BindingCount = 2;
-	descriptorDesc.Bindings[0].Type = EDescriptorType::ConstantBuffer;
-	descriptorDesc.Bindings[0].ShaderVisibility = EShaderType::Vertex;
-	descriptorDesc.Bindings[1].Type = EDescriptorType::ShaderResource;
-	descriptorDesc.Bindings[1].ShaderVisibility = EShaderType::Pixel;
-	descriptorDesc.NumSamplers = 1;
-	descriptorDesc.Samplers[0].AdressU = descriptorDesc.Samplers[0].AdressV =
-		descriptorDesc.Samplers[0].AdressW = ETextureAddressMode::ClampToEdge;
-	descriptorDesc.Samplers[0].BorderColor = ETextureBorderColor::OpaqueBlack;
-	descriptorDesc.Samplers[0].ShaderVisibility = EShaderType::Pixel;
-	// descriptorDesc.Samplers[0].MagFilter = EFiltering::Nearest; // nearest for default
-
-	m_Pipeline = m_Context->CreateGraphicsPipeline(m_PipelineInfo);
+    
+    m_PipelineInfo.numInputLayout = 2;
+    m_PipelineInfo.inputLayouts[0] = { "POSITION", VertexAttribType::Float3 };
+    m_PipelineInfo.inputLayouts[1] = { "TEXCOORD", VertexAttribType::Float2 };
+    
+    DescriptorSetDesc& descriptorDesc = m_PipelineInfo.descriptorSet;
+    descriptorDesc.BindingCount = 2;
+    descriptorDesc.Bindings[0].Type = EDescriptorType::ConstantBuffer;
+    descriptorDesc.Bindings[0].ShaderVisibility = EShaderType::Vertex;
+    descriptorDesc.Bindings[1].Type = EDescriptorType::ShaderResource;
+    descriptorDesc.Bindings[1].ShaderVisibility = EShaderType::Pixel;
+    descriptorDesc.NumSamplers = 1;
+    descriptorDesc.Samplers[0].BorderColor = ETextureBorderColor::OpaqueBlack;
+    descriptorDesc.Samplers[0].ShaderVisibility = EShaderType::Pixel;
+    descriptorDesc.Samplers[0].AdressU = descriptorDesc.Samplers[0].AdressV = 
+                                         descriptorDesc.Samplers[0].AdressW = ETextureAddressMode::ClampToEdge;
+    // descriptorDesc.Samplers[0].MagFilter = EFiltering::Nearest; // nearest for default
+    
+    m_Pipeline = m_Context->CreateGraphicsPipeline(m_PipelineInfo);
     // iedoc has seperate fences for each frame
-	m_Fence = m_Context->CreateFence();
-
-	m_CommandList->Close();
+    m_Fence = m_Context->CreateFence();
+    
+    m_CommandList->Close();
     m_CommandQueue->ExecuteCommandLists(&m_CommandList, 1);
-
-	WaitForGPU();
-	free(shaderCode);
+    
+    WaitForGPU();
+    free(shaderCode);
 }
 
 void GraphicsRenderer::Render()
