@@ -148,36 +148,37 @@ struct InputLayout
 
 struct PipelineInfo
 {
-	static constexpr int MaxRenderTargets = 16;
-
-	IShader* VertexShader      = nullptr;
-	IShader* FragmentShader    = nullptr;
-	IShader* HullShader        = nullptr;
-	IShader* DomainShader      = nullptr;
-	IShader* GeometryShader    = nullptr;
-	IShader* TesellationShader = nullptr;
-
-	EPrimitiveType primitiveType = EPrimitiveType::Triangle;
-	ECullMode cullMode = ECullMode::None;
-	EFillMode fillMode = EFillMode::Fill;
-	bool counterClockWise = false;
-
-	int32 numRenderTargets = 1;
+    static constexpr int MaxRenderTargets = 16;
+    
+    IShader* VertexShader      = nullptr;
+    IShader* FragmentShader    = nullptr;
+    IShader* HullShader        = nullptr;
+    IShader* DomainShader      = nullptr;
+    IShader* GeometryShader    = nullptr;
+    IShader* TesellationShader = nullptr;
+    
+    EPrimitiveType primitiveType = EPrimitiveType::Triangle;
+    ECullMode cullMode = ECullMode::None;
+    EFillMode fillMode = EFillMode::Fill;
+    bool counterClockWise = false;
+    
+    int32 numRenderTargets = 1;
     EGraphicsFormat DepthStencilFormat = EGraphicsFormat::UNKNOWN;
     EGraphicsFormat RTVFormats[MaxRenderTargets]{};
-
-	bool AlphaToCoverageEnable = false;
-	bool IndependentBlendEnable = false;
-
-	BlendDesc RenderTargetBlendDescs[MaxRenderTargets]{};
-	
-	DescriptorSetDesc descriptorSet{};
-	
-	uint32 numInputLayout = 0u;
-	InputLayout inputLayouts[8]{};
-
-	bool enableMultiSampling = false;
-	SampleDesc sampleDesc{}; // multisampling parameters
+    
+    bool AlphaToCoverageEnable = false;
+    bool IndependentBlendEnable = false;
+    
+    BlendDesc RenderTargetBlendDescs[MaxRenderTargets]{};
+    
+    DescriptorSetDesc descriptorSet{};
+    
+    uint32 numInputLayout = 0u;
+    InputLayout inputLayouts[8]{};
+    
+	// not used for now
+    bool enableMultiSampling = false;
+    SampleDesc sampleDesc{}; // multisampling parameters
 };
 
 struct IPipeline : IGraphicsResource

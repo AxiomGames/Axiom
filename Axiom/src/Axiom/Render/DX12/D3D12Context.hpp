@@ -17,40 +17,40 @@ struct D3D12DescriptorHeap //  DescriptorPool in vk
 class D3D12Context : public IDeviceContext
 {
 public:
-	~D3D12Context();
-	void Initialize(SharedPtr<INativeWindow> window) override;
-	
-	IBuffer* CreateBuffer(BufferDesc& description, ICommandList* commandList) override;
+    ~D3D12Context();
+    void Initialize(SharedPtr<INativeWindow> window) override;
+    
+    IBuffer* CreateBuffer(BufferDesc& description, ICommandList* commandList) override;
     IImage* CreateImage(BufferDesc& description, ICommandList* commandList) override;
     IPipeline* CreateGraphicsPipeline(PipelineInfo& info) override;
-	ICommandAllocator* CreateCommandAllocator(ECommandListType type) override;
-	ICommandList* CreateCommandList(ICommandAllocator* allocator, ECommandListType type) override;
-	ICommandQueue* CreateCommandQueue(ECommandListType type, ECommandQueuePriority priority) override;
+    ICommandAllocator* CreateCommandAllocator(ECommandListType type) override;
+    ICommandList* CreateCommandList(ICommandAllocator* allocator, ECommandListType type) override;
+    ICommandQueue* CreateCommandQueue(ECommandListType type, ECommandQueuePriority priority) override;
     ISwapChain* CreateSwapChain(ICommandQueue* commandQueue, EGraphicsFormat format) override;
-	IFence* CreateFence() override;
+    IFence* CreateFence() override;
     void MapBuffer(IBuffer* buffer, void const* data, uint64 size) override;
-
-	IShader* CreateShader(const char* sourceCode, const char* functionName, EShaderType shaderType) override;
-	
-	void DestroyResource(IGraphicsResource* resource) override;
-
-	void WaitFence(IFence* fence, uint32 value) override;
-
-	void Release() override;
     
-	ID3D12Device8* GetDevice() { return m_Device; };
+    IShader* CreateShader(const char* sourceCode, const char* functionName, EShaderType shaderType) override;
+    
+    void DestroyResource(IGraphicsResource* resource) override;
+    
+    void WaitFence(IFence* fence, uint32 value) override;
+    
+    void Release() override;
+    
+    ID3D12Device8* GetDevice() { return m_Device; };
 private:
     ID3D12RootSignature* CreateRootSignature(DescriptorSetDesc& desc);
     void AllocateAndUploadBuffer(BufferDesc& desc, D3D12Buffer* buffer, ID3D12GraphicsCommandList6* cmdList);
     void DirectUploadBuffer(BufferDesc& desc, D3D12Buffer* buffer, ID3D12GraphicsCommandList6* cmdList);
 private:
     SharedPtr<INativeWindow> m_Window;
-	ID3D12DescriptorHeap* m_DescriptorHeap = nullptr;
+    ID3D12DescriptorHeap* m_DescriptorHeap = nullptr;
     ID3D12Device8* m_Device = nullptr;
-	IDXGIFactory7* DXFactory = nullptr;
+    IDXGIFactory7* DXFactory = nullptr;
     D3D12MA::Allocator* m_Allocator;
-
-	HANDLE m_FenceEvent = nullptr;
+    
+    HANDLE m_FenceEvent = nullptr;
     D3D12DescriptorHeap m_DescriptorHeaps[4]{}; 
 public:
     D3D12DescriptorHeap m_CBV_SRV_UAV_HEAPS[g_NumBackBuffers]{};

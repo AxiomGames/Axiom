@@ -64,6 +64,7 @@ _deps
 *.sln.docstates
 *.vcxproj
 *.vcxproj.filters
+*.sln
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

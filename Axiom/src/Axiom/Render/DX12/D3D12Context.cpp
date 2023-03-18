@@ -254,7 +254,7 @@ IBuffer* D3D12Context::CreateBuffer(BufferDesc& desc, ICommandList* commandList)
     break;
     default: ax_assert(false); break;
     }
-
+    buffer->Desc = desc;
     return static_cast<IBuffer*>(buffer);
 }
 
@@ -273,6 +273,7 @@ IImage* D3D12Context::CreateImage(BufferDesc& desc, ICommandList* commandList)
     viewDesc.Texture2D.MipLevels = 1;
     m_Device->CreateShaderResourceView(buffer->VidMemBuffer, &viewDesc, buffer->CPUDescHandle);
     buffer->VidMemBuffer->SetName(L"D3D12Context Image");
+    buffer->Desc = desc;
     return buffer;
 }
 
@@ -297,7 +298,7 @@ IPipeline* D3D12Context::CreateGraphicsPipeline(PipelineInfo& info)
 	D3D12_BLEND_DESC& blendDesc = psoDesc.BlendState;
 	blendDesc.AlphaToCoverageEnable = info.AlphaToCoverageEnable;
 	blendDesc.IndependentBlendEnable = info.IndependentBlendEnable;
-	
+	// create blend descriptions
 	for (int i = 0; i < info.numRenderTargets; ++i)
 	{
 		psoDesc.RTVFormats[i] = DX12::ToDX12Format(info.RTVFormats[i]);

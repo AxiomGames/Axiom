@@ -16,26 +16,26 @@ struct ICommandQueue : IGraphicsResource
 
 struct IDeviceContext 
 {
-	virtual void Initialize(SharedPtr<INativeWindow> window) = 0;
-	virtual IBuffer* CreateBuffer(BufferDesc& description, ICommandList* commandList) = 0;
+    virtual void Initialize(SharedPtr<INativeWindow> window) = 0;
+    virtual IBuffer* CreateBuffer(BufferDesc& description, ICommandList* commandList) = 0;
     virtual IImage* CreateImage(BufferDesc& description, ICommandList* commandList) = 0;
-
-	virtual IPipeline* CreateGraphicsPipeline(PipelineInfo& info) = 0;
-	virtual ICommandAllocator* CreateCommandAllocator(ECommandListType type) = 0; // aka command pool in vulkan
-	virtual ICommandList* CreateCommandList(ICommandAllocator* allocator, ECommandListType type) = 0;
-	virtual ICommandQueue* CreateCommandQueue(ECommandListType type, ECommandQueuePriority priority) = 0; 
+    
+    virtual IPipeline* CreateGraphicsPipeline(PipelineInfo& info) = 0;
+    virtual ICommandAllocator* CreateCommandAllocator(ECommandListType type) = 0; // aka command pool in vulkan
+    virtual ICommandList* CreateCommandList(ICommandAllocator* allocator, ECommandListType type) = 0;
+    virtual ICommandQueue* CreateCommandQueue(ECommandListType type, ECommandQueuePriority priority) = 0; 
     virtual ISwapChain* CreateSwapChain(ICommandQueue* commandQueue, EGraphicsFormat format) = 0;
-	virtual IFence* CreateFence() = 0;
-	virtual IShader* CreateShader(const char* sourceCode, const char* functionName, EShaderType shaderType) = 0;
+    virtual IFence* CreateFence() = 0;
+    virtual IShader* CreateShader(const char* sourceCode, const char* functionName, EShaderType shaderType) = 0;
     
     virtual void MapBuffer(IBuffer* buffer, void const* data, uint64 size) = 0;
-
-	virtual void DestroyResource(IGraphicsResource* resource) = 0;
-
-	virtual void WaitFence(IFence* fence, uint32 fenceValue) = 0;
-	virtual void Release() = 0;
-
-	// todo add coppy buffer 
+    
+    virtual void DestroyResource(IGraphicsResource* resource) = 0;
+    
+    virtual void WaitFence(IFence* fence, uint32 fenceValue) = 0;
+    virtual void Release() = 0;
+    
+    // todo add coppy buffer 
 };
 
 struct ICommandList : IGraphicsResource
@@ -43,7 +43,7 @@ struct ICommandList : IGraphicsResource
     virtual void Initialize(IDeviceContext* deviceContext) = 0;
     virtual void Close() = 0;
     virtual void Reset(ICommandAllocator* commandAllocator, IPipeline* pipeline) = 0;
-
+    
     virtual void SetPipelineState(IPipeline* pipeline) = 0;
     virtual void DrawIndexedInstanced(uint32 numIndex, uint32 numInstance, uint32 startIndex, int startVertex, uint32 startInstance) = 0;
     virtual void SetBufferBarrier(IBuffer* pBuffer, const PipelineBarrier& pBarrier) = 0;
@@ -52,7 +52,7 @@ struct ICommandList : IGraphicsResource
     virtual void SetRenderTargets(IImage** images, uint32 numImages, IImage* depthStencil) = 0;
     virtual void SetConstantBufferView(int index, IBuffer* buffer) = 0;
     virtual void SetTexture(uint32 index, IImage* texture) = 0;
-
+    
     virtual void SetImageBarrier(IImage* pBuffer, const PipelineBarrier& pBarrier) = 0;
     virtual void SetVertexBuffers(IBuffer** vertexBuffers, uint32 numVertexBuffers) = 0;
     virtual void SetIndexBuffer(IBuffer* indexBuffer) = 0;
