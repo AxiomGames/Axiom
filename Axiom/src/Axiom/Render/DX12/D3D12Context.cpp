@@ -42,6 +42,8 @@ void D3D12Context::Initialize(SharedPtr<INativeWindow> window)
     // this heaps will going to be inside of d3d12 context because creating rhi for this is hard not compatible with vk, 
     // so since we create this heaps here these are not thread safe
     
+    LPCWSTR names[] = { L"DX12Ctx CBV_SRV_UAV", L"DX12Ctx Sampler", L"DX12Ctx RTV", L"DX12Ctx DSV" };
+
     // create cbv_srv_uav heaps for each frame, number of descriptors are now restricted to 32
     for (int i = 0; i < g_NumBackBuffers; ++i)
     {
@@ -52,9 +54,9 @@ void D3D12Context::Initialize(SharedPtr<INativeWindow> window)
     
         DXCall(m_Device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&m_CBV_SRV_UAV_HEAPS[i].Heap)));
         m_CBV_SRV_UAV_HEAPS[i].IncrementSize = m_Device->GetDescriptorHandleIncrementSize(heapDesc.Type);
-		m_CBV_SRV_UAV_HEAPS[i].Heap->SetName(L"cbv heap");
+		m_CBV_SRV_UAV_HEAPS[i].Heap->SetName(names[0]);
 	}
-    
+
     // start from 1 because cbv_srv_uav is created, this loop will create sampler, rtv, dsv descriptor heaps
     for (int i = 1; i < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES; ++i)     
     {
@@ -64,20 +66,15 @@ void D3D12Context::Initialize(SharedPtr<INativeWindow> window)
         heapDesc.Flags = (D3D12_DESCRIPTOR_HEAP_FLAGS)(i == 1); // if sampler, flag is shader_visible. otherwise flag is none
         DXCall(m_Device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&m_DescriptorHeaps[i].Heap)));
         m_DescriptorHeaps[i].IncrementSize = m_Device->GetDescriptorHandleIncrementSize(heapDesc.Type);
+        m_DescriptorHeaps[i].Heap->SetName(names[i]);
     }
 }
 
 static D3D12_RESOURCE_DESC CreateResourceDesc(const BufferDesc& desc, bool isTexture)
 {
-    static const D3D12_RESOURCE_DIMENSION bufferTypeLUT[] = { // texture arrays are not supported yet
-        D3D12_RESOURCE_DIMENSION_UNKNOWN  ,
-        D3D12_RESOURCE_DIMENSION_BUFFER	  , 
-        D3D12_RESOURCE_DIMENSION_TEXTURE1D,
-        D3D12_RESOURCE_DIMENSION_TEXTURE2D, 
-        D3D12_RESOURCE_DIMENSION_TEXTURE3D	
-    };
+    // texture arrays are not supported yet
     D3D12_RESOURCE_DESC bufferResourceDesc = {};
-    bufferResourceDesc.Dimension = bufferTypeLUT[(uint32)desc.BufferType];
+    bufferResourceDesc.Dimension = (D3D12_RESOURCE_DIMENSION)desc.BufferType;
     bufferResourceDesc.Alignment = 0;
     bufferResourceDesc.Width  = desc.Width;
     bufferResourceDesc.Height = desc.Height;
@@ -89,6 +86,16 @@ static D3D12_RESOURCE_DESC CreateResourceDesc(const BufferDesc& desc, bool isTex
     bufferResourceDesc.Layout = isTexture ? D3D12_TEXTURE_LAYOUT_UNKNOWN : D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
     bufferResourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;    
     return bufferResourceDesc;
+}
+
+static void IncrementBufferPointer(D3D12Buffer* buffer, D3D12DescriptorHeap& descHeap)
+{
+    // incrementing heap offset here, we will add other buffers and increment the pointers
+    buffer->CPUDescHandle = descHeap.Heap->GetCPUDescriptorHandleForHeapStart();
+    buffer->GPUDescHandle = descHeap.Heap->GetGPUDescriptorHandleForHeapStart();
+    buffer->CPUDescHandle.ptr += descHeap.IncrementSize * descHeap.Offset;    
+    buffer->GPUDescHandle.ptr += descHeap.IncrementSize * descHeap.Offset;    
+    descHeap.Offset++;
 }
 
 void D3D12Context::DirectUploadBuffer(BufferDesc& desc, D3D12Buffer* buffer, ID3D12GraphicsCommandList6* cmdList)
@@ -129,7 +136,10 @@ void D3D12Context::AllocateAndUploadBuffer(BufferDesc& desc, D3D12Buffer* buffer
     	&buffer->VidAlloc,
     	IID_PPV_ARGS(&buffer->VidMemBuffer)));
     
-    if (isTexture) { 
+
+    if (isTexture) 
+    {
+        // todo mipmaps
         m_Device->GetCopyableFootprints(&bufferResourceDesc, 0, 1, 0, nullptr, nullptr, nullptr, &bufferResourceDesc.Width); 
         bufferResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
     	bufferResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
@@ -176,7 +186,10 @@ IBuffer* D3D12Context::CreateBuffer(BufferDesc& desc, ICommandList* commandList)
 {
     D3D12Buffer* buffer = new D3D12Buffer();
     ID3D12GraphicsCommandList6* pCmd = static_cast<D3D12CommandList*>(commandList)->m_CmdList;
+    
+    desc.Height = Math::Max(1, desc.Height); // minimum height for dx12 is 1
 
+    // if EResourceUsage is constant buffer align buffer size
     if (desc.ResourceUsage == EResourceUsage::ConstantBuffer) desc.Width = (desc.Width + 255) & ~255;
 
     if (uint32(desc.flags & EBufferDescFlags::DirectUpload))
@@ -188,19 +201,15 @@ IBuffer* D3D12Context::CreateBuffer(BufferDesc& desc, ICommandList* commandList)
         AllocateAndUploadBuffer(desc, buffer, pCmd);
     }
     
-    constexpr EResourceUsage CBV_SRV_UAV = EResourceUsage::ConstantBuffer | EResourceUsage::ShaderResource | EResourceUsage::UnorderedAccess;
+    constexpr EResourceUsage CBV_UAV = EResourceUsage::ConstantBuffer | EResourceUsage::UnorderedAccess;
     D3D12DescriptorHeap& descHeap = m_CBV_SRV_UAV_HEAPS[desc.FrameIndex]; //m_DescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV];
     
-    if (uint32(desc.ResourceUsage & CBV_SRV_UAV)) // is our buffer cbv or srv or uav?
+    // is our buffer cbv or uav?
+    if (uint32(desc.ResourceUsage & CBV_UAV)) // no need for vertex or index buffers
     {
-        // incrementing heap offset here, we will add other buffers and increment the pointers
-        buffer->CPUDescHandle = descHeap.Heap->GetCPUDescriptorHandleForHeapStart();
-        buffer->GPUDescHandle = descHeap.Heap->GetGPUDescriptorHandleForHeapStart();
-        buffer->CPUDescHandle.ptr += descHeap.IncrementSize * descHeap.Offset;    
-        buffer->GPUDescHandle.ptr += descHeap.IncrementSize * descHeap.Offset;    
-        descHeap.Offset++;
+        IncrementBufferPointer(buffer, descHeap);
     }
-    
+
     switch (desc.ResourceUsage)
     {
     case EResourceUsage::VertexBuffer:
@@ -208,6 +217,9 @@ IBuffer* D3D12Context::CreateBuffer(BufferDesc& desc, ICommandList* commandList)
         buffer->vertexBufferView.BufferLocation = buffer->VidMemBuffer->GetGPUVirtualAddress();  
         buffer->vertexBufferView.SizeInBytes = desc.Width;
         buffer->vertexBufferView.StrideInBytes = desc.ElementByteStride; 
+        // wchar_t name[256];
+        // wsprintfW(name, L"%s %s", L"D3D12Context Vertex Buffer", "other information");
+        buffer->VidMemBuffer->SetName(L"D3D12Context Vertex Buffer");
     }
     break;
     case EResourceUsage::IndexBuffer:
@@ -215,6 +227,7 @@ IBuffer* D3D12Context::CreateBuffer(BufferDesc& desc, ICommandList* commandList)
         buffer->indexBufferView.BufferLocation = buffer->VidMemBuffer->GetGPUVirtualAddress();  
         buffer->indexBufferView.SizeInBytes = desc.Width;
         buffer->indexBufferView.Format = DXGI_FORMAT_R32_UINT; 
+        buffer->VidMemBuffer->SetName(L"D3D12Context Index Buffer");
     }
     break;
     case EResourceUsage::ConstantBuffer:
@@ -225,6 +238,7 @@ IBuffer* D3D12Context::CreateBuffer(BufferDesc& desc, ICommandList* commandList)
         m_Device->CreateConstantBufferView(&cbvDesc, buffer->CPUDescHandle);
         buffer->UploadResource->Map(0, nullptr, &buffer->MapPtr);
         buffer->GPUDescHandle = {cbvDesc.BufferLocation};
+        buffer->UploadResource->SetName(L"D3D12Context Constant Buffer");
     }
     break;
     case EResourceUsage::UnorderedAccess:
@@ -235,21 +249,31 @@ IBuffer* D3D12Context::CreateBuffer(BufferDesc& desc, ICommandList* commandList)
         uavDesc.Buffer.NumElements = desc.Width / desc.ElementByteStride;
         uavDesc.Buffer.StructureByteStride = desc.ElementByteStride; 
         m_Device->CreateUnorderedAccessView(buffer->VidMemBuffer, nullptr, &uavDesc, buffer->CPUDescHandle);
+        buffer->VidMemBuffer->SetName(L"D3D12Context UAV Buffer");
     }
     break;
-    case EResourceUsage::ShaderResource:
-    {
-        D3D12_SHADER_RESOURCE_VIEW_DESC viewDesc = {};
-        viewDesc.Format = DX12::ToDX12Format(desc.Format);
-        viewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D; // todo change
-        viewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-        viewDesc.Texture2D.MipLevels = 1;
-        m_Device->CreateShaderResourceView(buffer->VidMemBuffer, &viewDesc, buffer->CPUDescHandle);   
-    }
-    break; default: ax_assert(false); break;
+    default: ax_assert(false); break;
     }
 
     return static_cast<IBuffer*>(buffer);
+}
+
+IImage* D3D12Context::CreateImage(BufferDesc& desc, ICommandList* commandList)
+{
+    D3D12Image* buffer = new D3D12Image();
+    ID3D12GraphicsCommandList6* pCmd = static_cast<D3D12CommandList*>(commandList)->m_CmdList;
+    
+    IncrementBufferPointer(buffer, m_CBV_SRV_UAV_HEAPS[0]);
+    AllocateAndUploadBuffer(desc, buffer, pCmd);
+
+    D3D12_SHADER_RESOURCE_VIEW_DESC viewDesc = {};
+    viewDesc.Format = DX12::ToDX12Format(desc.Format);
+    viewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D; // todo change
+    viewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    viewDesc.Texture2D.MipLevels = 1;
+    m_Device->CreateShaderResourceView(buffer->VidMemBuffer, &viewDesc, buffer->CPUDescHandle);
+    buffer->VidMemBuffer->SetName(L"D3D12Context Image");
+    return buffer;
 }
 
 IPipeline* D3D12Context::CreateGraphicsPipeline(PipelineInfo& info)
@@ -327,7 +351,7 @@ IPipeline* D3D12Context::CreateGraphicsPipeline(PipelineInfo& info)
 
 	DXCall(m_Device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&outPipeline->PipelineState)));
 	outPipeline->info = info;
-	return outPipeline;
+    return static_cast<IPipeline*>(outPipeline);
 }
 
 ICommandAllocator* D3D12Context::CreateCommandAllocator(ECommandListType type)

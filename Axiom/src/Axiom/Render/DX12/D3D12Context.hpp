@@ -7,28 +7,28 @@
 
 namespace D3D12MA { class Allocator; }
 
+struct D3D12DescriptorHeap //  DescriptorPool in vk
+{
+    ID3D12DescriptorHeap* Heap = nullptr;
+    uint32 IncrementSize = 0u;
+    uint32 Offset = 0u;
+};
+
 class D3D12Context : public IDeviceContext
 {
-private:
-    struct D3D12DescriptorHeap //  DescriptorPool in vk
-    {
-        ID3D12DescriptorHeap* Heap = nullptr;
-        uint32 IncrementSize = 0u;
-        uint32 Offset = 0u;
-    };
 public:
 	~D3D12Context();
 	void Initialize(SharedPtr<INativeWindow> window) override;
 	
 	IBuffer* CreateBuffer(BufferDesc& description, ICommandList* commandList) override;
-	IPipeline* CreateGraphicsPipeline(PipelineInfo& info) override;
+    IImage* CreateImage(BufferDesc& description, ICommandList* commandList) override;
+    IPipeline* CreateGraphicsPipeline(PipelineInfo& info) override;
 	ICommandAllocator* CreateCommandAllocator(ECommandListType type) override;
 	ICommandList* CreateCommandList(ICommandAllocator* allocator, ECommandListType type) override;
 	ICommandQueue* CreateCommandQueue(ECommandListType type, ECommandQueuePriority priority) override;
     ISwapChain* CreateSwapChain(ICommandQueue* commandQueue, EGraphicsFormat format) override;
 	IFence* CreateFence() override;
     void MapBuffer(IBuffer* buffer, void const* data, uint64 size) override;
-    
 
 	IShader* CreateShader(const char* sourceCode, const char* functionName, EShaderType shaderType) override;
 	
@@ -81,7 +81,7 @@ public:
     void ClearRenderTarget(IImage* image, float color[4]) override;
     void ClearDepthStencil(IImage* image) override;
     void SetRenderTargets(IImage** images, uint32 numImages, IImage* depthStencil) override;
-    void SetTexture(uint32 index, IBuffer* texture);
+    void SetTexture(uint32 index, IImage* texture);
 
     void SetConstantBufferView(int index, IBuffer* buffer) override;
     void SetImageBarrier(IImage* pBuffer, const PipelineBarrier& pBarrier) override;

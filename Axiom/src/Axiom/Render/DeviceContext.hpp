@@ -18,6 +18,7 @@ struct IDeviceContext
 {
 	virtual void Initialize(SharedPtr<INativeWindow> window) = 0;
 	virtual IBuffer* CreateBuffer(BufferDesc& description, ICommandList* commandList) = 0;
+    virtual IImage* CreateImage(BufferDesc& description, ICommandList* commandList) = 0;
 
 	virtual IPipeline* CreateGraphicsPipeline(PipelineInfo& info) = 0;
 	virtual ICommandAllocator* CreateCommandAllocator(ECommandListType type) = 0; // aka command pool in vulkan
@@ -50,7 +51,7 @@ struct ICommandList : IGraphicsResource
     virtual void ClearDepthStencil(IImage* image) = 0;
     virtual void SetRenderTargets(IImage** images, uint32 numImages, IImage* depthStencil) = 0;
     virtual void SetConstantBufferView(int index, IBuffer* buffer) = 0;
-    virtual void SetTexture(uint32 index, IBuffer* texture) = 0;
+    virtual void SetTexture(uint32 index, IImage* texture) = 0;
 
     virtual void SetImageBarrier(IImage* pBuffer, const PipelineBarrier& pBarrier) = 0;
     virtual void SetVertexBuffers(IBuffer** vertexBuffers, uint32 numVertexBuffers) = 0;

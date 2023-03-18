@@ -47,13 +47,13 @@ D3D12SwapChain::D3D12SwapChain(const DX12SwapChainDesc& arguments)
 	{
 		D3D12Image* img = new D3D12Image();
 		m_BackBuffers[i] = img;
-		img->DescriptorHandle = hRTV;
+		img->CPUDescHandle = hRTV;
 		
-		DXCall(m_SwapChain->GetBuffer(i, IID_PPV_ARGS(&img->Resource)));
-		m_Device->CreateRenderTargetView(img->Resource, nullptr, img->DescriptorHandle);
+		DXCall(m_SwapChain->GetBuffer(i, IID_PPV_ARGS(&img->VidMemBuffer)));
+		m_Device->CreateRenderTargetView(img->VidMemBuffer, nullptr, img->CPUDescHandle);
 	
 		hRTV.ptr += RTVDescSize;
-		D3D12SetName(img->Resource, "Swapchain Render Target %d", i);
+		D3D12SetName(img->VidMemBuffer, "Swapchain Render Target %d", i);
 	}
 
     // create a depth stencil descriptor heap so we can get a pointer to the depth stencil buffer
@@ -84,7 +84,7 @@ D3D12SwapChain::D3D12SwapChain(const DX12SwapChainDesc& arguments)
       &resourceDesc,
       D3D12_RESOURCE_STATE_DEPTH_WRITE,
       &clearValue,
-      IID_PPV_ARGS(&m_DepthStencilBuffer->Resource)
+      IID_PPV_ARGS(&m_DepthStencilBuffer->VidMemBuffer)
     );
 
     D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
@@ -92,11 +92,11 @@ D3D12SwapChain::D3D12SwapChain(const DX12SwapChainDesc& arguments)
     depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
     depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
 
-	m_DepthStencilBuffer->DescriptorHandle = m_depthStencilDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	m_DepthStencilBuffer->CPUDescHandle = m_depthStencilDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 
     m_Device->CreateDepthStencilView(
-		m_DepthStencilBuffer->Resource, &depthStencilDesc,
-        m_DepthStencilBuffer->DescriptorHandle);
+		m_DepthStencilBuffer->VidMemBuffer, &depthStencilDesc,
+        m_DepthStencilBuffer->CPUDescHandle);
 }
 
 void D3D12SwapChain::Present(bool gsync, uint32 flags)
@@ -108,11 +108,11 @@ void D3D12SwapChain::Release()
 {
 	for (int i = 0; i < g_NumBackBuffers; i++)
 	{
-		m_BackBuffers[i]->Resource->Release();
+		m_BackBuffers[i]->VidMemBuffer->Release();
         delete m_BackBuffers[i];
 	}
     
-    m_DepthStencilBuffer->Resource->Release();
+    m_DepthStencilBuffer->VidMemBuffer->Release();
     delete m_DepthStencilBuffer;
 
 	m_depthStencilDescriptorHeap->Release();

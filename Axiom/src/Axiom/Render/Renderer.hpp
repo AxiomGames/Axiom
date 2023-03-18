@@ -25,7 +25,7 @@ private:
 	IFence* m_Fence;
 	IBuffer* m_IndexBuffer;
 	IBuffer* m_VertexBuffer;
-    IBuffer* m_CheckerTexture;
+    IImage* m_CheckerTexture;
 	SharedPtr<INativeWindow> m_NativeWindow;
 	PipelineInfo m_PipelineInfo{};
 	IBuffer* m_MatrixCBPerFrame[2]{}; // g_NumBackBuffers

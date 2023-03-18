@@ -65,7 +65,7 @@ void D3D12CommandList::SetImageBarrier(IImage* pImage, const PipelineBarrier& pB
 	D3D12_RESOURCE_BARRIER barrier = {};
 	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrier.Transition.pResource = dxBuffer->Resource;
+	barrier.Transition.pResource = dxBuffer->VidMemBuffer;
 	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 	barrier.Transition.StateBefore = DX12::ToDX12PipelineStage(pBarrier.CurrentStage);
 	barrier.Transition.StateAfter = DX12::ToDX12PipelineStage(pBarrier.NextStage);
@@ -75,13 +75,13 @@ void D3D12CommandList::SetImageBarrier(IImage* pImage, const PipelineBarrier& pB
 void D3D12CommandList::ClearRenderTarget(IImage* image, float color[4])
 {
 	D3D12Image* dxBuffer = static_cast<D3D12Image*>(image);
-	m_CmdList->ClearRenderTargetView(dxBuffer->DescriptorHandle, color, 0, 0);
+	m_CmdList->ClearRenderTargetView(dxBuffer->CPUDescHandle, color, 0, 0);
 }
 
 void D3D12CommandList::ClearDepthStencil(IImage* image)
 {
     D3D12Image* dxBuffer = static_cast<D3D12Image*>(image);
-    m_CmdList->ClearDepthStencilView(dxBuffer->DescriptorHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+    m_CmdList->ClearDepthStencilView(dxBuffer->CPUDescHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 }
 
 // todo add depth render target
@@ -90,10 +90,10 @@ void D3D12CommandList::SetRenderTargets(IImage** images, uint32 numImages, IImag
 	D3D12_CPU_DESCRIPTOR_HANDLE descHandles[16];
 	for (int i = 0; i < numImages; ++i)
 	{
-		descHandles[i] = static_cast<D3D12Image*>(images[i])->DescriptorHandle;
+		descHandles[i] = static_cast<D3D12Image*>(images[i])->CPUDescHandle;
 	}
     m_CmdList->OMSetRenderTargets(numImages, descHandles, false,
-		          depthStencil ? &((D3D12Image*)depthStencil)->DescriptorHandle : nullptr);
+		          depthStencil ? &((D3D12Image*)depthStencil)->CPUDescHandle : nullptr);
 }
 
 void D3D12CommandList::SetVertexBuffers(IBuffer** vertexBuffers, uint32 numVertexBuffers) 
@@ -113,9 +113,9 @@ void D3D12CommandList::SetIndexBuffer(IBuffer* indexBuffer)
 	m_CmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
-void D3D12CommandList::SetTexture(uint32 index, IBuffer* texture)
+void D3D12CommandList::SetTexture(uint32 index, IImage* texture)
 {
-    D3D12Buffer* dxBuffer = static_cast<D3D12Buffer*>(texture);
+    D3D12Image* dxBuffer = static_cast<D3D12Image*>(texture);
     m_CmdList->SetGraphicsRootDescriptorTable(index, dxBuffer->GPUDescHandle);
 }
 

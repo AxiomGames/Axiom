@@ -300,13 +300,7 @@ struct BufferDesc
 
 struct IBuffer : IGraphicsResource
 {
-	EResourceUsage ResourceUsage;
-	uint64 SizeInBytes = 0;
-	uint64 ElementByteStride = 0;
-	uint64 DataLen = 0;
-	uint64 DataOffset = 0;
-
-	void* BufferData;
+    BufferDesc Desc;
 };
 
 struct ISwapChain : IGraphicsResource

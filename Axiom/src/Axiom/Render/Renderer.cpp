@@ -114,7 +114,7 @@ GraphicsRenderer::GraphicsRenderer(SharedPtr<UIWindow> window)
     imageDesc.BufferType = EBufferType::Texture2D;
     imageDesc.Width = width;
     imageDesc.Height = height;
-    m_CheckerTexture = m_Context->CreateBuffer(imageDesc, m_CommandList);
+    m_CheckerTexture = m_Context->CreateImage(imageDesc, m_CommandList);
     
     // create mvp constant buffers for each frame
     for (int i = 0; i < g_NumBackBuffers; ++i)
@@ -170,7 +170,7 @@ GraphicsRenderer::GraphicsRenderer(SharedPtr<UIWindow> window)
     // descriptorDesc.Samplers[0].MagFilter = EFiltering::Nearest; // nearest for default
     
     m_Pipeline = m_Context->CreateGraphicsPipeline(m_PipelineInfo);
-    // iedoc has seperate fences for each frame
+    // some people has seperate fences for each frame
     m_Fence = m_Context->CreateFence();
     
     m_CommandList->Close();
@@ -205,7 +205,7 @@ void GraphicsRenderer::Render()
 
 	// rotate camera around our cube
 	static float f = 1.0f; f += 0.01f;
-	constexpr float distance = 3.1415f; 
+	constexpr float distance = 3.14159265f; // this is distance from cube but I did use pi anyways 
 	Vector3f position(sinf(f) * distance, 0.0f, cosf(f) * distance );
 	float verticalFOV = 65.0f, nearClip = 0.01f, farClip = 500.0f;
 
@@ -217,8 +217,8 @@ void GraphicsRenderer::Render()
 	m_CommandList->SetVertexBuffers(&m_VertexBuffer, 1);
     m_Context->MapBuffer(m_MatrixCBPerFrame[m_FrameIndex], &viewProjection, sizeof(Matrix4));
     
-	m_CommandList->SetConstantBufferView(0, m_MatrixCBPerFrame[m_FrameIndex]);
-    m_CommandList->SetTexture(1, m_CheckerTexture);
+	m_CommandList->SetConstantBufferView(0, m_MatrixCBPerFrame[m_FrameIndex]); // 0th thing in our descriptor set is cbuffer
+    m_CommandList->SetTexture(1, m_CheckerTexture); // 1th thing in our descriptor set is texture
 
     // m_CommandList->SetGraphicsPushConstants(m_Pipeline, EShaderType::Vertex, &viewProjection, sizeof(Matrix4));
 	

@@ -35,14 +35,12 @@ struct D3D12Buffer : public IBuffer
     }
 };
 
-struct D3D12Image : IImage
+struct D3D12Image : IImage, D3D12Buffer
 {
-	ID3D12Resource* Resource;
-
-	D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHandle;
-
-	void Release() override
-	{ ReleaseResource(Resource); }
+    void Release() override
+    {
+        D3D12Buffer::Release();
+    }
 };
 
 struct D3D12Pipeline : public IPipeline
