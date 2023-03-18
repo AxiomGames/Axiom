@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstdint>
+#include <stdint.h>
 
 #if AX_SHARED
 #ifdef AX_EXPORT
@@ -84,7 +84,6 @@ FINLINE constexpr T PopCount(T x)
 		return ((i + (i >> 4)) & 0xf0f0f0f0f0f0f0full) * 0x101010101010101ull >> 56;
 	}
 #endif
-	ax_assert(0);
 }
 
 template<typename T>
@@ -99,7 +98,6 @@ FINLINE  constexpr T TrailingZeroCount(T x)
 #else
 	return PopCount((x & -x) - 1);
 #endif
-	ax_assert(0);
 }
 
 template<typename T>
@@ -119,7 +117,6 @@ FINLINE  constexpr T LeadingZeroCount(T x)
 	x |= (x >> 16);
 	return 32 - PopCount(x);
 #endif
-	ax_assert(0);
 }
 
 typedef uint8_t uint8;

@@ -10,8 +10,6 @@
 #include <d3dcompiler.h>
 #include <wrl.h>
 
-using namespace Microsoft::WRL;
-
 #define AX_DEBUG_BREAK DebugBreak()
 
 #ifndef DXCall

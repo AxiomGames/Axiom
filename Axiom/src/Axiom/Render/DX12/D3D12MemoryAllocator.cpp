@@ -559,7 +559,7 @@ static bool IsFormatCompressed(DXGI_FORMAT format)
 }
 
 // Only some formats are supported. For others it returns 0.
-static UINT GetBitsPerPixel(DXGI_FORMAT format)
+static UINT GetBitsPerFragment(DXGI_FORMAT format)
 {
     switch (format)
     {
@@ -700,19 +700,19 @@ static bool CanUseSmallAlignment(const D3D12_RESOURCE_DESC_T& resourceDesc)
 
     UINT sizeX = (UINT)resourceDesc.Width;
     UINT sizeY = resourceDesc.Height;
-    UINT bitsPerPixel = GetBitsPerPixel(resourceDesc.Format);
-    if (bitsPerPixel == 0)
+    UINT bitsPerFragment = GetBitsPerFragment(resourceDesc.Format);
+    if (bitsPerFragment == 0)
         return false;
 
     if (IsFormatCompressed(resourceDesc.Format))
     {
         sizeX = DivideRoundingUp(sizeX, 4u);
         sizeY = DivideRoundingUp(sizeY, 4u);
-        bitsPerPixel *= 16;
+        bitsPerFragment *= 16;
     }
 
     UINT tileSizeX = 0, tileSizeY = 0;
-    switch (bitsPerPixel)
+    switch (bitsPerFragment)
     {
     case   8: tileSizeX = 64; tileSizeY = 64; break;
     case  16: tileSizeX = 64; tileSizeY = 32; break;
@@ -3995,7 +3995,7 @@ size_t BlockMetadata_Linear::GetAllocationCount() const
 
 size_t BlockMetadata_Linear::GetFreeRegionsCount() const
 {
-    // Function only used for defragmentation, which is disabled for this algorithm
+    // Function only used for deFragmentation, which is disabled for this algorithm
     D3D12MA_ASSERT(0);
     return SIZE_MAX;
 }
@@ -4195,21 +4195,21 @@ void BlockMetadata_Linear::Clear()
 
 AllocHandle BlockMetadata_Linear::GetAllocationListBegin() const
 {
-    // Function only used for defragmentation, which is disabled for this algorithm
+    // Function only used for deFragmentation, which is disabled for this algorithm
     D3D12MA_ASSERT(0);
     return (AllocHandle)0;
 }
 
 AllocHandle BlockMetadata_Linear::GetNextAllocation(AllocHandle prevAlloc) const
 {
-    // Function only used for defragmentation, which is disabled for this algorithm
+    // Function only used for deFragmentation, which is disabled for this algorithm
     D3D12MA_ASSERT(0);
     return (AllocHandle)0;
 }
 
 UINT64 BlockMetadata_Linear::GetNextFreeRegionSize(AllocHandle alloc) const
 {
-    // Function only used for defragmentation, which is disabled for this algorithm
+    // Function only used for deFragmentation, which is disabled for this algorithm
     D3D12MA_ASSERT(0);
     return 0;
 }
@@ -6152,7 +6152,7 @@ Synchronized internally with a mutex.
 */
 class BlockVector
 {
-    friend class DefragmentationContextPimpl;
+    friend class DeFragmentationContextPimpl;
     D3D12MA_CLASS_NO_COPY(BlockVector)
 public:
     BlockVector(
@@ -6176,9 +6176,9 @@ public:
     UINT64 GetPreferredBlockSize() const { return m_PreferredBlockSize; }
     UINT32 GetAlgorithm() const { return m_Algorithm; }
     bool DeniesMsaaTextures() const { return m_DenyMsaaTextures; }
-    // To be used only while the m_Mutex is locked. Used during defragmentation.
+    // To be used only while the m_Mutex is locked. Used during deFragmentation.
     size_t GetBlockCount() const { return m_Blocks.size(); }
-    // To be used only while the m_Mutex is locked. Used during defragmentation.
+    // To be used only while the m_Mutex is locked. Used during deFragmentation.
     NormalBlock* GetBlock(size_t index) const { return m_Blocks[index]; }
     D3D12MA_RW_MUTEX& GetMutex() { return m_Mutex; }
 
@@ -6414,22 +6414,22 @@ void CurrentBudgetData::RemoveBlock(UINT group, UINT64 blockBytes)
 #endif // _D3D12MA_CURRENT_BUDGET_DATA_FUNCTIONS
 #endif // _D3D12MA_CURRENT_BUDGET_DATA
 
-#ifndef _D3D12MA_DEFRAGMENTATION_CONTEXT_PIMPL
-class DefragmentationContextPimpl
+#ifndef _D3D12MA_DEFragmentATION_CONTEXT_PIMPL
+class DeFragmentationContextPimpl
 {
-    D3D12MA_CLASS_NO_COPY(DefragmentationContextPimpl)
+    D3D12MA_CLASS_NO_COPY(DeFragmentationContextPimpl)
 public:
-    DefragmentationContextPimpl(
+    DeFragmentationContextPimpl(
         AllocatorPimpl* hAllocator,
-        const DEFRAGMENTATION_DESC& desc,
+        const DEFragmentATION_DESC& desc,
         BlockVector* poolVector);
-    ~DefragmentationContextPimpl();
+    ~DeFragmentationContextPimpl();
 
-    void GetStats(DEFRAGMENTATION_STATS& outStats) { outStats = m_GlobalStats; }
+    void GetStats(DEFragmentATION_STATS& outStats) { outStats = m_GlobalStats; }
     const ALLOCATION_CALLBACKS& GetAllocs() const { return m_Moves.GetAllocs(); }
 
-    HRESULT DefragmentPassBegin(DEFRAGMENTATION_PASS_MOVE_INFO& moveInfo);
-    HRESULT DefragmentPassEnd(DEFRAGMENTATION_PASS_MOVE_INFO& moveInfo);
+    HRESULT DeFragmentPassBegin(DEFragmentATION_PASS_MOVE_INFO& moveInfo);
+    HRESULT DeFragmentPassEnd(DEFragmentATION_PASS_MOVE_INFO& moveInfo);
 
 private:
     // Max number of allocations to ignore due to size constraints before ending single pass
@@ -6451,13 +6451,13 @@ private:
         UINT64 size;
         UINT64 alignment;
         ALLOCATION_FLAGS flags;
-        DEFRAGMENTATION_MOVE move = {};
+        DEFragmentATION_MOVE move = {};
     };
 
     const UINT64 m_MaxPassBytes;
     const UINT32 m_MaxPassAllocations;
 
-    Vector<DEFRAGMENTATION_MOVE> m_Moves;
+    Vector<DEFragmentATION_MOVE> m_Moves;
 
     UINT8 m_IgnoredAllocs = 0;
     UINT32 m_Algorithm;
@@ -6465,8 +6465,8 @@ private:
     BlockVector* m_PoolBlockVector;
     BlockVector** m_pBlockVectors;
     size_t m_ImmovableBlockCount = 0;
-    DEFRAGMENTATION_STATS m_GlobalStats = { 0 };
-    DEFRAGMENTATION_STATS m_PassStats = { 0 };
+    DEFragmentATION_STATS m_GlobalStats = { 0 };
+    DEFragmentATION_STATS m_PassStats = { 0 };
     void* m_AlgorithmState = NULL;
 
     static MoveAllocationData GetMoveData(AllocHandle handle, BlockMetadata* metadata);
@@ -6475,14 +6475,14 @@ private:
     bool ReallocWithinBlock(BlockVector& vector, NormalBlock* block);
     bool AllocInOtherBlock(size_t start, size_t end, MoveAllocationData& data, BlockVector& vector);
 
-    bool ComputeDefragmentation(BlockVector& vector, size_t index);
-    bool ComputeDefragmentation_Fast(BlockVector& vector);
-    bool ComputeDefragmentation_Balanced(BlockVector& vector, size_t index, bool update);
-    bool ComputeDefragmentation_Full(BlockVector& vector);
+    bool ComputeDeFragmentation(BlockVector& vector, size_t index);
+    bool ComputeDeFragmentation_Fast(BlockVector& vector);
+    bool ComputeDeFragmentation_Balanced(BlockVector& vector, size_t index, bool update);
+    bool ComputeDeFragmentation_Full(BlockVector& vector);
 
     void UpdateVectorStatistics(BlockVector& vector, StateBalanced& state);
 };
-#endif // _D3D12MA_DEFRAGMENTATION_CONTEXT_PIMPL
+#endif // _D3D12MA_DEFragmentATION_CONTEXT_PIMPL
 
 #ifndef _D3D12MA_POOL_PIMPL
 class PoolPimpl
@@ -9011,16 +9011,16 @@ HRESULT BlockVector::CreateBlock(
 }
 #endif // _D3D12MA_BLOCK_VECTOR_FUNCTIONS
 
-#ifndef _D3D12MA_DEFRAGMENTATION_CONTEXT_PIMPL_FUNCTIONS
-DefragmentationContextPimpl::DefragmentationContextPimpl(
+#ifndef _D3D12MA_DEFragmentATION_CONTEXT_PIMPL_FUNCTIONS
+DeFragmentationContextPimpl::DeFragmentationContextPimpl(
     AllocatorPimpl* hAllocator,
-    const DEFRAGMENTATION_DESC& desc,
+    const DEFragmentATION_DESC& desc,
     BlockVector* poolVector)
     : m_MaxPassBytes(desc.MaxBytesPerPass == 0 ? UINT64_MAX : desc.MaxBytesPerPass),
     m_MaxPassAllocations(desc.MaxAllocationsPerPass == 0 ? UINT32_MAX : desc.MaxAllocationsPerPass),
     m_Moves(hAllocator->GetAllocs())
 {
-    m_Algorithm = desc.Flags & DEFRAGMENTATION_FLAG_ALGORITHM_MASK;
+    m_Algorithm = desc.Flags & DEFragmentATION_FLAG_ALGORITHM_MASK;
 
     if (poolVector != NULL)
     {
@@ -9049,8 +9049,8 @@ DefragmentationContextPimpl::DefragmentationContextPimpl(
     switch (m_Algorithm)
     {
     case 0: // Default algorithm
-        m_Algorithm = DEFRAGMENTATION_FLAG_ALGORITHM_BALANCED;
-    case DEFRAGMENTATION_FLAG_ALGORITHM_BALANCED:
+        m_Algorithm = DEFragmentATION_FLAG_ALGORITHM_BALANCED;
+    case DEFragmentATION_FLAG_ALGORITHM_BALANCED:
     {
         m_AlgorithmState = D3D12MA_NEW_ARRAY(hAllocator->GetAllocs(), StateBalanced, m_BlockVectorCount);
         break;
@@ -9058,7 +9058,7 @@ DefragmentationContextPimpl::DefragmentationContextPimpl(
     }
 }
 
-DefragmentationContextPimpl::~DefragmentationContextPimpl()
+DeFragmentationContextPimpl::~DeFragmentationContextPimpl()
 {
     if (m_PoolBlockVector != NULL)
         m_PoolBlockVector->SetIncrementalSort(true);
@@ -9076,7 +9076,7 @@ DefragmentationContextPimpl::~DefragmentationContextPimpl()
     {
         switch (m_Algorithm)
         {
-        case DEFRAGMENTATION_FLAG_ALGORITHM_BALANCED:
+        case DEFragmentATION_FLAG_ALGORITHM_BALANCED:
             D3D12MA_DELETE_ARRAY(m_Moves.GetAllocs(), reinterpret_cast<StateBalanced*>(m_AlgorithmState), m_BlockVectorCount);
             break;
         default:
@@ -9085,14 +9085,14 @@ DefragmentationContextPimpl::~DefragmentationContextPimpl()
     }
 }
 
-HRESULT DefragmentationContextPimpl::DefragmentPassBegin(DEFRAGMENTATION_PASS_MOVE_INFO& moveInfo)
+HRESULT DeFragmentationContextPimpl::DeFragmentPassBegin(DEFragmentATION_PASS_MOVE_INFO& moveInfo)
 {
     if (m_PoolBlockVector != NULL)
     {
         MutexLockWrite lock(m_PoolBlockVector->GetMutex(), m_PoolBlockVector->m_hAllocator->UseMutex());
 
         if (m_PoolBlockVector->GetBlockCount() > 1)
-            ComputeDefragmentation(*m_PoolBlockVector, 0);
+            ComputeDeFragmentation(*m_PoolBlockVector, 0);
         else if (m_PoolBlockVector->GetBlockCount() == 1)
             ReallocWithinBlock(*m_PoolBlockVector, m_PoolBlockVector->GetBlock(0));
 
@@ -9112,7 +9112,7 @@ HRESULT DefragmentationContextPimpl::DefragmentPassBegin(DEFRAGMENTATION_PASS_MO
                 size_t movesOffset = m_Moves.size();
                 if (m_pBlockVectors[i]->GetBlockCount() > 1)
                 {
-                    end = ComputeDefragmentation(*m_pBlockVectors[i], i);
+                    end = ComputeDeFragmentation(*m_pBlockVectors[i], i);
                 }
                 else if (m_pBlockVectors[i]->GetBlockCount() == 1)
                 {
@@ -9140,7 +9140,7 @@ HRESULT DefragmentationContextPimpl::DefragmentPassBegin(DEFRAGMENTATION_PASS_MO
     return S_OK;
 }
 
-HRESULT DefragmentationContextPimpl::DefragmentPassEnd(DEFRAGMENTATION_PASS_MOVE_INFO& moveInfo)
+HRESULT DeFragmentationContextPimpl::DeFragmentPassEnd(DEFragmentATION_PASS_MOVE_INFO& moveInfo)
 {
     D3D12MA_ASSERT(moveInfo.MoveCount > 0 ? moveInfo.pMoves != NULL : true);
 
@@ -9149,7 +9149,7 @@ HRESULT DefragmentationContextPimpl::DefragmentPassEnd(DEFRAGMENTATION_PASS_MOVE
 
     for (uint32_t i = 0; i < moveInfo.MoveCount; ++i)
     {
-        DEFRAGMENTATION_MOVE& move = moveInfo.pMoves[i];
+        DEFragmentATION_MOVE& move = moveInfo.pMoves[i];
         size_t prevCount = 0, currentCount = 0;
         UINT64 freedBlockSize = 0;
 
@@ -9169,7 +9169,7 @@ HRESULT DefragmentationContextPimpl::DefragmentPassEnd(DEFRAGMENTATION_PASS_MOVE
 
         switch (move.Operation)
         {
-        case DEFRAGMENTATION_MOVE_OPERATION_COPY:
+        case DEFragmentATION_MOVE_OPERATION_COPY:
         {
             move.pSrcAllocation->SwapBlockAllocation(move.pDstTmpAllocation);
 
@@ -9188,7 +9188,7 @@ HRESULT DefragmentationContextPimpl::DefragmentPassEnd(DEFRAGMENTATION_PASS_MOVE
             result = S_FALSE;
             break;
         }
-        case DEFRAGMENTATION_MOVE_OPERATION_IGNORE:
+        case DEFragmentATION_MOVE_OPERATION_IGNORE:
         {
             m_PassStats.BytesMoved -= move.pSrcAllocation->GetSize();
             --m_PassStats.AllocationsMoved;
@@ -9208,7 +9208,7 @@ HRESULT DefragmentationContextPimpl::DefragmentPassEnd(DEFRAGMENTATION_PASS_MOVE
                 immovableBlocks.push_back({ vectorIndex, newBlock });
             break;
         }
-        case DEFRAGMENTATION_MOVE_OPERATION_DESTROY:
+        case DEFragmentATION_MOVE_OPERATION_DESTROY:
         {
             m_PassStats.BytesMoved -= move.pSrcAllocation->GetSize();
             --m_PassStats.AllocationsMoved;
@@ -9284,22 +9284,22 @@ HRESULT DefragmentationContextPimpl::DefragmentPassEnd(DEFRAGMENTATION_PASS_MOVE
     return result;
 }
 
-bool DefragmentationContextPimpl::ComputeDefragmentation(BlockVector& vector, size_t index)
+bool DeFragmentationContextPimpl::ComputeDeFragmentation(BlockVector& vector, size_t index)
 {
     switch (m_Algorithm)
     {
-    case DEFRAGMENTATION_FLAG_ALGORITHM_FAST:
-        return ComputeDefragmentation_Fast(vector);
+    case DEFragmentATION_FLAG_ALGORITHM_FAST:
+        return ComputeDeFragmentation_Fast(vector);
     default:
         D3D12MA_ASSERT(0);
-    case DEFRAGMENTATION_FLAG_ALGORITHM_BALANCED:
-        return ComputeDefragmentation_Balanced(vector, index, true);
-    case DEFRAGMENTATION_FLAG_ALGORITHM_FULL:
-        return ComputeDefragmentation_Full(vector);
+    case DEFragmentATION_FLAG_ALGORITHM_BALANCED:
+        return ComputeDeFragmentation_Balanced(vector, index, true);
+    case DEFragmentATION_FLAG_ALGORITHM_FULL:
+        return ComputeDeFragmentation_Full(vector);
     }
 }
 
-DefragmentationContextPimpl::MoveAllocationData DefragmentationContextPimpl::GetMoveData(
+DeFragmentationContextPimpl::MoveAllocationData DeFragmentationContextPimpl::GetMoveData(
     AllocHandle handle, BlockMetadata* metadata)
 {
     MoveAllocationData moveData;
@@ -9311,7 +9311,7 @@ DefragmentationContextPimpl::MoveAllocationData DefragmentationContextPimpl::Get
     return moveData;
 }
 
-DefragmentationContextPimpl::CounterStatus DefragmentationContextPimpl::CheckCounters(UINT64 bytes)
+DeFragmentationContextPimpl::CounterStatus DeFragmentationContextPimpl::CheckCounters(UINT64 bytes)
 {
     // Ignore allocation if will exceed max size for copy
     if (m_PassStats.BytesMoved + bytes > m_MaxPassBytes)
@@ -9324,7 +9324,7 @@ DefragmentationContextPimpl::CounterStatus DefragmentationContextPimpl::CheckCou
     return CounterStatus::Pass;
 }
 
-bool DefragmentationContextPimpl::IncrementCounters(UINT64 bytes)
+bool DeFragmentationContextPimpl::IncrementCounters(UINT64 bytes)
 {
     m_PassStats.BytesMoved += bytes;
     // Early return when max found
@@ -9337,7 +9337,7 @@ bool DefragmentationContextPimpl::IncrementCounters(UINT64 bytes)
     return false;
 }
 
-bool DefragmentationContextPimpl::ReallocWithinBlock(BlockVector& vector, NormalBlock* block)
+bool DeFragmentationContextPimpl::ReallocWithinBlock(BlockVector& vector, NormalBlock* block)
 {
     BlockMetadata* metadata = block->m_pMetadata;
 
@@ -9346,7 +9346,7 @@ bool DefragmentationContextPimpl::ReallocWithinBlock(BlockVector& vector, Normal
         handle = metadata->GetNextAllocation(handle))
     {
         MoveAllocationData moveData = GetMoveData(handle, metadata);
-        // Ignore newly created allocations by defragmentation algorithm
+        // Ignore newly created allocations by deFragmentation algorithm
         if (moveData.move.pSrcAllocation->GetPrivateData() == this)
             continue;
         switch (CheckCounters(moveData.move.pSrcAllocation->GetSize()))
@@ -9393,7 +9393,7 @@ bool DefragmentationContextPimpl::ReallocWithinBlock(BlockVector& vector, Normal
     return false;
 }
 
-bool DefragmentationContextPimpl::AllocInOtherBlock(size_t start, size_t end, MoveAllocationData& data, BlockVector& vector)
+bool DeFragmentationContextPimpl::AllocInOtherBlock(size_t start, size_t end, MoveAllocationData& data, BlockVector& vector)
 {
     for (; start < end; ++start)
     {
@@ -9418,7 +9418,7 @@ bool DefragmentationContextPimpl::AllocInOtherBlock(size_t start, size_t end, Mo
     return false;
 }
 
-bool DefragmentationContextPimpl::ComputeDefragmentation_Fast(BlockVector& vector)
+bool DeFragmentationContextPimpl::ComputeDeFragmentation_Fast(BlockVector& vector)
 {
     // Move only between blocks
 
@@ -9432,7 +9432,7 @@ bool DefragmentationContextPimpl::ComputeDefragmentation_Fast(BlockVector& vecto
             handle = metadata->GetNextAllocation(handle))
         {
             MoveAllocationData moveData = GetMoveData(handle, metadata);
-            // Ignore newly created allocations by defragmentation algorithm
+            // Ignore newly created allocations by deFragmentation algorithm
             if (moveData.move.pSrcAllocation->GetPrivateData() == this)
                 continue;
             switch (CheckCounters(moveData.move.pSrcAllocation->GetSize()))
@@ -9455,7 +9455,7 @@ bool DefragmentationContextPimpl::ComputeDefragmentation_Fast(BlockVector& vecto
     return false;
 }
 
-bool DefragmentationContextPimpl::ComputeDefragmentation_Balanced(BlockVector& vector, size_t index, bool update)
+bool DeFragmentationContextPimpl::ComputeDeFragmentation_Balanced(BlockVector& vector, size_t index, bool update)
 {
     // Go over every allocation and try to fit it in previous blocks at lowest offsets,
     // if not possible: realloc within single block to minimize offset (exclude offset == 0),
@@ -9479,7 +9479,7 @@ bool DefragmentationContextPimpl::ComputeDefragmentation_Balanced(BlockVector& v
             handle = metadata->GetNextAllocation(handle))
         {
             MoveAllocationData moveData = GetMoveData(handle, metadata);
-            // Ignore newly created allocations by defragmentation algorithm
+            // Ignore newly created allocations by deFragmentation algorithm
             if (moveData.move.pSrcAllocation->GetPrivateData() == this)
                 continue;
             switch (CheckCounters(moveData.move.pSrcAllocation->GetSize()))
@@ -9544,12 +9544,12 @@ bool DefragmentationContextPimpl::ComputeDefragmentation_Balanced(BlockVector& v
     if (startMoveCount == m_Moves.size() && !update)
     {
         vectorState.avgAllocSize = UINT64_MAX;
-        return ComputeDefragmentation_Balanced(vector, index, false);
+        return ComputeDeFragmentation_Balanced(vector, index, false);
     }
     return false;
 }
 
-bool DefragmentationContextPimpl::ComputeDefragmentation_Full(BlockVector& vector)
+bool DeFragmentationContextPimpl::ComputeDeFragmentation_Full(BlockVector& vector)
 {
     // Go over every allocation and try to fit it in previous blocks at lowest offsets,
     // if not possible: realloc within single block to minimize offset (exclude offset == 0)
@@ -9564,7 +9564,7 @@ bool DefragmentationContextPimpl::ComputeDefragmentation_Full(BlockVector& vecto
             handle = metadata->GetNextAllocation(handle))
         {
             MoveAllocationData moveData = GetMoveData(handle, metadata);
-            // Ignore newly created allocations by defragmentation algorithm
+            // Ignore newly created allocations by deFragmentation algorithm
             if (moveData.move.pSrcAllocation->GetPrivateData() == this)
                 continue;
             switch (CheckCounters(moveData.move.pSrcAllocation->GetSize()))
@@ -9618,7 +9618,7 @@ bool DefragmentationContextPimpl::ComputeDefragmentation_Full(BlockVector& vecto
     return false;
 }
 
-void DefragmentationContextPimpl::UpdateVectorStatistics(BlockVector& vector, StateBalanced& state)
+void DeFragmentationContextPimpl::UpdateVectorStatistics(BlockVector& vector, StateBalanced& state)
 {
     size_t allocCount = 0;
     size_t freeCount = 0;
@@ -9638,7 +9638,7 @@ void DefragmentationContextPimpl::UpdateVectorStatistics(BlockVector& vector, St
     state.avgAllocSize = (state.avgAllocSize - state.avgFreeSize) / allocCount;
     state.avgFreeSize /= freeCount;
 }
-#endif // _D3D12MA_DEFRAGMENTATION_CONTEXT_PIMPL_FUNCTIONS
+#endif // _D3D12MA_DEFragmentATION_CONTEXT_PIMPL_FUNCTIONS
 
 #ifndef _D3D12MA_POOL_PIMPL_FUNCTIONS
 PoolPimpl::PoolPimpl(AllocatorPimpl* allocator, const POOL_DESC& desc)
@@ -10012,26 +10012,26 @@ void Allocation::FreeName()
 }
 #endif // _D3D12MA_ALLOCATION_FUNCTIONS
 
-#ifndef _D3D12MA_DEFRAGMENTATION_CONTEXT_FUNCTIONS
-HRESULT DefragmentationContext::BeginPass(DEFRAGMENTATION_PASS_MOVE_INFO* pPassInfo)
+#ifndef _D3D12MA_DEFragmentATION_CONTEXT_FUNCTIONS
+HRESULT DeFragmentationContext::BeginPass(DEFragmentATION_PASS_MOVE_INFO* pPassInfo)
 {
     D3D12MA_ASSERT(pPassInfo);
-    return m_Pimpl->DefragmentPassBegin(*pPassInfo);
+    return m_Pimpl->DeFragmentPassBegin(*pPassInfo);
 }
 
-HRESULT DefragmentationContext::EndPass(DEFRAGMENTATION_PASS_MOVE_INFO* pPassInfo)
+HRESULT DeFragmentationContext::EndPass(DEFragmentATION_PASS_MOVE_INFO* pPassInfo)
 {
     D3D12MA_ASSERT(pPassInfo);
-    return m_Pimpl->DefragmentPassEnd(*pPassInfo);
+    return m_Pimpl->DeFragmentPassEnd(*pPassInfo);
 }
 
-void DefragmentationContext::GetStats(DEFRAGMENTATION_STATS* pStats)
+void DeFragmentationContext::GetStats(DEFragmentATION_STATS* pStats)
 {
     D3D12MA_ASSERT(pStats);
     m_Pimpl->GetStats(*pStats);
 }
 
-void DefragmentationContext::ReleaseThis()
+void DeFragmentationContext::ReleaseThis()
 {
     if (this == NULL)
     {
@@ -10041,16 +10041,16 @@ void DefragmentationContext::ReleaseThis()
     D3D12MA_DELETE(m_Pimpl->GetAllocs(), this);
 }
 
-DefragmentationContext::DefragmentationContext(AllocatorPimpl* allocator,
-    const DEFRAGMENTATION_DESC& desc,
+DeFragmentationContext::DeFragmentationContext(AllocatorPimpl* allocator,
+    const DEFragmentATION_DESC& desc,
     BlockVector* poolVector)
-    : m_Pimpl(D3D12MA_NEW(allocator->GetAllocs(), DefragmentationContextPimpl)(allocator, desc, poolVector)) {}
+    : m_Pimpl(D3D12MA_NEW(allocator->GetAllocs(), DeFragmentationContextPimpl)(allocator, desc, poolVector)) {}
 
-DefragmentationContext::~DefragmentationContext()
+DeFragmentationContext::~DeFragmentationContext()
 {
     D3D12MA_DELETE(m_Pimpl->GetAllocs(), m_Pimpl);
 }
-#endif // _D3D12MA_DEFRAGMENTATION_CONTEXT_FUNCTIONS
+#endif // _D3D12MA_DEFragmentATION_CONTEXT_FUNCTIONS
 
 #ifndef _D3D12MA_POOL_FUNCTIONS
 POOL_DESC Pool::GetDesc() const
@@ -10083,7 +10083,7 @@ LPCWSTR Pool::GetName() const
     return m_Pimpl->GetName();
 }
 
-HRESULT Pool::BeginDefragmentation(const DEFRAGMENTATION_DESC* pDesc, DefragmentationContext** ppContext)
+HRESULT Pool::BeginDeFragmentation(const DEFragmentATION_DESC* pDesc, DeFragmentationContext** ppContext)
 {
     D3D12MA_ASSERT(pDesc && ppContext);
 
@@ -10092,7 +10092,7 @@ HRESULT Pool::BeginDefragmentation(const DEFRAGMENTATION_DESC* pDesc, Defragment
         return E_NOINTERFACE;
 
     AllocatorPimpl* allocator = m_Pimpl->GetAllocator();
-    *ppContext = D3D12MA_NEW(allocator->GetAllocs(), DefragmentationContext)(allocator, *pDesc, m_Pimpl->GetBlockVector());
+    *ppContext = D3D12MA_NEW(allocator->GetAllocs(), DeFragmentationContext)(allocator, *pDesc, m_Pimpl->GetBlockVector());
     return S_OK;
 }
 
@@ -10372,11 +10372,11 @@ void Allocator::FreeStatsString(WCHAR* pStatsString) const
     }
 }
 
-void Allocator::BeginDefragmentation(const DEFRAGMENTATION_DESC* pDesc, DefragmentationContext** ppContext)
+void Allocator::BeginDeFragmentation(const DEFragmentATION_DESC* pDesc, DeFragmentationContext** ppContext)
 {
     D3D12MA_ASSERT(pDesc && ppContext);
 
-    *ppContext = D3D12MA_NEW(m_Pimpl->GetAllocs(), DefragmentationContext)(m_Pimpl, *pDesc, NULL);
+    *ppContext = D3D12MA_NEW(m_Pimpl->GetAllocs(), DeFragmentationContext)(m_Pimpl, *pDesc, NULL);
 }
 
 void Allocator::ReleaseThis()

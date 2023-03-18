@@ -107,13 +107,10 @@ struct DescriptorSetDesc
 {
 	uint32 BindingCount = 0u;
     DescriptorBindingDesc Bindings[8]{};
-};
-
-
-struct DescriptorSet : IGraphicsResource
-{
-    uint32 BindingCount = 0;
-    EDescriptorType BindingTypes[8]{};
+    
+    // static Samplers, optional. no dynamic samplers yet
+    uint32 NumSamplers = 0u; 
+	SamplerInfo Samplers[4] {};
 };
 
 struct PipelineBarrier
@@ -166,22 +163,21 @@ struct PipelineInfo
 	bool counterClockWise = false;
 
 	int32 numRenderTargets = 1;
-	EImageFormat DepthStencilFormat = EImageFormat::UNKNOWN;
-	EImageFormat RTVFormats[MaxRenderTargets] = {};
+    EGraphicsFormat DepthStencilFormat = EGraphicsFormat::UNKNOWN;
+    EGraphicsFormat RTVFormats[MaxRenderTargets]{};
 
 	bool AlphaToCoverageEnable = false;
 	bool IndependentBlendEnable = false;
 
-	BlendDesc RenderTargetBlendDescs[MaxRenderTargets] = {};
+	BlendDesc RenderTargetBlendDescs[MaxRenderTargets]{};
 	
-	int32 descriptorSetCount = 0;
-	DescriptorSetDesc descriptorSet = {};
+	DescriptorSetDesc descriptorSet{};
 	
 	uint32 numInputLayout = 0u;
-	InputLayout inputLayouts[8] = {};
+	InputLayout inputLayouts[8]{};
 
 	bool enableMultiSampling = false;
-	SampleDesc sampleDesc = {}; // multisampling parameters
+	SampleDesc sampleDesc{}; // multisampling parameters
 };
 
 struct IPipeline : IGraphicsResource

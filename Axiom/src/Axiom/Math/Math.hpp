@@ -6,7 +6,7 @@
 namespace Math
 {
 	// constants
-	constexpr float PI = 3.14159265f;
+    constexpr float PI = 3.141592653f;
 	constexpr float RadToDeg = 180.0f / PI;
 	constexpr float DegToRad = PI / 180.0f;
 	constexpr float OneDivPI = 1.0f / PI;

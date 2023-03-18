@@ -12,7 +12,6 @@ struct Vector2
 	};
 	
 	static constexpr int NumElements = 2;
-	static constexpr uint64 ElementSize = sizeof(T);
 	using ElemType = T;
 
 	Vector2()         noexcept  : x(0), y(0) { }
@@ -36,8 +35,24 @@ struct Vector2
 		float diffy = a.y - b.y;
 		return diffx * diffx + diffy * diffy;
 	}
-
-	void Normalized() const { *this /= Length(); }
+	//        mid  *
+	// start  *     end  *
+    static inline Vector2 CurveMove(const Vector2& pos, const Vector2& start, 
+		const Vector2& mid, const Vector2& end, float t) noexcept
+    {
+      float t2 = t * t, t3 = t2 * t;
+      return pos * (-t3 + 3.0f * t2 - 3.0f * t + 1.0f) +
+           start * ( 3.0f * t3 - 6.0f * t2 + 3.0f * t) +
+             mid * (-3.0f * t3 + 3.0f * t2) + end * t3;
+    }
+    // only float or double T
+    static inline Vector2 Rotate(Vector2 v, float rad)
+    {
+      float st = sinf(rad), ct = cosf(rad);
+      return Vector2((ct * v.x) - (st * v.y), (st * v.x) + (ct * v.y));
+    }
+  
+    void Normalized() const { *this /= Length(); }
 	
 	Vector2 Normalize(Vector2 other) { return other.Normalize(); }
 	
@@ -114,7 +129,7 @@ struct Vector3
 
 	static float Length(const Vector3& vec) { return vec.Length(); }
 
-	static float Dot(const Vector3& a, const Vector3& b)
+    static float Dot(const Vector3& a, const Vector3& b) noexcept
 	{
 		return a.x * b.x + a.y * b.y + a.z * b.z;
 	}
@@ -134,13 +149,26 @@ struct Vector3
 			a.z * b.x - b.z * a.x,
 			a.x * b.y - b.x * a.y);
 	}
+	//        mid  *
+	// start  *     end  * 
+	static inline Vector3 CurveMove(const Vector3& pos, const Vector3& start, 
+		const Vector3& mid, const Vector3& end, float t) noexcept
+    {
+      float t2 = t * t, t3 = t2 * t;
+      return pos * (-t3 + 3.0f * t2 - 3.0f * t + 1.0f) +
+           start * ( 3.0f * t3 - 6.0f * t2 + 3.0f * t) +
+             mid * (-3.0f * t3 + 3.0f * t2) + end * t3;
+    }
 
 	static Vector3 Reflect(const Vector3& in, const Vector3& normal)
 	{
 		return in - normal * Dot(normal, in) * 2.0f;
 	}
-	// for more accuracy you can use sqrt instead of rsqrt: a / sqrt(dot(a,a)) 
-	static Vector3 Normalize(const Vector3& a) {
+    static Vector3 Normalize(const Vector3& a) {
+        return a / sqrtf(Dot(a, a));
+    }
+    // faster than Normalize but less accurate
+	static Vector3 NormalizeEst(const Vector3& a) {
 		return a * Math::RSqrt(Dot(a, a));
 	}
 
@@ -206,7 +234,7 @@ namespace Math
 	template<typename T>
 	FINLINE Vector2<T> Max(const Vector2<T>& a, const Vector2<T>& b) { return Vector2<T>(Max(a.x, b.x), Max(a.y, b.y)); }
 
-	template<typename T>
+    template<typename T>
 	FINLINE T Max3(const Vector3<T>& a) { return Max(Max(a.x, a.y), a.z); }
 	template<typename T>
 	FINLINE T Min3(const Vector3<T>& a) { return Min(Min(a.x, a.y), a.z); }
@@ -262,7 +290,7 @@ namespace Math
 		return hash;
 	}
 
-	FINLINE uint64 VecToHash(Vector3i vec)
+	FINLINE uint64 VecToHash(const Vector3i& vec)
 	{
 		uint64 hash = vec.x;
 		hash = (hash * 397ull) ^ vec.y;

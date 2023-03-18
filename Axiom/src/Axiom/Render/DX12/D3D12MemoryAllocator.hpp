@@ -39,7 +39,7 @@ Documentation of all members: D3D12MemAlloc.h
     - [Resource reference counting](@ref quick_start_resource_reference_counting)
     - [Mapping memory](@ref quick_start_mapping_memory)
 - \subpage custom_pools
-- \subpage defragmentation
+- \subpage deFragmentation
 - \subpage statistics
 - \subpage resource_aliasing
 - \subpage linear_algorithm
@@ -92,7 +92,7 @@ may get their alignment 4K and their size a multiply of 4K instead of 64K.
     ignore.
 */
 #ifndef D3D12MA_USE_SMALL_RESOURCE_PLACEMENT_ALIGNMENT
-    #define D3D12MA_USE_SMALL_RESOURCE_PLACEMENT_ALIGNMENT 1
+   // #define D3D12MA_USE_SMALL_RESOURCE_PLACEMENT_ALIGNMENT 1
 #endif
 
 /// \cond INTERNAL
@@ -167,7 +167,7 @@ namespace D3D12MA
 {
 
 /// \cond INTERNAL
-class DefragmentationContextPimpl;
+class DeFragmentationContextPimpl;
 class AllocatorPimpl;
 class PoolPimpl;
 class NormalBlock;
@@ -257,7 +257,7 @@ enum ALLOCATION_FLAGS
     ALLOCATION_FLAG_CAN_ALIAS = 0x10,
 
     /** Allocation strategy that chooses smallest possible free range for the allocation
-    to minimize memory usage and fragmentation, possibly at the expense of allocation time.
+    to minimize memory usage and Fragmentation, possibly at the expense of allocation time.
     */
     ALLOCATION_FLAG_STRATEGY_MIN_MEMORY = 0x00010000,
 
@@ -269,7 +269,7 @@ enum ALLOCATION_FLAGS
 
     /** Allocation strategy that chooses always the lowest offset in available space.
     This is not the most efficient strategy but achieves highly packed data.
-    Used internally by defragmentation, not recomended in typical usage.
+    Used internally by deFragmentation, not recomended in typical usage.
     */
     ALLOCATION_FLAG_STRATEGY_MIN_OFFSET = 0x0004000,
 
@@ -562,7 +562,7 @@ private:
     friend class CommittedAllocationList;
     friend class JsonWriter;
     friend class BlockMetadata_Linear;
-    friend class DefragmentationContextPimpl;
+    friend class DeFragmentationContextPimpl;
     friend struct CommittedAllocationListItemTraits;
     template<typename T> friend void D3D12MA_DELETE(const ALLOCATION_CALLBACKS&, T*);
     template<typename T> friend class PoolAllocator;
@@ -652,37 +652,37 @@ private:
 };
 
 
-/// Flags to be passed as DEFRAGMENTATION_DESC::Flags.
-enum DEFRAGMENTATION_FLAGS
+/// Flags to be passed as DEFragmentATION_DESC::Flags.
+enum DEFragmentATION_FLAGS
 {
-    /** Use simple but fast algorithm for defragmentation.
+    /** Use simple but fast algorithm for deFragmentation.
     May not achieve best results but will require least time to compute and least allocations to copy.
     */
-    DEFRAGMENTATION_FLAG_ALGORITHM_FAST = 0x1,
-    /** Default defragmentation algorithm, applied also when no `ALGORITHM` flag is specified.
-    Offers a balance between defragmentation quality and the amount of allocations and bytes that need to be moved.
+    DEFragmentATION_FLAG_ALGORITHM_FAST = 0x1,
+    /** Default deFragmentation algorithm, applied also when no `ALGORITHM` flag is specified.
+    Offers a balance between deFragmentation quality and the amount of allocations and bytes that need to be moved.
     */
-    DEFRAGMENTATION_FLAG_ALGORITHM_BALANCED = 0x2,
-    /** Perform full defragmentation of memory.
+    DEFragmentATION_FLAG_ALGORITHM_BALANCED = 0x2,
+    /** Perform full deFragmentation of memory.
     Can result in notably more time to compute and allocations to copy, but will achieve best memory packing.
     */
-    DEFRAGMENTATION_FLAG_ALGORITHM_FULL = 0x4,
+    DEFragmentATION_FLAG_ALGORITHM_FULL = 0x4,
 
     /// A bit mask to extract only `ALGORITHM` bits from entire set of flags.
-    DEFRAGMENTATION_FLAG_ALGORITHM_MASK =
-        DEFRAGMENTATION_FLAG_ALGORITHM_FAST |
-        DEFRAGMENTATION_FLAG_ALGORITHM_BALANCED |
-        DEFRAGMENTATION_FLAG_ALGORITHM_FULL
+    DEFragmentATION_FLAG_ALGORITHM_MASK =
+        DEFragmentATION_FLAG_ALGORITHM_FAST |
+        DEFragmentATION_FLAG_ALGORITHM_BALANCED |
+        DEFragmentATION_FLAG_ALGORITHM_FULL
 };
 
-/** \brief Parameters for defragmentation.
+/** \brief Parameters for deFragmentation.
 
-To be used with functions Allocator::BeginDefragmentation() and Pool::BeginDefragmentation().
+To be used with functions Allocator::BeginDeFragmentation() and Pool::BeginDeFragmentation().
 */
-struct DEFRAGMENTATION_DESC
+struct DEFragmentATION_DESC
 {
     /// Flags.
-    DEFRAGMENTATION_FLAGS Flags;
+    DEFragmentATION_FLAGS Flags;
     /** \brief Maximum numbers of bytes that can be copied during single pass, while moving allocations to different places.
 
     0 means no limit.
@@ -695,49 +695,49 @@ struct DEFRAGMENTATION_DESC
     UINT32 MaxAllocationsPerPass;
 };
 
-/// Operation performed on single defragmentation move.
-enum DEFRAGMENTATION_MOVE_OPERATION
+/// Operation performed on single deFragmentation move.
+enum DEFragmentATION_MOVE_OPERATION
 {
     /** Resource has been recreated at `pDstTmpAllocation`, data has been copied, old resource has been destroyed.
-    `pSrcAllocation` will be changed to point to the new place. This is the default value set by DefragmentationContext::BeginPass().
+    `pSrcAllocation` will be changed to point to the new place. This is the default value set by DeFragmentationContext::BeginPass().
     */
-    DEFRAGMENTATION_MOVE_OPERATION_COPY = 0,
+    DEFragmentATION_MOVE_OPERATION_COPY = 0,
     /// Set this value if you cannot move the allocation. New place reserved at `pDstTmpAllocation` will be freed. `pSrcAllocation` will remain unchanged.
-    DEFRAGMENTATION_MOVE_OPERATION_IGNORE = 1,
+    DEFragmentATION_MOVE_OPERATION_IGNORE = 1,
     /// Set this value if you decide to abandon the allocation and you destroyed the resource. New place reserved `pDstTmpAllocation` will be freed, along with `pSrcAllocation`.
-    DEFRAGMENTATION_MOVE_OPERATION_DESTROY = 2,
+    DEFragmentATION_MOVE_OPERATION_DESTROY = 2,
 };
 
-/// Single move of an allocation to be done for defragmentation.
-struct DEFRAGMENTATION_MOVE
+/// Single move of an allocation to be done for deFragmentation.
+struct DEFragmentATION_MOVE
 {
-    /** \brief Operation to be performed on the allocation by DefragmentationContext::EndPass().
-    Default value is #DEFRAGMENTATION_MOVE_OPERATION_COPY. You can modify it.
+    /** \brief Operation to be performed on the allocation by DeFragmentationContext::EndPass().
+    Default value is #DEFragmentATION_MOVE_OPERATION_COPY. You can modify it.
     */
-    DEFRAGMENTATION_MOVE_OPERATION Operation;
+    DEFragmentATION_MOVE_OPERATION Operation;
     /// %Allocation that should be moved.
     Allocation* pSrcAllocation;
     /** \brief Temporary allocation pointing to destination memory that will replace `pSrcAllocation`.
 
     Use it to retrieve new `ID3D12Heap` and offset to create new `ID3D12Resource` and then store it here via Allocation::SetResource().
 
-    \warning Do not store this allocation in your data structures! It exists only temporarily, for the duration of the defragmentation pass,
-    to be used for storing newly created resource. DefragmentationContext::EndPass() will destroy it and make `pSrcAllocation` point to this memory.
+    \warning Do not store this allocation in your data structures! It exists only temporarily, for the duration of the deFragmentation pass,
+    to be used for storing newly created resource. DeFragmentationContext::EndPass() will destroy it and make `pSrcAllocation` point to this memory.
     */
     Allocation* pDstTmpAllocation;
 };
 
-/** \brief Parameters for incremental defragmentation steps.
+/** \brief Parameters for incremental deFragmentation steps.
 
-To be used with function DefragmentationContext::BeginPass().
+To be used with function DeFragmentationContext::BeginPass().
 */
-struct DEFRAGMENTATION_PASS_MOVE_INFO
+struct DEFragmentATION_PASS_MOVE_INFO
 {
     /// Number of elements in the `pMoves` array.
     UINT32 MoveCount;
-    /** \brief Array of moves to be performed by the user in the current defragmentation pass.
+    /** \brief Array of moves to be performed by the user in the current deFragmentation pass.
 
-    Pointer to an array of `MoveCount` elements, owned by %D3D12MA, created in DefragmentationContext::BeginPass(), destroyed in DefragmentationContext::EndPass().
+    Pointer to an array of `MoveCount` elements, owned by %D3D12MA, created in DeFragmentationContext::BeginPass(), destroyed in DeFragmentationContext::EndPass().
 
     For each element, you should:
 
@@ -746,21 +746,21 @@ struct DEFRAGMENTATION_PASS_MOVE_INFO
     3. Copy data from the `pMoves[i].pSrcAllocation` e.g. using `D3D12GraphicsCommandList::CopyResource`.
     4. Make sure these commands finished executing on the GPU.
 
-    Only then you can finish defragmentation pass by calling DefragmentationContext::EndPass().
+    Only then you can finish deFragmentation pass by calling DeFragmentationContext::EndPass().
     After this call, the allocation will point to the new place in memory.
 
     Alternatively, if you cannot move specific allocation,
-    you can set DEFRAGMENTATION_MOVE::Operation to D3D12MA::DEFRAGMENTATION_MOVE_OPERATION_IGNORE.
+    you can set DEFragmentATION_MOVE::Operation to D3D12MA::DEFragmentATION_MOVE_OPERATION_IGNORE.
 
     Alternatively, if you decide you want to completely remove the allocation,
-    set DEFRAGMENTATION_MOVE::Operation to D3D12MA::DEFRAGMENTATION_MOVE_OPERATION_DESTROY.
-    Then, after DefragmentationContext::EndPass() the allocation will be released.
+    set DEFragmentATION_MOVE::Operation to D3D12MA::DEFragmentATION_MOVE_OPERATION_DESTROY.
+    Then, after DeFragmentationContext::EndPass() the allocation will be released.
     */
-    DEFRAGMENTATION_MOVE* pMoves;
+    DEFragmentATION_MOVE* pMoves;
 };
 
-/// %Statistics returned for defragmentation process by function DefragmentationContext::GetStats().
-struct DEFRAGMENTATION_STATS
+/// %Statistics returned for deFragmentation process by function DeFragmentationContext::GetStats().
+struct DEFragmentATION_STATS
 {
     /// Total number of bytes that have been copied while moving allocations to different places.
     UINT64 BytesMoved;
@@ -772,42 +772,42 @@ struct DEFRAGMENTATION_STATS
     UINT32 HeapsFreed;
 };
 
-/** \brief Represents defragmentation process in progress.
+/** \brief Represents deFragmentation process in progress.
 
-You can create this object using Allocator::BeginDefragmentation (for default pools) or
-Pool::BeginDefragmentation (for a custom pool).
+You can create this object using Allocator::BeginDeFragmentation (for default pools) or
+Pool::BeginDeFragmentation (for a custom pool).
 */
-class D3D12MA_API DefragmentationContext : public IUnknownImpl
+class D3D12MA_API DeFragmentationContext : public IUnknownImpl
 {
 public:
-    /** \brief Starts single defragmentation pass.
+    /** \brief Starts single deFragmentation pass.
 
     \param[out] pPassInfo Computed informations for current pass.
     \returns
-    - `S_OK` if no more moves are possible. Then you can omit call to DefragmentationContext::EndPass() and simply end whole defragmentation.
-    - `S_FALSE` if there are pending moves returned in `pPassInfo`. You need to perform them, call DefragmentationContext::EndPass(),
-      and then preferably try another pass with DefragmentationContext::BeginPass().
+    - `S_OK` if no more moves are possible. Then you can omit call to DeFragmentationContext::EndPass() and simply end whole deFragmentation.
+    - `S_FALSE` if there are pending moves returned in `pPassInfo`. You need to perform them, call DeFragmentationContext::EndPass(),
+      and then preferably try another pass with DeFragmentationContext::BeginPass().
     */
-    HRESULT BeginPass(DEFRAGMENTATION_PASS_MOVE_INFO* pPassInfo);
-    /** \brief Ends single defragmentation pass.
+    HRESULT BeginPass(DEFragmentATION_PASS_MOVE_INFO* pPassInfo);
+    /** \brief Ends single deFragmentation pass.
 
-    \param pPassInfo Computed informations for current pass filled by DefragmentationContext::BeginPass() and possibly modified by you.
-    \return Returns `S_OK` if no more moves are possible or `S_FALSE` if more defragmentations are possible.
+    \param pPassInfo Computed informations for current pass filled by DeFragmentationContext::BeginPass() and possibly modified by you.
+    \return Returns `S_OK` if no more moves are possible or `S_FALSE` if more deFragmentations are possible.
 
-    Ends incremental defragmentation pass and commits all defragmentation moves from `pPassInfo`.
+    Ends incremental deFragmentation pass and commits all deFragmentation moves from `pPassInfo`.
     After this call:
 
-    - %Allocation at `pPassInfo[i].pSrcAllocation` that had `pPassInfo[i].Operation ==` #DEFRAGMENTATION_MOVE_OPERATION_COPY
+    - %Allocation at `pPassInfo[i].pSrcAllocation` that had `pPassInfo[i].Operation ==` #DEFragmentATION_MOVE_OPERATION_COPY
       (which is the default) will be pointing to the new destination place.
-    - %Allocation at `pPassInfo[i].pSrcAllocation` that had `pPassInfo[i].operation ==` #DEFRAGMENTATION_MOVE_OPERATION_DESTROY
+    - %Allocation at `pPassInfo[i].pSrcAllocation` that had `pPassInfo[i].operation ==` #DEFragmentATION_MOVE_OPERATION_DESTROY
       will be released.
 
-    If no more moves are possible you can end whole defragmentation.
+    If no more moves are possible you can end whole deFragmentation.
     */
-    HRESULT EndPass(DEFRAGMENTATION_PASS_MOVE_INFO* pPassInfo);
-    /** \brief Returns statistics of the defragmentation performed so far.
+    HRESULT EndPass(DEFragmentATION_PASS_MOVE_INFO* pPassInfo);
+    /** \brief Returns statistics of the deFragmentation performed so far.
     */
-    void GetStats(DEFRAGMENTATION_STATS* pStats);
+    void GetStats(DEFragmentATION_STATS* pStats);
 
 protected:
     void ReleaseThis() override;
@@ -817,14 +817,14 @@ private:
     friend class Allocator;
     template<typename T> friend void D3D12MA_DELETE(const ALLOCATION_CALLBACKS&, T*);
 
-    DefragmentationContextPimpl* m_Pimpl;
+    DeFragmentationContextPimpl* m_Pimpl;
 
-    DefragmentationContext(AllocatorPimpl* allocator,
-        const DEFRAGMENTATION_DESC& desc,
+    DeFragmentationContext(AllocatorPimpl* allocator,
+        const DEFragmentATION_DESC& desc,
         BlockVector* poolVector);
-    ~DefragmentationContext();
+    ~DeFragmentationContext();
 
-    D3D12MA_CLASS_NO_COPY(DefragmentationContext)
+    D3D12MA_CLASS_NO_COPY(DeFragmentationContext)
 };
 
 /// \brief Bit flags to be used with POOL_DESC::Flags.
@@ -982,18 +982,18 @@ public:
     */
     LPCWSTR GetName() const;
 
-    /** \brief Begins defragmentation process of the current pool.
+    /** \brief Begins deFragmentation process of the current pool.
 
-    \param pDesc Structure filled with parameters of defragmentation.
-    \param[out] ppContext Context object that will manage defragmentation.
+    \param pDesc Structure filled with parameters of deFragmentation.
+    \param[out] ppContext Context object that will manage deFragmentation.
     \returns
-    - `S_OK` if defragmentation can begin.
-    - `E_NOINTERFACE` if defragmentation is not supported.
+    - `S_OK` if deFragmentation can begin.
+    - `E_NOINTERFACE` if deFragmentation is not supported.
 
-    For more information about defragmentation, see documentation chapter:
-    [Defragmentation](@ref defragmentation).
+    For more information about deFragmentation, see documentation chapter:
+    [DeFragmentation](@ref deFragmentation).
     */
-    HRESULT BeginDefragmentation(const DEFRAGMENTATION_DESC* pDesc, DefragmentationContext** ppContext);
+    HRESULT BeginDeFragmentation(const DEFragmentATION_DESC* pDesc, DeFragmentationContext** ppContext);
 
 protected:
     void ReleaseThis() override;
@@ -1357,15 +1357,15 @@ public:
     /// Frees memory of a string returned from Allocator::BuildStatsString.
     void FreeStatsString(WCHAR* pStatsString) const;
 
-    /** \brief Begins defragmentation process of the default pools.
+    /** \brief Begins deFragmentation process of the default pools.
 
-    \param pDesc Structure filled with parameters of defragmentation.
-    \param[out] ppContext Context object that will manage defragmentation.
+    \param pDesc Structure filled with parameters of deFragmentation.
+    \param[out] ppContext Context object that will manage deFragmentation.
 
-    For more information about defragmentation, see documentation chapter:
-    [Defragmentation](@ref defragmentation).
+    For more information about deFragmentation, see documentation chapter:
+    [DeFragmentation](@ref deFragmentation).
     */
-    void BeginDefragmentation(const DEFRAGMENTATION_DESC* pDesc, DefragmentationContext** ppContext);
+    void BeginDeFragmentation(const DEFragmentATION_DESC* pDesc, DeFragmentationContext** ppContext);
 
 protected:
     void ReleaseThis() override;
@@ -1373,7 +1373,7 @@ protected:
 private:
     friend D3D12MA_API HRESULT CreateAllocator(const ALLOCATOR_DESC*, Allocator**);
     template<typename T> friend void D3D12MA_DELETE(const ALLOCATION_CALLBACKS&, T*);
-    friend class DefragmentationContext;
+    friend class DeFragmentationContext;
     friend class Pool;
 
     Allocator(const ALLOCATION_CALLBACKS& allocationCallbacks, const ALLOCATOR_DESC& desc);
@@ -1585,7 +1585,7 @@ D3D12MA_API HRESULT CreateVirtualBlock(const VIRTUAL_BLOCK_DESC* pDesc, VirtualB
 
 /// \cond INTERNAL
 DEFINE_ENUM_FLAG_OPERATORS(D3D12MA::ALLOCATION_FLAGS);
-DEFINE_ENUM_FLAG_OPERATORS(D3D12MA::DEFRAGMENTATION_FLAGS);
+DEFINE_ENUM_FLAG_OPERATORS(D3D12MA::DEFragmentATION_FLAGS);
 DEFINE_ENUM_FLAG_OPERATORS(D3D12MA::ALLOCATOR_FLAGS);
 DEFINE_ENUM_FLAG_OPERATORS(D3D12MA::POOL_FLAGS);
 DEFINE_ENUM_FLAG_OPERATORS(D3D12MA::VIRTUAL_BLOCK_FLAGS);
@@ -1773,11 +1773,11 @@ a reference to any resource.
 It can be changed by calling D3D12MA::Allocation::SetResource. This function
 releases the old resource and calls `AddRef` on the new one.
 
-Special care must be taken when performing <b>defragmentation</b>.
+Special care must be taken when performing <b>deFragmentation</b>.
 The new resource created at the destination place should be set as `pass.pMoves[i].pDstTmpAllocation->SetResource(newRes)`,
-but it is moved to the source allocation at end of the defragmentation pass,
+but it is moved to the source allocation at end of the deFragmentation pass,
 while the old resource accessible through `pass.pMoves[i].pSrcAllocation->GetResource()` is then released.
-For more information, see documentation chapter \ref defragmentation.
+For more information, see documentation chapter \ref deFragmentation.
 
 
 \section quick_start_mapping_memory Mapping memory
@@ -1921,15 +1921,15 @@ in some cases, e.g. to have separate memory usage statistics for some group of r
 extended allocation parameters, like custom `D3D12_HEAP_PROPERTIES`, which are available only in custom pools.
 
 
-\page defragmentation Defragmentation
+\page deFragmentation DeFragmentation
 
 Interleaved allocations and deallocations of many objects of varying size can
-cause fragmentation over time, which can lead to a situation where the library is unable
+cause Fragmentation over time, which can lead to a situation where the library is unable
 to find a continuous range of free memory for a new allocation despite there is
 enough free space, just scattered across many small free ranges between existing
 allocations.
 
-To mitigate this problem, you can use defragmentation feature.
+To mitigate this problem, you can use deFragmentation feature.
 It doesn't happen automatically though and needs your cooperation,
 because %D3D12MA is a low level library that only allocates memory.
 It cannot recreate buffers and textures in a new place as it doesn't remember the contents of `D3D12_RESOURCE_DESC` structure.
@@ -1938,15 +1938,15 @@ It cannot copy their contents as it doesn't record any commands to a command lis
 Example:
 
 \code
-D3D12MA::DEFRAGMENTATION_DESC defragDesc = {};
-defragDesc.Flags = D3D12MA::DEFRAGMENTATION_FLAG_ALGORITHM_FAST;
+D3D12MA::DEFragmentATION_DESC defragDesc = {};
+defragDesc.Flags = D3D12MA::DEFragmentATION_FLAG_ALGORITHM_FAST;
 
-D3D12MA::DefragmentationContext* defragCtx;
-allocator->BeginDefragmentation(&defragDesc, &defragCtx);
+D3D12MA::DeFragmentationContext* defragCtx;
+allocator->BeginDeFragmentation(&defragDesc, &defragCtx);
 
 for(;;)
 {
-    D3D12MA::DEFRAGMENTATION_PASS_MOVE_INFO pass;
+    D3D12MA::DEFragmentATION_PASS_MOVE_INFO pass;
     HRESULT hr = defragCtx->BeginPass(&pass);
     if(hr == S_OK)
         break;
@@ -1996,12 +1996,12 @@ defragCtx->Release();
 Although functions like D3D12MA::Allocator::CreateResource()
 create an allocation and a buffer/texture at once, these are just a shortcut for
 allocating memory and creating a placed resource.
-Defragmentation works on memory allocations only. You must handle the rest manually.
-Defragmentation is an iterative process that should repreat "passes" as long as related functions
+DeFragmentation works on memory allocations only. You must handle the rest manually.
+DeFragmentation is an iterative process that should repreat "passes" as long as related functions
 return `S_FALSE` not `S_OK`.
 In each pass:
 
-1. D3D12MA::DefragmentationContext::BeginPass() function call:
+1. D3D12MA::DeFragmentationContext::BeginPass() function call:
    - Calculates and returns the list of allocations to be moved in this pass.
      Note this can be a time-consuming process.
    - Reserves destination memory for them by creating temporary destination allocations
@@ -2011,67 +2011,67 @@ In each pass:
    - Create new buffers/textures as placed at the returned destination temporary allocations.
    - Copy data from source to destination resources if necessary.
    - Store the pointer to the new resource in the temporary destination allocation.
-3. D3D12MA::DefragmentationContext::EndPass() function call:
+3. D3D12MA::DeFragmentationContext::EndPass() function call:
    - Frees the source memory reserved for the allocations that are moved.
    - Modifies source D3D12MA::Allocation objects that are moved to point to the destination reserved memory
      and destination resource, while source resource is released.
    - Frees `ID3D12Heap` blocks that became empty.
 
-Defragmentation algorithm tries to move all suitable allocations.
-You can, however, refuse to move some of them inside a defragmentation pass, by setting
-`pass.pMoves[i].Operation` to D3D12MA::DEFRAGMENTATION_MOVE_OPERATION_IGNORE.
-This is not recommended and may result in suboptimal packing of the allocations after defragmentation.
+DeFragmentation algorithm tries to move all suitable allocations.
+You can, however, refuse to move some of them inside a deFragmentation pass, by setting
+`pass.pMoves[i].Operation` to D3D12MA::DEFragmentATION_MOVE_OPERATION_IGNORE.
+This is not recommended and may result in suboptimal packing of the allocations after deFragmentation.
 If you cannot ensure any allocation can be moved, it is better to keep movable allocations separate in a custom pool.
 
 Inside a pass, for each allocation that should be moved:
 
 - You should copy its data from the source to the destination place by calling e.g. `CopyResource()`.
-  - You need to make sure these commands finished executing before the source buffers/textures are released by D3D12MA::DefragmentationContext::EndPass().
+  - You need to make sure these commands finished executing before the source buffers/textures are released by D3D12MA::DeFragmentationContext::EndPass().
 - If a resource doesn't contain any meaningful data, e.g. it is a transient render-target texture to be cleared,
   filled, and used temporarily in each rendering frame, you can just recreate this texture
   without copying its data.
 - If the resource is in `D3D12_HEAP_TYPE_READBACK` memory, you can copy its data on the CPU
   using `memcpy()`.
-- If you cannot move the allocation, you can set `pass.pMoves[i].Operation` to D3D12MA::DEFRAGMENTATION_MOVE_OPERATION_IGNORE.
+- If you cannot move the allocation, you can set `pass.pMoves[i].Operation` to D3D12MA::DEFragmentATION_MOVE_OPERATION_IGNORE.
   This will cancel the move.
-  - D3D12MA::DefragmentationContext::EndPass() will then free the destination memory
+  - D3D12MA::DeFragmentationContext::EndPass() will then free the destination memory
     not the source memory of the allocation, leaving it unchanged.
 - If you decide the allocation is unimportant and can be destroyed instead of moved (e.g. it wasn't used for long time),
-  you can set `pass.pMoves[i].Operation` to D3D12MA::DEFRAGMENTATION_MOVE_OPERATION_DESTROY.
-  - D3D12MA::DefragmentationContext::EndPass() will then free both source and destination memory, and will destroy the source D3D12MA::Allocation object.
+  you can set `pass.pMoves[i].Operation` to D3D12MA::DEFragmentATION_MOVE_OPERATION_DESTROY.
+  - D3D12MA::DeFragmentationContext::EndPass() will then free both source and destination memory, and will destroy the source D3D12MA::Allocation object.
 
-You can defragment a specific custom pool by calling D3D12MA::Pool::BeginDefragmentation
-or all the default pools by calling D3D12MA::Allocator::BeginDefragmentation (like in the example above).
+You can deFragment a specific custom pool by calling D3D12MA::Pool::BeginDeFragmentation
+or all the default pools by calling D3D12MA::Allocator::BeginDeFragmentation (like in the example above).
 
-Defragmentation is always performed in each pool separately.
+DeFragmentation is always performed in each pool separately.
 Allocations are never moved between different heap types.
 The size of the destination memory reserved for a moved allocation is the same as the original one.
-Alignment of an allocation as it was determined using `GetResourceAllocationInfo()` is also respected after defragmentation.
+Alignment of an allocation as it was determined using `GetResourceAllocationInfo()` is also respected after deFragmentation.
 Buffers/textures should be recreated with the same `D3D12_RESOURCE_DESC` parameters as the original ones.
 
-You can perform the defragmentation incrementally to limit the number of allocations and bytes to be moved
+You can perform the deFragmentation incrementally to limit the number of allocations and bytes to be moved
 in each pass, e.g. to call it in sync with render frames and not to experience too big hitches.
-See members: D3D12MA::DEFRAGMENTATION_DESC::MaxBytesPerPass, D3D12MA::DEFRAGMENTATION_DESC::MaxAllocationsPerPass.
+See members: D3D12MA::DEFragmentATION_DESC::MaxBytesPerPass, D3D12MA::DEFragmentATION_DESC::MaxAllocationsPerPass.
 
 <b>Thread safety:</b>
-It is safe to perform the defragmentation asynchronously to render frames and other Direct3D 12 and %D3D12MA
+It is safe to perform the deFragmentation asynchronously to render frames and other Direct3D 12 and %D3D12MA
 usage, possibly from multiple threads, with the exception that allocations
-returned in D3D12MA::DEFRAGMENTATION_PASS_MOVE_INFO::pMoves shouldn't be released until the defragmentation pass is ended.
-During the call to D3D12MA::DefragmentationContext::BeginPass(), any operations on the memory pool
-affected by the defragmentation are blocked by a mutex.
+returned in D3D12MA::DEFragmentATION_PASS_MOVE_INFO::pMoves shouldn't be released until the deFragmentation pass is ended.
+During the call to D3D12MA::DeFragmentationContext::BeginPass(), any operations on the memory pool
+affected by the deFragmentation are blocked by a mutex.
 
-What it means in practice is that you shouldn't free any allocations from the defragmented pool
+What it means in practice is that you shouldn't free any allocations from the deFragmented pool
 since the moment a call to `BeginPass` begins. Otherwise, a thread performing the `allocation->Release()`
 would block for the time `BeginPass` executes and then free the allocation when it finishes, while the allocation
 could have ended up on the list of allocations to move.
-A solution to freeing allocations during defragmentation is to find such allocation on the list
-`pass.pMoves[i]` and set its operation to D3D12MA::DEFRAGMENTATION_MOVE_OPERATION_DESTROY instead of
-calling `allocation->Release()`, or simply deferring the release to the time after defragmentation finished.
+A solution to freeing allocations during deFragmentation is to find such allocation on the list
+`pass.pMoves[i]` and set its operation to D3D12MA::DEFragmentATION_MOVE_OPERATION_DESTROY instead of
+calling `allocation->Release()`, or simply deferring the release to the time after deFragmentation finished.
 
-<b>Mapping</b> is out of scope of this library and so it is not preserved after an allocation is moved during defragmentation.
+<b>Mapping</b> is out of scope of this library and so it is not preserved after an allocation is moved during deFragmentation.
 You need to map the new resource yourself if needed.
 
-\note Defragmentation is not supported in custom pools created with D3D12MA::POOL_FLAG_ALGORITHM_LINEAR.
+\note DeFragmentation is not supported in custom pools created with D3D12MA::POOL_FLAG_ALGORITHM_LINEAR.
 
 
 \page statistics Statistics
@@ -2129,7 +2129,7 @@ and appropriate mention in changelog.
 The JSON string contains all the data that can be obtained using D3D12MA::Allocator::CalculateStatistics().
 It can also contain detailed map of allocated memory blocks and their regions -
 free and occupied by allocations.
-This allows e.g. to visualize the memory or assess fragmentation.
+This allows e.g. to visualize the memory or assess Fragmentation.
 
 
 \page resource_aliasing Resource aliasing (overlap)
@@ -2565,7 +2565,7 @@ or those automatically decided to put into committed allocations, e.g. due to it
 
 Margins appear in [JSON dump](@ref statistics_json_dump) as part of free space.
 
-Note that enabling margins increases memory usage and fragmentation.
+Note that enabling margins increases memory usage and Fragmentation.
 
 Margins do not apply to \ref virtual_allocator.
 

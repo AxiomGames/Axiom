@@ -1,4 +1,4 @@
-#include "D3D12CommandList.hpp"
+
 #include "D3D12CommonHeaders.hpp"
 #include "d3d12x.h"
 #include "../DeviceContext.hpp"
@@ -24,14 +24,18 @@ void D3D12CommandList::Release()
 
 void D3D12CommandList::Initialize(IDeviceContext* deviceContext)
 {
-	D3D12Context* context = (D3D12Context*)deviceContext;
-	m_Device = context->GetDevice();
+	m_DeviceContext = static_cast<D3D12Context*>(deviceContext);
+	m_Device = m_DeviceContext->GetDevice();
 }
 
 void D3D12CommandList::SetPipelineState(IPipeline* pipeline) 
 {
 	D3D12Pipeline* dx12Pipeline = static_cast<D3D12Pipeline*>(pipeline);
 	m_CmdList->SetPipelineState(dx12Pipeline->PipelineState);
+	
+	/// we will not use m_CBV_SRV_UAV_HEAPS here 
+	ID3D12DescriptorHeap* descriptorHeaps[] = { m_DeviceContext->m_CBV_SRV_UAV_HEAPS[0].Heap};
+	m_CmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 	m_CmdList->SetGraphicsRootSignature(dx12Pipeline->RootSignature);
 }
 
@@ -47,7 +51,7 @@ void D3D12CommandList::SetBufferBarrier(IBuffer* pBuffer, const PipelineBarrier&
 	D3D12_RESOURCE_BARRIER barrier = {};
 	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrier.Transition.pResource = dxBuffer->mpVidMemBuffer;
+	barrier.Transition.pResource = dxBuffer->VidMemBuffer;
 	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 	barrier.Transition.StateBefore = DX12::ToDX12PipelineStage(pBarrier.CurrentStage);
 	barrier.Transition.StateAfter = DX12::ToDX12PipelineStage(pBarrier.NextStage);
@@ -88,13 +92,13 @@ void D3D12CommandList::SetRenderTargets(IImage** images, uint32 numImages, IImag
 	{
 		descHandles[i] = static_cast<D3D12Image*>(images[i])->DescriptorHandle;
 	}
-    m_CmdList->OMSetRenderTargets(numImages, descHandles, false, depthStencil ? &((D3D12Image*)depthStencil)->DescriptorHandle : nullptr);
+    m_CmdList->OMSetRenderTargets(numImages, descHandles, false,
+		          depthStencil ? &((D3D12Image*)depthStencil)->DescriptorHandle : nullptr);
 }
 
 void D3D12CommandList::SetVertexBuffers(IBuffer** vertexBuffers, uint32 numVertexBuffers) 
 {
 	D3D12_VERTEX_BUFFER_VIEW views[16];
-
 	for (int i = 0; i < numVertexBuffers; ++i)
 	{
 		views[i] = static_cast<D3D12Buffer*>(vertexBuffers[i])->vertexBufferView;
@@ -104,8 +108,21 @@ void D3D12CommandList::SetVertexBuffers(IBuffer** vertexBuffers, uint32 numVerte
 
 void D3D12CommandList::SetIndexBuffer(IBuffer* indexBuffer)  
 {
-	m_CmdList->IASetIndexBuffer(&static_cast<D3D12Buffer*>(indexBuffer)->indexBufferView);
+	D3D12Buffer* d3dBuffer = static_cast<D3D12Buffer*>(indexBuffer);
+	m_CmdList->IASetIndexBuffer(&d3dBuffer->indexBufferView);
 	m_CmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+}
+
+void D3D12CommandList::SetTexture(uint32 index, IBuffer* texture)
+{
+    D3D12Buffer* dxBuffer = static_cast<D3D12Buffer*>(texture);
+    m_CmdList->SetGraphicsRootDescriptorTable(index, dxBuffer->GPUDescHandle);
+}
+
+void D3D12CommandList::SetConstantBufferView(int index, IBuffer* buffer)
+{
+    D3D12Buffer* dxBuffer = static_cast<D3D12Buffer*>(buffer);
+    m_CmdList->SetGraphicsRootConstantBufferView(index, dxBuffer->GPUDescHandle.ptr);
 }
 
 void D3D12CommandList::SetViewports(uint32 numViewports, const ViewportDesc* desc)

@@ -1,29 +1,44 @@
 #pragma once
 
 #include "D3D12CommonHeaders.hpp"
-#include "../CommandList.hpp"
+#include "../PipelineState.hpp"
 
-struct D3D12Buffer : IBuffer
+namespace D3D12MA
 {
-	ID3D12Resource* mpVidMemBuffer;
-	ID3D12Resource* mpSysMemBuffer;
-	
+    class Allocation;
+}
+
+struct D3D12Buffer : public IBuffer
+{
+    ID3D12Resource* VidMemBuffer{};
+    ID3D12Resource* UploadResource{};
+    D3D12MA::Allocation* VidAlloc{};
+    void* MapPtr = nullptr;
+
 	union
 	{
 		D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
 		D3D12_INDEX_BUFFER_VIEW indexBufferView;
-	};
+        struct
+        {
+            // for srv_cbv_uav
+            D3D12_CPU_DESCRIPTOR_HANDLE CPUDescHandle;
+            D3D12_GPU_DESCRIPTOR_HANDLE GPUDescHandle;
+        };
+    };
 
 	void Release() override
 	{
-		ReleaseResource(mpVidMemBuffer);
-		ReleaseResource(mpSysMemBuffer);
+        // delete Allocation;
+        ReleaseResource(UploadResource);
+        ReleaseResource(VidMemBuffer);
 	}
 };
 
 struct D3D12Image : IImage
 {
 	ID3D12Resource* Resource;
+
 	D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHandle;
 
 	void Release() override
@@ -48,7 +63,7 @@ struct D3D12Fence : public IFence
 	ID3D12Fence1* fence = nullptr;
 };
 
-struct D3D12CommandAllocator : ICommandAllocator
+struct D3D12CommandAllocator : public ICommandAllocator
 {
 	ID3D12CommandAllocator* allocator;
 	void Reset() override
@@ -60,14 +75,4 @@ struct D3D12CommandAllocator : ICommandAllocator
 	{
 		allocator->Release();
 	}
-};
-
-struct D3D12DescriptorSet : DescriptorSet
-{
-    ID3D12RootSignature* RootSignature;
-    D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHandles[8];
-    void Release()
-    {
-        ReleaseResource(RootSignature);
-    }
 };
