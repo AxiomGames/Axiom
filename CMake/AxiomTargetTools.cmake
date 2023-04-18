@@ -1,0 +1,3 @@
+function(AddAxiomTarget targetName)
+
+endfunction()

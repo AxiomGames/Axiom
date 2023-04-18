@@ -1,5 +1,6 @@
 #include "EditorApplication.hpp"
 #include "Axiom/Core/TypeID.hpp"
+#include "Axiom/Core/Reflection.hpp"
 #include <iostream>
 #include "Axiom/Engine.hpp"
 #include "Axiom/App/WindowManager.hpp"
@@ -8,14 +9,26 @@
 #include <entt/entt.hpp>
 
 #include "Axiom/Render/DX12/D3D12Core.hpp"
+#include "Axiom/Math/Vector4.hpp"
+#include "Axiom/Core/Enum.hpp"
 
 #include <Axiom/Core/Allocator.hpp>
 #include <Axiom/Core/Memory.hpp>
 #include <Axiom/Core/BlockAllocator.hpp>
 
+AX_ENUM()
+enum class TestEnum
+{
+	One AX_META(DisplayName = "1"),
+	Two = 1,
+	Three = 1 << 5,
+	Four, // This will have value 32 + 1 since 32 is the last one
+	Five = 5 AX_META(DisplayName = "Yo")
+};
+
 void EditorApplication::OnInit()
 {
-	GEngine->Initialize<WindowManager>();
+	/*GEngine->Initialize<WindowManager>();
 
 	SharedPtr<UIWindow> window = UINew(UIWindow)
 									.AutoCenter(true)
@@ -24,41 +37,47 @@ void EditorApplication::OnInit()
 
 	GEngine->Get<WindowManager>()->AddWindow(window, true);
 
-	DX12::Initialize();
+	DX12::Initialize();*/
 
-	struct Test
+	/*auto enumClassTest = Reflection::NewType<TestEnum>("TestEnum");
+
+	enumClassTest.Value<TestEnum::One>("One")
+		.Attribute(EnumAttributeNumericValue{10});
+
+	enumClassTest.Value<TestEnum::Two>("Two").Attribute(EnumAttributeNumericValue{20}).Attribute(EnumAttributeDisplayName{"asdasd"});*/
+
+	//std::cout << "After " << Reflection::m_TypesByName.Size() << std::endl;
+
+	/*if (auto type = StaticType<::TestEnum>())
 	{
-		int A = 0;
-	};
+		for (auto val : type.Values())
+		{
+			const EnumAttributeNumericValue& v = val.GetAttribute<EnumAttributeNumericValue>();
 
-	Test* a = Memory::Alloc<Test>();
-	Memory::FreeDestruct<int>(a);
+			if (val.HasAttribute<EnumAttributeDisplayName>())
+			{
+				const EnumAttributeDisplayName& displayName = val.GetAttribute<EnumAttributeDisplayName>();
 
-	int* b = (int*)Memory::Malloc(sizeof(int));
-	Memory::Free(b);
-
-	int* c = (int*)Memory::MallocZeroed(sizeof(int));
-	Memory::Free(c);
-
-
-	IAllocator* allocator = new BlockAllocator();
-
-	Test* d = allocator->Alloc<Test>();
-	allocator->FreeDestruct<Test>(d);
-
-	delete allocator;
+				std::cout << val.GetName().CStr() << " (" << displayName.DisplayName << ")" << " = " << std::to_string(v.NumericValue) << std::endl;
+			}
+			else
+			{
+				std::cout << val.GetName().CStr() << " = " << std::to_string(v.NumericValue) << std::endl;
+			}
+		}
+	}*/
 }
 
 void EditorApplication::OnShutdown()
 {
-	DX12::Shutdown();
+	/*DX12::Shutdown();
 
-	GEngine->Destroy<WindowManager>();
+	GEngine->Destroy<WindowManager>();*/
 }
 
 void EditorApplication::OnUpdate(float delta)
 {
-	DX12::Render();
+	//DX12::Render();
 }
 
 Application* CreateApplication(int argc, char* argv[])

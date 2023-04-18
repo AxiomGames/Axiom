@@ -22,7 +22,11 @@ IF(NOT DEFINED CMAKE_RUNTIME_OUTPUT_DIRECTORY)
 	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin CACHE PATH "Directory for dlls and binaries")
 endif()
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/CMake)
+
 add_subdirectory(lib)
+
+add_subdirectory(AxiomHeaderTool)
 
 add_subdirectory(AxiomPlatform)
 add_subdirectory(Axiom)

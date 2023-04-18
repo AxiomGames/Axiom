@@ -14,8 +14,6 @@ struct Tuple
 template<typename T, typename... Rest>
 struct Tuple<T, Rest...>
 {
-	static constexpr unsigned long long Size = sizeof...(T);
-
 	T first;
 	Tuple<Rest...> rest;        // Parameter pack expansion
 

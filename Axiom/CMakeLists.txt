@@ -24,3 +24,8 @@ if (MSVC)
 endif(MSVC)
 
 target_compile_definitions(Axiom PUBLIC NOMINMAX)
+
+add_custom_target(Axiom_PreBuiltTarget COMMAND AxiomHeaderTool --root_dir "${PROJECT_SOURCE_DIR}/src"
+				WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+				VERBATIM DEPENDS AxiomHeaderTool)
+add_dependencies(Axiom Axiom_PreBuiltTarget)

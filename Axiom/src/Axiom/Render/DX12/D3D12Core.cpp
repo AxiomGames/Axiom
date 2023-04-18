@@ -280,8 +280,10 @@ namespace DX12
 		ReleaseResource(MainDevice);
 		DXCall(debugDevice->ReportLiveDeviceObjects(D3D12_RLDO_SUMMARY | D3D12_RLDO_DETAIL | D3D12_RLDO_IGNORE_INTERNAL));
 #else
-		ReleaseResource(main_device);
+		ReleaseResource(MainDevice);
 #endif
+
+
 	}
 
 	void Render()
