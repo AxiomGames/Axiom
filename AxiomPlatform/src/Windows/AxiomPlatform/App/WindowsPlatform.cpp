@@ -2,6 +2,7 @@
 #include "Axiom/App/WindowManager.hpp"
 #include "Axiom/Engine.hpp"
 
+#include "AxiomPlatform/App/GLFW.hpp"
 #include "AxiomPlatform/App/GLFWWindow.hpp"
 #include "AxiomPlatform/App/GLFWEvents.hpp"
 

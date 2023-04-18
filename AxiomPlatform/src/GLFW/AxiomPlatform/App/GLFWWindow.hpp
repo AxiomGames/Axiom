@@ -2,7 +2,7 @@
 
 #include "Axiom/App/Window.hpp"
 
-#include "GLFW.hpp"
+struct GLFWwindow;
 
 class GLFWNativeWindow : public INativeWindow
 {
@@ -36,6 +36,10 @@ public:
 
 	void SetTitle(const String& title) override;
 
+#ifdef AX_WIN32
+	HWND GetHWND() override;
+#endif
+
 	[[nodiscard]] bool IsFocused() const override;
 
 	[[nodiscard]] bool IsShouldClose() const override;
@@ -45,9 +49,9 @@ public:
 	[[nodiscard]] const ECursorMode& GetCursorMode() const override;
 
 	bool IsIconified() override;
+	bool ShouldClose() override;
 
 	void SetFocused(bool focused) { m_Focused = focused; }
 
-	[[nodiscard]] GLFWwindow* GetWindowHandle() const
-	{ return m_WindowHandle; }
+	[[nodiscard]] GLFWwindow* GetWindowHandle() const { return m_WindowHandle; }
 };

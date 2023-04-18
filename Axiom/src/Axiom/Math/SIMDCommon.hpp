@@ -204,7 +204,7 @@ FINLINE double VECTORCALL hsum_256_pd(__m256d v)
 }
 
 // from: Faster Population Counts Using AVX2 Instructions resource paper
-FINLINE int VECTORCALL popcount256_epi64(__m256i v)
+FINLINE long long VECTORCALL popcount256_epi64(__m256i v)
 {
 	static const __m256i lookup = _mm256_setr_epi8(0, 1, 1, 2, 1, 2, 2, 3, 1, 2,
 			2, 3, 2, 3, 3, 4, 0, 1, 1, 2, 1, 2, 2, 3,

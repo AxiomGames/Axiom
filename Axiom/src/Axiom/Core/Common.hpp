@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstdint>
+#include <stdint.h>
 
 #if AX_SHARED
 #ifdef AX_EXPORT
@@ -43,6 +43,7 @@
 
 #if _WIN32 || _WIN64
 #   define AX_WIN32
+#	include <intrin.h>
 #elif __linux__
 #   define AX_LINUX
 #endif
@@ -57,35 +58,18 @@
 #	endif
 #endif
 
-#ifdef _MSC_VER
-#include <intrin.h>
-#	ifndef AXPopCount
-#		define AXPopCount(x) __popcnt(x)
-#   endif
-#	ifndef AXPopCount64
-#		define AXPopCount64(x) __popcnt64(x)
-#   endif
-#elif defined(__GNUC__) && !defined(__MINGW32__)
-#	ifndef AXPopCount
-#		define AXPopCount(x) __builtin_popcount(x)
-#   endif
-#	ifndef AXPopCount64
-#		define AXPopCount64() __builtin_popcountl(x)
-#   endif
-#else
-#	ifndef AXPopCount
-#		define AXPopCount(x) PopCount(x)
-#   endif
-#	ifndef AXPopCount64
-#		define AXPopCount64(x) PopCount(x)
-#   endif
-#endif
-
 #define ax_assert(...)
 
 template<typename T>
-inline constexpr T PopCount(T i)
+FINLINE constexpr T PopCount(T x)
 {
+#ifdef _MSC_VER
+	if      constexpr (sizeof(T) == 4) return __popcnt(x);
+	else if constexpr (sizeof(T) == 8) return __popcnt64(x);
+#elif defined(__GNUC__) && !defined(__MINGW32__)
+	if      constexpr (sizeof(T) == 4) return __builtin_popcount(x);
+	else if constexpr (sizeof(T) == 8) return __builtin_popcountl(x);
+#else
 	if constexpr (sizeof(T) == 4)
 	{
 		i = i - ((i >> 1) & 0x55555555);        // add pairs of bits
@@ -93,13 +77,46 @@ inline constexpr T PopCount(T i)
 		i = (i + (i >> 4)) & 0x0F0F0F0F;        // groups of 8
 		return (i * 0x01010101) >> 24;          // horizontal sum of bytes	
 	}
-	else if constexpr (sizeof(T) == 8) // standard popcount; from wikipedia
+	else if (sizeof(T) == 8) // standard popcount; from wikipedia
 	{
 		i -= ((i >> 1) & 0x5555555555555555ull);
 		i = (i & 0x3333333333333333ull) + (i >> 2 & 0x3333333333333333ull);
 		return ((i + (i >> 4)) & 0xf0f0f0f0f0f0f0full) * 0x101010101010101ull >> 56;
 	}
-	ax_assert(0);
+#endif
+}
+
+template<typename T>
+FINLINE  constexpr T TrailingZeroCount(T x)
+{
+#ifdef _MSC_VER
+	if      constexpr (sizeof(T) == 4) return _tzcnt_u32(x);
+	else if constexpr (sizeof(T) == 8) return _tzcnt_u64(x);
+#elif defined(__GNUC__) && !defined(__MINGW32__)
+	if      constexpr (sizeof(T) == 4) return __builtin_ctz(x);
+	else if constexpr (sizeof(T) == 8) return __builtin_ctzll(x);
+#else
+	return PopCount((x & -x) - 1);
+#endif
+}
+
+template<typename T>
+FINLINE  constexpr T LeadingZeroCount(T x)
+{
+#ifdef _MSC_VER
+	if      constexpr (sizeof(T) == 4) return _lzcnt_u32(x);
+	else if constexpr (sizeof(T) == 8) return _lzcnt_u64(x);
+#elif defined(__GNUC__) && !defined(__MINGW32__)
+	if      constexpr (sizeof(T) == 4) return __builtin_clz(x);
+	else if constexpr (sizeof(T) == 8) return __builtin_clzll(x);
+#else
+	x |= (x >> 1);
+	x |= (x >> 2);
+	x |= (x >> 4);
+	x |= (x >> 8);
+	x |= (x >> 16);
+	return 32 - PopCount(x);
+#endif
 }
 
 typedef uint8_t uint8;
@@ -119,3 +136,4 @@ enum EForceInit
 {
 	ForceInit
 };
+

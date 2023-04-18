@@ -10,8 +10,6 @@
 #include <d3dcompiler.h>
 #include <wrl.h>
 
-using namespace Microsoft::WRL;
-
 #define AX_DEBUG_BREAK DebugBreak()
 
 #ifndef DXCall
@@ -27,6 +25,8 @@ using namespace Microsoft::WRL;
 	#endif
 #endif
 
+static constexpr uint32 g_NumBackBuffers = 2;
+
 template<typename T>
 constexpr void ReleaseResource(T*& resource)
 {
@@ -35,6 +35,14 @@ constexpr void ReleaseResource(T*& resource)
 		resource->Release();
 		resource = nullptr;
 	}
+}
+
+template<class... Args>
+static inline void D3D12SetName(ID3D12Object* obj, const char* name, Args&&... args)
+{
+	wchar_t buffer[1024];
+	swprintf_s(buffer, _countof(buffer), L"%S", name, args...);
+	obj->SetName(buffer);
 }
 
 #endif
