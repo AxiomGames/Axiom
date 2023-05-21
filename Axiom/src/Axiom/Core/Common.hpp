@@ -199,7 +199,7 @@ struct KeyValuePair
 	ValueT value{};
 
 	KeyValuePair() {}
-	KeyValuePair(KeyT ky, ValueT val) : key(ky), value(val) {}
+	KeyValuePair(KeyT ky, ValueT val) : key((KeyT&&)ky), value((ValueT&&)val) {}
 
 	bool operator==(const KeyValuePair& other) {
 		return key == other.key && value == other.value;
