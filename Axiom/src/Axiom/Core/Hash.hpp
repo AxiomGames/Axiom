@@ -208,8 +208,8 @@ template<typename T> struct  Hasher
 {
 	static FINLINE uint64 Hash(const T& x)
 	{
-		if constexpr (sizeof(T) == 4) return uint64(WangHash(x)) * 0x9ddfea08eb382d69ull;
-		else if constexpr (sizeof(T) == 8) return MurmurHash(x);
+		if constexpr (sizeof(T) == 4) return uint64(WangHash(BitCast<uint32>(x))) * 0x9ddfea08eb382d69ull;
+		else if constexpr (sizeof(T) == 8) return MurmurHash(BitCast<uint64>(x));
 		else return WYHash::Hash(&x, sizeof(T));
 	}
 };

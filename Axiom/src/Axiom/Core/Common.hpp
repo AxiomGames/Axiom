@@ -135,6 +135,11 @@ FINLINE  constexpr T LeadingZeroCount(T x)
 #endif
 }
 
+template<typename To, typename From>
+FINLINE constexpr To BitCast(const From& _Val) noexcept {
+	return __builtin_bit_cast(To, _Val);
+}
+
 template<typename T> FINLINE T Max(const T a, const T b) { return a > b ? a : b; }
 template<typename T> FINLINE T Min(const T a, const T b) { return a < b ? a : b; }
 template<typename T> FINLINE T Clamp(const T x, const T a, const T b) { return Max(a, Min(b, x)); }
