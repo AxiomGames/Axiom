@@ -881,5 +881,12 @@ struct StringConverter<float>
 		int len = snprintf(buf, 50, "%f", value);
 		string.Append(buf, buf + len);
 	}
+};
 
+template<> struct Hasher<String>
+{
+	static FINLINE uint64 Hash(const String& x)
+	{
+		return WYHash::Hash(x.CStr(), x.Size());
+	}
 };

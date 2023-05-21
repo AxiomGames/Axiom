@@ -26,7 +26,7 @@ struct Matrix3
 		Matrix3 result{};
 		result.vec[2] = direction;
 		Vector3f const& Right = Vector3f::Cross(up, result.vec[2]);
-		result.vec[0] = Right * Math::RSqrt(Math::Max(0.00001f, Vector3f::Dot(Right, Right)));
+		result.vec[0] = Right * Math::RSqrt(Max(0.00001f, Vector3f::Dot(Right, Right)));
 		result.vec[1] = Vector3f::Cross(result.vec[2], result.vec[0]);
 		return result;
 	}

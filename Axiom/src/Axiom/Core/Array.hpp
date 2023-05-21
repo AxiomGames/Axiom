@@ -96,8 +96,8 @@ public:
 
 	void EmplaceBack();
 
-	template<typename Param>
-	T& EmplaceBack(const Param& param);
+	template<typename... Args>
+	T& EmplaceBack(Args&&... args);
 
 	void ShrinkToFit();
 
@@ -110,6 +110,10 @@ public:
 	ConstIterator begin() const;
 
 	ConstIterator end() const;
+
+	ConstIterator cbegin() const;
+
+	ConstIterator cend()   const;
 
 	void Insert(Iterator where);
 
@@ -328,10 +332,10 @@ FINLINE void Array<T, Alloc>::EmplaceBack()
 }
 
 template<typename T, typename Alloc>
-template<typename Param>
-FINLINE T& Array<T, Alloc>::EmplaceBack(const Param& param)
+template<typename... Args>
+FINLINE T& Array<T, Alloc>::EmplaceBack(Args&&... param)
 {
-	return *AxSTL::buffer_emplace(&m_Buffer, &param);
+	return *AxSTL::buffer_emplace(&m_Buffer, Forward<Args&&>(param)...);
 }
 
 template<typename T, typename Alloc>
@@ -372,6 +376,18 @@ FINLINE typename Array<T, Alloc>::ConstIterator Array<T, Alloc>::begin() const
 
 template<typename T, typename Alloc>
 FINLINE typename Array<T, Alloc>::ConstIterator Array<T, Alloc>::end() const
+{
+	return m_Buffer.last;
+}
+
+template<typename T, typename Alloc>
+FINLINE typename Array<T, Alloc>::ConstIterator Array<T, Alloc>::cbegin() const
+{
+	return m_Buffer.first;
+}
+
+template<typename T, typename Alloc>
+FINLINE typename Array<T, Alloc>::ConstIterator Array<T, Alloc>::cend() const
 {
 	return m_Buffer.last;
 }

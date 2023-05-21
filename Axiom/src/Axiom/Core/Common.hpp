@@ -58,6 +58,22 @@
 #	endif
 #endif
 
+#if defined(__GNUC__) || defined(__INTEL_COMPILER) || defined(__clang__)
+#    define AX_LIKELY(x) __builtin_expect(x, 1)   // NOLINT(cppcoreguidelines-macro-usage)
+#    define AX_UNLIKELY(x) __builtin_expect(x, 0) // NOLINT(cppcoreguidelines-macro-usage)
+#else
+#    define AX_LIKELY(x) (x)   // NOLINT(cppcoreguidelines-macro-usage)
+#    define AX_UNLIKELY(x) (x) // NOLINT(cppcoreguidelines-macro-usage)
+#endif
+
+#if defined(__GNUC__) || defined(__MINGW32__)
+    #define RESTRICT __restrict__
+#elif defined(_MSC_VER)
+    #define RESTRICT __restrict
+#else
+    #define RESTRICT
+#endif
+
 #define ax_assert(...)
 
 template<typename T>
@@ -119,6 +135,22 @@ FINLINE  constexpr T LeadingZeroCount(T x)
 #endif
 }
 
+template<typename T> FINLINE T Max(const T a, const T b) { return a > b ? a : b; }
+template<typename T> FINLINE T Min(const T a, const T b) { return a < b ? a : b; }
+template<typename T> FINLINE T Clamp(const T x, const T a, const T b) { return Max(a, Min(b, x)); }
+
+template<typename T, typename Other>
+constexpr FINLINE T Min(T left, Other right)
+{
+	return left <= right ? left : right;
+}
+
+template<typename T, typename Other>
+constexpr FINLINE T Max(T left, Other right)
+{
+	return left <= right ? left : right;
+}
+
 typedef uint8_t uint8;
 typedef uint16_t uint16;
 typedef uint32_t uint32;
@@ -137,3 +169,38 @@ enum EForceInit
 	ForceInit
 };
 
+template<typename A, typename B>
+struct Pair
+{
+	A first;
+	B second;
+
+	bool operator==(const Pair& other) {
+		return first == other.first && second == other.second;
+	}
+
+	bool operator!=(const Pair& other) {
+		return first != other.first || second != other.second;
+	}
+
+	Pair() {}
+	Pair(const A& x, const B& y) : first(x), second(y) {}
+};
+
+template<typename KeyT, typename ValueT>
+struct KeyValuePair
+{
+	KeyT key{};
+	ValueT value{};
+
+	KeyValuePair() {}
+	KeyValuePair(KeyT ky, ValueT val) : key(ky), value(val) {}
+
+	bool operator==(const KeyValuePair& other) {
+		return key == other.key && value == other.value;
+	}
+
+	bool operator!=(const KeyValuePair& other) {
+		return key != other.key || value != other.value;
+	}
+};
