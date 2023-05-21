@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Common.hpp"
+#include "Hash.hpp"
 #include "../Math/SIMDCommon.hpp"
 
 namespace Random
@@ -18,23 +18,6 @@ namespace Random
 		uint64 result;
 		_rdseed64_step(&result);
 		return result;
-	}
-
-	constexpr FINLINE uint32 WangHash(uint32 s) {
-		s = (s ^ 61u) ^ (s >> 16u);
-		s *= 9, s = s ^ (s >> 4u);
-		s *= 0x27d4eb2du;
-		s = s ^ (s >> 15u);
-		return s;
-	}
-
-	constexpr FINLINE uint64 MurmurHash(uint64 h) {
-		h ^= h >> 33ul;
-		h *= 0xff51afd7ed558ccdUL;
-		h ^= h >> 33ul;
-		h *= 0xc4ceb9fe1a85ec53UL;
-		h ^= h >> 33ul;
-		return h;
 	}
 
 	constexpr inline uint64 StringToHash64(const char* str, uint64 hash = 0)

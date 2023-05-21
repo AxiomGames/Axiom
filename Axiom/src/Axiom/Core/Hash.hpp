@@ -35,13 +35,13 @@ struct Hash
 {
 	constexpr static bool c_HasHashImpl = true;
 
-	static std::size_t hash(const T& value)
+	static size_t hash(const T& value)
 	{
 		const auto asint = (std::size_t) value;
 		const auto str = (const char*) &asint;
 		const auto len = sizeof(asint);
 
-		std::size_t hash = 0;
+		size_t hash = 0;
 		typedef const char* pointer;
 		for (pointer it = str, end = str + len; it != end; ++it)
 		{
