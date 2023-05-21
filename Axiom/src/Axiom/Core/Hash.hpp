@@ -187,21 +187,72 @@ FINLINE uint64 FNVHash64(const void* ptr, uint64 length)
 	return hash;
 }
 
-constexpr FINLINE uint32 WangHash(uint32 s) {
-	s = (s ^ 61u) ^ (s >> 16u);
-	s *= 9, s = s ^ (s >> 4u);
-	s *= 0x27d4eb2du;
-	s = s ^ (s >> 15u);
-	return s;
+
+// Not WangHash actually we can say skeeto hash.
+// developed and highly optimized by Chris Wellons
+// https://github.com/skeeto/hash-prospector https://nullprogram.com/blog/2018/07/31/
+constexpr FINLINE uint32 WangHash(uint32 x) {
+	x ^= x >> 16u;
+	x *= 0x7feb352du;
+	x ^= x >> 15u;
+	x *= 0x846ca68bu;
+	x ^= x >> 16u;
+	return x;
 }
 
-constexpr FINLINE uint64 MurmurHash(uint64 h) {
-	h ^= h >> 33ul;
-	h *= 0xff51afd7ed558ccdUL;
-	h ^= h >> 33ul;
-	h *= 0xc4ceb9fe1a85ec53UL;
-	h ^= h >> 33ul;
-	return h;
+// given Wang hash returns input value: x = WangHashInverse(WangHash(x))
+constexpr FINLINE uint32 WangHashInverse(uint32 x)
+{
+	x ^= x >> 16u;
+	x *= 0x7feb352du;
+	x ^= x >> 15u;
+	x *= 0x846ca68bu;
+	x ^= x >> 16u;
+	return x;
+}
+
+// little slower than Wang but more accurate
+constexpr FINLINE uint32_t TripleHash(uint32_t x)
+{
+	x ^= x >> 17u;
+	x *= 0xed5ad4bbu;
+	x ^= x >> 11u;
+	x *= 0xac4c1b51u;
+	x ^= x >> 15u;
+	x *= 0x31848babu;
+	x ^= x >> 14u;
+	return x;
+}
+
+// inverse
+constexpr FINLINE uint32_t TripleHashInverse(uint32_t x)
+{
+	x ^= x >> 14u ^ x >> 28u;
+	x *= 0x32b21703u;
+	x ^= x >> 15u ^ x >> 30u;
+	x *= 0x469e0db1u;
+	x ^= x >> 11u ^ x >> 22u;
+	x *= 0x79a85073u;
+	x ^= x >> 17u;
+	return x;
+}
+
+constexpr FINLINE uint64 MurmurHash(uint64 x) {
+	x ^= x >> 30ULL;
+	x *= 0xbf58476d1ce4e5b9ULL;
+	x ^= x >> 27ULL;
+	x *= 0x94d049bb133111ebULL;
+	x ^= x >> 31ULL;
+	return x;
+}
+
+constexpr FINLINE uint64 MurmurHashInverse(uint64 x) {
+	x ^= x >> 31ULL ^ x >> 62ULL;
+	x *= 0x319642b2d24d8ec3ULL;
+	x ^= x >> 27ULL ^ x >> 54ULL;
+	x *= 0x96de1b173f119089ULL;
+	x ^= x >> 30ULL ^ x >> 60ULL;
+	return x;
 }
 
 template<typename T> struct  Hasher
