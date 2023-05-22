@@ -135,7 +135,7 @@ AX_ALIGNAS(16) struct Quaternion
 	inline Vector3f static ToEulerAngles(const Quaternion& q) noexcept {
 		Vector3f eulerAngles;
 		eulerAngles.x = atan2f(2.0f * (q.y * q.z + q.w * q.x), q.w * q.w - q.x * q.x - q.y * q.y + q.z * q.z);
-		eulerAngles.y = asinf(Math::Clamp(-2.0f * (q.x * q.z - q.w * q.y), -1.0f, 1.0f));
+		eulerAngles.y = asinf(Clamp(-2.0f * (q.x * q.z - q.w * q.y), -1.0f, 1.0f));
 		eulerAngles.z = atan2f(2.0f * (q.x * q.y + q.w * q.z), q.w * q.w + q.x * q.x - q.y * q.y - q.z * q.z);
 		return eulerAngles;
 	}

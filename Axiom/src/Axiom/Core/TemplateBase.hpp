@@ -45,6 +45,14 @@ FINLINE void SwapPrimitive(T& left, T& right)
 	right = Move(temp);
 }
 
+template<class T, class U = T>
+FINLINE constexpr T Exchange(T& obj, U&& new_value)
+{
+  T old_value = Move(obj);
+  obj = Forward<U>(new_value);
+  return old_value;
+}
+
 template<typename T>
 FINLINE void SwapMemory(T& left, T& right)
 {

@@ -13,22 +13,6 @@ namespace Math
 	constexpr float PIDiv2 = PI / 2.0f;
 	constexpr float TwoPI = PI * 2.0f;
 
-	template<typename T> FINLINE T Max(const T a, const T b) { return a > b ? a : b; }
-	template<typename T> FINLINE T Min(const T a, const T b) { return a < b ? a : b; }
-	template<typename T> FINLINE T Clamp(const T x, const T a, const T b) { return Max(a, Min(b, x)); }
-
-	template<typename T, typename Other>
-	constexpr FINLINE T Min(T left, Other right)
-	{
-		return left <= right ? left : right;
-	}
-
-	template<typename T, typename Other>
-	constexpr FINLINE T Max(T left, Other right)
-	{
-		return left <= right ? left : right;
-	}
-
 	FINLINE bool IsZero(const float x)	noexcept { return fabsf(x) <= 0.0001f; }
 	FINLINE bool IsZero(const double x)	noexcept { return fabs(x) <= 0.00001; }
 
